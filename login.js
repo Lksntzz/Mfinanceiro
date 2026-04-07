@@ -21,11 +21,15 @@ async function login(email, password) {
 
 const form = document.querySelector('form');
 
+if (!form) {
+  throw new Error('Formulario de login nao encontrado');
+}
+
 form.addEventListener('submit', async (e) => {
   e.preventDefault();
 
   const email = document.querySelector('#email').value;
-  const password = document.querySelector('#password').value;
+  const password = document.querySelector('#senha').value;
 
   await login(email, password);
 });
