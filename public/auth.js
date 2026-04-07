@@ -12,14 +12,19 @@ function saveAuthSession(user) {
 
 function getAuthSession() {
   const rawSession = sessionStorage.getItem(AUTH_STORAGE_KEY);
+  console.log('getAuthSession: rawSession =', rawSession);
 
   if (!rawSession) {
+    console.log('Nenhuma sessão encontrada no sessionStorage');
     return null;
   }
 
   try {
-    return JSON.parse(rawSession);
+    const session = JSON.parse(rawSession);
+    console.log('Sessão parseada:', session);
+    return session;
   } catch (error) {
+    console.log('Erro ao parsear sessão:', error);
     sessionStorage.removeItem(AUTH_STORAGE_KEY);
     return null;
   }
@@ -35,7 +40,9 @@ function isAuthenticated() {
 }
 
 function requireAuth() {
+  console.log('requireAuth chamado');
   if (!isAuthenticated()) {
+    console.log('Usuário não autenticado, redirecionando para login');
     window.location.replace("/login.html");
     return null;
   }

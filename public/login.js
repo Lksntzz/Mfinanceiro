@@ -44,7 +44,9 @@ loginForm.addEventListener('submit', async (event) => {
       `Login realizado com sucesso. Redirecionando para o dashboard...`
     );
 
+    console.log('Redirecionando em 1.2s...');
     setTimeout(() => {
+      console.log('Executando redirecionamento para /dashboard.html');
       window.location.href = '/dashboard.html';
     }, 1200);
   } catch (error) {
