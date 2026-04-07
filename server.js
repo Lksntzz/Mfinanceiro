@@ -25,11 +25,12 @@ app.use((req, res, next) => {
 // Serve os arquivos HTML, CSS e JavaScript do frontend.
 app.use(express.static(path.join(__dirname, "public")));
 
+// Serve os arquivos do src para imports dinamicos.
+app.use('/src', express.static(path.join(__dirname, 'src')));
+
 // Rota simples para verificar se a API esta no ar.
 app.get("/", (req, res) => {
-  res.json({
-    message: "API de autenticacao funcionando.",
-  });
+  res.sendFile(path.join(__dirname, 'public', 'index.html'));
 });
 
 // Importa e registra as rotas de autenticacao.

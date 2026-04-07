@@ -1,53 +1,53 @@
+let supabaseInstance = null;
+
+async function getSupabase() {
+  if (!supabaseInstance) {
+    const module = await import('/src/supabase.js');
+    supabaseInstance = module.supabase;
+  }
+  return supabaseInstance;
+}
+
 const AUTH_STORAGE_KEY = "mfinanceiro_auth";
 
-function saveAuthSession(user) {
+async function saveAuthSession(user) {
+  const supabase = await getSupabase();
+  const session = await supabase.auth.getSession();
   sessionStorage.setItem(
     AUTH_STORAGE_KEY,
     JSON.stringify({
       user,
+      session: session.data.session,
       authenticatedAt: Date.now(),
     })
   );
 }
 
-function getAuthSession() {
-  const rawSession = sessionStorage.getItem(AUTH_STORAGE_KEY);
-  console.log('getAuthSession: rawSession =', rawSession);
-
-  if (!rawSession) {
-    console.log('Nenhuma sessão encontrada no sessionStorage');
-    return null;
+async function getAuthSession() {
+  const supabase = await getSupabase();
+  const { data: { session } } = await supabase.auth.getSession();
+  if (session) {
+    return { user: session.user, session };
   }
-
-  try {
-    const session = JSON.parse(rawSession);
-    console.log('Sessão parseada:', session);
-    return session;
-  } catch (error) {
-    console.log('Erro ao parsear sessão:', error);
-    sessionStorage.removeItem(AUTH_STORAGE_KEY);
-    return null;
-  }
+  return null;
 }
 
 function clearAuthSession() {
   sessionStorage.removeItem(AUTH_STORAGE_KEY);
 }
 
-function isAuthenticated() {
-  const session = getAuthSession();
+async function isAuthenticated() {
+  const session = await getAuthSession();
   return Boolean(session?.user?.email);
 }
 
-function requireAuth() {
-  console.log('requireAuth chamado');
-  if (!isAuthenticated()) {
-    console.log('Usuário não autenticado, redirecionando para login');
+async function requireAuth() {
+  if (!(await isAuthenticated())) {
     window.location.replace("/login.html");
     return null;
   }
-
-  return getAuthSession();
+  return await getAuthSession();
+}
 }
 
 window.AuthSession = {
