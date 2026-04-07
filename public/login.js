@@ -1,58 +1,52 @@
-const loginForm = document.getElementById("login-form");
-const loginButton = document.getElementById("login-button");
-const messageBox = document.getElementById("message");
-
-if (window.AuthSession.isAuthenticated()) {
-  window.location.replace("/dashboard.html");
+async function getSupabase() {
+  const module = await import('./src/supabase.js');
+  return module.supabase;
 }
+
+const loginForm = document.getElementById('login-form');
+const loginButton = document.getElementById('login-button');
+const messageBox = document.getElementById('message');
 
 function showMessage(type, text) {
   messageBox.textContent = text;
   messageBox.className = `message-box ${type}`;
 }
 
-loginForm.addEventListener("submit", async (event) => {
+loginForm.addEventListener('submit', async (event) => {
   event.preventDefault();
 
   const formData = new FormData(loginForm);
-  const payload = {
-    email: formData.get("email"),
-    senha: formData.get("senha"),
-  };
+  const email = formData.get('email');
+  const password = formData.get('senha');
 
   loginButton.disabled = true;
-  loginButton.textContent = "Entrando...";
+  loginButton.textContent = 'Entrando...';
 
   try {
-    const response = await fetch("http://localhost:3000/login", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify(payload),
+    const supabase = await getSupabase();
+    const { data, error } = await supabase.auth.signInWithPassword({
+      email,
+      password,
     });
 
-    const data = await response.json();
-
-    if (!response.ok) {
-      throw new Error(data.error || "Nao foi possivel fazer login.");
+    if (error) {
+      throw error;
     }
 
-    // Guarda a sessao atual no navegador para liberar o acesso ao painel.
-    window.AuthSession.saveAuthSession(data.user);
+    window.AuthSession?.saveAuthSession(data.user);
 
     showMessage(
-      "success",
-      `Login realizado com sucesso. Bem-vindo, ${data.user.nome}. Redirecionando para o dashboard...`
+      'success',
+      `Login realizado com sucesso. Redirecionando para o dashboard...`
     );
 
     setTimeout(() => {
-      window.location.href = "/dashboard.html";
+      window.location.href = '/dashboard.html';
     }, 1200);
   } catch (error) {
-    showMessage("error", error.message);
+    showMessage('error', error.message || 'Nao foi possivel fazer login.');
   } finally {
     loginButton.disabled = false;
-    loginButton.textContent = "Entrar";
+    loginButton.textContent = 'Entrar';
   }
 });
