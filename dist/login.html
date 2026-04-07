@@ -3,67 +3,57 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Cadastro</title>
+    <title>Login</title>
     <link rel="stylesheet" href="/styles.css" />
     <script type="module" src="/auth.js"></script>
+    <script type="module" crossorigin src="/assets/modulepreload-polyfill-Cf3xff8G.js"></script>
   </head>
   <body>
     <main class="page-shell">
       <section class="auth-layout">
         <aside class="auth-panel">
-          <div class="auth-badge">Cadastro seguro</div>
+          <div class="auth-badge">Acesso seguro</div>
           <h1 class="auth-title">
-            Organize sua entrada no sistema com simplicidade e consistencia.
+            Seu painel financeiro, com visual claro e acesso protegido.
           </h1>
           <p class="auth-description">
-            Seu nome identifica voce no aplicativo. Seu e-mail protege o acesso e centraliza
-            a conta.
+            Navegue com praticidade em uma interface pensada para foco, leitura e
+            organizacao.
           </p>
 
           <div class="auth-highlights">
             <div class="highlight-item">
-              <div class="highlight-icon">01</div>
+              <div class="highlight-icon">A</div>
               <div>
-                <strong>Conta unica por e-mail</strong>
-                <p class="auth-description">O login fica claro, direto e sem duplicidade.</p>
+                <strong>Entrada simples</strong>
+                <p class="auth-description">Somente o essencial para acessar sua conta.</p>
               </div>
             </div>
             <div class="highlight-item">
-              <div class="highlight-icon">02</div>
+              <div class="highlight-icon">B</div>
               <div>
-                <strong>Senha protegida</strong>
-                <p class="auth-description">As credenciais sao tratadas com hash no backend.</p>
+                <strong>Leitura confortavel</strong>
+                <p class="auth-description">Tipografia, contraste e espacamento bem resolvidos.</p>
               </div>
             </div>
             <div class="highlight-item">
-              <div class="highlight-icon">03</div>
+              <div class="highlight-icon">C</div>
               <div>
-                <strong>Experiencia fluida</strong>
-                <p class="auth-description">Cadastro objetivo, visual limpo e navegacao segura.</p>
+                <strong>Resposta direta</strong>
+                <p class="auth-description">Feedback imediato para sucesso ou erro de autenticacao.</p>
               </div>
             </div>
           </div>
         </aside>
 
         <section class="auth-card">
-          <p class="eyebrow">Cadastro</p>
-          <h2>Crie sua conta</h2>
+          <p class="eyebrow">Entrar</p>
+          <h2>Acesse sua conta</h2>
           <p class="subtitle">
-            Comece a organizar sua vida financeira de forma simples, segura e inteligente.
+            Entre com seu e-mail e senha para continuar seu planejamento financeiro com seguranca.
           </p>
 
-          <form id="register-form" class="auth-form">
-            <label class="field">
-              <span>Nome</span>
-              <input
-                type="text"
-                id="nome"
-                name="nome"
-                placeholder="Digite seu nome completo"
-                required
-              />
-            </label>
-
+          <form id="login-form" class="auth-form">
             <label class="field">
               <span>Email</span>
               <input
@@ -81,14 +71,14 @@
                 type="password"
                 id="senha"
                 name="senha"
-                placeholder="Crie uma senha segura"
+                placeholder="Digite sua senha"
                 required
               />
             </label>
 
             <div class="button-row">
-              <button type="submit" id="register-button" class="primary-button">
-                Cadastrar
+              <button type="submit" id="login-button" class="primary-button">
+                Entrar
               </button>
             </div>
           </form>
@@ -96,13 +86,13 @@
           <div id="message" class="message-box hidden" aria-live="polite"></div>
 
           <p class="helper-link">
-            Ja tem conta?
-            <a href="/login.html">Fazer login</a>
+            Ainda nao tem conta?
+            <a href="/register.html">Criar cadastro</a>
           </p>
         </section>
       </section>
     </main>
 
-    <script type="module" src="/register.js"></script>
+    <script type="module" src="/login.js"></script>
   </body>
 </html>

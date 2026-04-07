@@ -1,0 +1,123 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Perfil</title>
+    <link rel="stylesheet" href="/styles.css?v=20260406c" />
+    <script src="/auth.js?v=20260406c"></script>
+    <script src="/finance-store-v2.js?v=20260406c"></script>
+    <script src="/finance-calculations-v2.js?v=20260406c"></script>
+    <script src="/app-shell.js?v=20260406c"></script>
+    <script>
+      window.AuthSession.requireAuth();
+    </script>
+  </head>
+  <body data-page="profile">
+    <main class="page-shell">
+      <section class="dashboard-layout app-layout">
+        <aside id="app-sidebar" class="dashboard-sidebar"></aside>
+
+        <section class="dashboard-main app-main">
+          <header class="dashboard-topbar">
+            <div>
+              <div class="nav-pill">Perfil</div>
+              <h1 class="topbar-title">Seu perfil no aplicativo</h1>
+              <p class="topbar-subtitle">
+                Esta area guarda apenas sua identidade no produto. As configuracoes financeiras ficam em Cadastro bancario.
+              </p>
+            </div>
+
+            <div class="topbar-actions">
+              <div class="user-panel">
+                <div class="user-avatar" data-user-initial>U</div>
+                <div>
+                  <strong data-user-name>Usuario</strong>
+                  <small data-user-email>email@conta.com</small>
+                </div>
+              </div>
+              <button type="button" class="secondary-button" data-logout-button>
+                Logout
+              </button>
+            </div>
+          </header>
+
+          <section class="content-stack">
+            <section class="profile-grid">
+              <article class="dashboard-card profile-photo-card">
+                <div>
+                  <div class="card-label">Foto do usuario</div>
+                  <h3>Identidade visual da sua conta</h3>
+                </div>
+
+                <div id="profile-photo-preview" class="profile-photo-preview">U</div>
+
+                <label class="field">
+                  <span>Enviar nova foto</span>
+                  <input type="file" id="foto" name="foto" accept="image/*" />
+                </label>
+
+                <button type="button" id="remove-photo-button" class="ghost-button">
+                  Remover foto
+                </button>
+
+                <p class="helper-text">
+                  A foto fica salva apenas neste navegador enquanto o app estiver usando armazenamento local.
+                </p>
+              </article>
+
+              <article class="table-card">
+                <div class="card-header">
+                  <div>
+                    <div class="card-label">Dados da conta</div>
+                    <h3>Informacoes basicas do perfil</h3>
+                    <p class="table-caption">
+                      Nome e email servem para identificar o usuario no produto. As configuracoes financeiras ficaram em Cadastro bancario.
+                    </p>
+                  </div>
+                  <div class="status-chip">Perfil pessoal</div>
+                </div>
+
+                <form id="profile-form" class="settings-grid">
+                  <div class="form-section">
+                    <div class="field">
+                      <span>Nome</span>
+                      <input type="text" id="nome" name="nome" placeholder="Seu nome" />
+                    </div>
+                    <div class="field">
+                      <span>Email</span>
+                      <input type="email" id="email" name="email" placeholder="voce@email.com" />
+                    </div>
+                  </div>
+
+                  <div class="form-actions">
+                    <button type="submit" class="primary-button">Salvar perfil</button>
+                  </div>
+                </form>
+
+                <div id="profile-message" class="message-box hidden" aria-live="polite"></div>
+              </article>
+            </section>
+
+            <section class="info-card-grid">
+              <article class="summary-card">
+                <strong>Perfil</strong>
+                <span>Centraliza apenas foto, nome e email para nao misturar identidade com financas.</span>
+              </article>
+              <article class="summary-card">
+                <strong>Cadastro bancario</strong>
+                <span>Saldo, salario, descontos, ciclo e VR alimentam os calculos do dashboard.</span>
+              </article>
+              <article class="summary-card">
+                <strong>Contas</strong>
+                <span>Contas fixas, gastos do dia a dia e cartoes ficam juntos em uma area operacional unica.</span>
+              </article>
+            </section>
+          </section>
+        </section>
+      </section>
+    </main>
+
+    <script src="/profile.js?v=20260406c"></script>
+  </body>
+</html>
