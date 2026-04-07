@@ -27,6 +27,8 @@ registerForm.addEventListener('submit', async (event) => {
     const { data, error } = await supabase.auth.signUp({
       email,
       password,
+    }, {
+      redirectTo: 'http://localhost:3000/login.html'
     });
 
     if (error) {

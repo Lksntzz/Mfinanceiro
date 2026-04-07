@@ -49,4 +49,5 @@ window.AuthSession = {
   isAuthenticated,
   requireAuth,
   saveAuthSession,
+  saveAuthSession,
 };

@@ -24,15 +24,19 @@ loginForm.addEventListener('submit', async (event) => {
 
   try {
     const supabase = await getSupabase();
+    console.log('Tentando login com:', email);
     const { data, error } = await supabase.auth.signInWithPassword({
       email,
       password,
     });
 
+    console.log('Resposta do login:', { data, error });
+
     if (error) {
       throw error;
     }
 
+    console.log('Usuário logado:', data.user);
     window.AuthSession?.saveAuthSession(data.user);
 
     showMessage(
