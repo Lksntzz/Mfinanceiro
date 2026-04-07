@@ -1,0 +1,108 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Cadastro</title>
+    <link rel="stylesheet" href="/styles.css" />
+    <script src="/auth.js"></script>
+  </head>
+  <body>
+    <main class="page-shell">
+      <section class="auth-layout">
+        <aside class="auth-panel">
+          <div class="auth-badge">Cadastro seguro</div>
+          <h1 class="auth-title">
+            Organize sua entrada no sistema com simplicidade e consistencia.
+          </h1>
+          <p class="auth-description">
+            Seu nome identifica voce no aplicativo. Seu e-mail protege o acesso e centraliza
+            a conta.
+          </p>
+
+          <div class="auth-highlights">
+            <div class="highlight-item">
+              <div class="highlight-icon">01</div>
+              <div>
+                <strong>Conta unica por e-mail</strong>
+                <p class="auth-description">O login fica claro, direto e sem duplicidade.</p>
+              </div>
+            </div>
+            <div class="highlight-item">
+              <div class="highlight-icon">02</div>
+              <div>
+                <strong>Senha protegida</strong>
+                <p class="auth-description">As credenciais sao tratadas com hash no backend.</p>
+              </div>
+            </div>
+            <div class="highlight-item">
+              <div class="highlight-icon">03</div>
+              <div>
+                <strong>Experiencia fluida</strong>
+                <p class="auth-description">Cadastro objetivo, visual limpo e navegacao segura.</p>
+              </div>
+            </div>
+          </div>
+        </aside>
+
+        <section class="auth-card">
+          <p class="eyebrow">Cadastro</p>
+          <h2>Crie sua conta</h2>
+          <p class="subtitle">
+            Comece a organizar sua vida financeira de forma simples, segura e inteligente.
+          </p>
+
+          <form id="register-form" class="auth-form">
+            <label class="field">
+              <span>Nome</span>
+              <input
+                type="text"
+                id="nome"
+                name="nome"
+                placeholder="Digite seu nome completo"
+                required
+              />
+            </label>
+
+            <label class="field">
+              <span>Email</span>
+              <input
+                type="email"
+                id="email"
+                name="email"
+                placeholder="voce@email.com"
+                required
+              />
+            </label>
+
+            <label class="field">
+              <span>Senha</span>
+              <input
+                type="password"
+                id="senha"
+                name="senha"
+                placeholder="Crie uma senha segura"
+                required
+              />
+            </label>
+
+            <div class="button-row">
+              <button type="submit" id="register-button" class="primary-button">
+                Cadastrar
+              </button>
+            </div>
+          </form>
+
+          <div id="message" class="message-box hidden" aria-live="polite"></div>
+
+          <p class="helper-link">
+            Ja tem conta?
+            <a href="/login.html">Fazer login</a>
+          </p>
+        </section>
+      </section>
+    </main>
+
+    <script src="/register.js"></script>
+  </body>
+</html>

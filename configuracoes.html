@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Configuracoes</title>
+    <link rel="stylesheet" href="/styles.css" />
+    <script src="/auth.js"></script>
+    <script src="/finance-store-v2.js"></script>
+    <script src="/app-shell.js"></script>
+    <script>
+      window.AuthSession.requireAuth();
+    </script>
+  </head>
+  <body data-page="configuracoes">
+    <main class="page-shell">
+      <section class="dashboard-layout app-layout">
+        <aside id="app-sidebar" class="dashboard-sidebar"></aside>
+
+        <section class="dashboard-main app-main">
+          <header class="dashboard-topbar">
+            <div>
+              <div class="nav-pill">Configuracoes</div>
+              <h1 class="topbar-title">Preferencias gerais do aplicativo</h1>
+              <p class="topbar-subtitle">
+                Esta area fica separada do Perfil e do Cadastro bancario para manter a estrutura do app clara.
+              </p>
+            </div>
+
+            <div class="topbar-actions">
+              <div class="user-panel">
+                <div class="user-avatar" data-user-initial>U</div>
+                <div>
+                  <strong data-user-name>Usuario</strong>
+                  <small data-user-email>email@conta.com</small>
+                </div>
+              </div>
+              <button type="button" class="secondary-button" data-logout-button>
+                Logout
+              </button>
+            </div>
+          </header>
+
+          <section class="content-stack">
+            <article class="table-card">
+              <div class="card-header">
+                <div>
+                  <div class="card-label">Estado atual</div>
+                  <h3>Configuracoes prontas para evoluir</h3>
+                  <p class="table-caption">
+                    O app ja separa identidade, cadastro bancario, contas, investimentos e dashboard. Esta pagina fica preparada para preferencias futuras.
+                  </p>
+                </div>
+                <div class="status-chip">Estrutura organizada</div>
+              </div>
+
+              <div class="info-card-grid">
+                <article class="summary-card">
+                  <strong>Perfil</strong>
+                  <span>Foto, nome e email do usuario.</span>
+                </article>
+                <article class="summary-card">
+                  <strong>Cadastro bancario</strong>
+                  <span>Saldo, salario, descontos, ciclo e VR.</span>
+                </article>
+                <article class="summary-card">
+                  <strong>Contas</strong>
+                  <span>Contas fixas, dia a dia e cartoes reunidos em uma area unica.</span>
+                </article>
+              </div>
+            </article>
+          </section>
+        </section>
+      </section>
+    </main>
+
+    <script>
+      window.AppShell.initAppShell();
+    </script>
+  </body>
+</html>
