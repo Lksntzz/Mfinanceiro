@@ -1,5 +1,5 @@
 async function getSupabase() {
-  const module = await import('./src/supabase.js');
+  const module = await import('../src/supabase.js');
   return module.supabase;
 }
 
