@@ -50,7 +50,12 @@ loginForm.addEventListener('submit', async (event) => {
       window.location.href = '/dashboard.html';
     }, 1200);
   } catch (error) {
-    showMessage('error', error.message || 'Nao foi possivel fazer login.');
+    const message =
+      error.message === 'Email not confirmed'
+        ? 'Email ainda nao confirmado. Verifique seu email e confirme o cadastro.'
+        : error.message || 'Nao foi possivel fazer login.';
+
+    showMessage('error', message);
   } finally {
     loginButton.disabled = false;
     loginButton.textContent = 'Entrar';

@@ -28,7 +28,7 @@ registerForm.addEventListener('submit', async (event) => {
       email,
       password,
     }, {
-      redirectTo: 'http://localhost:3000/login.html'
+      redirectTo: `${window.location.origin}/login.html`,
     });
 
     if (error) {
