@@ -1,0 +1,159 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Recebimentos</title>
+    <link rel="stylesheet" href="/styles.css?v=20260407b" />
+    <script src="/auth.js?v=20260407b"></script>
+    <script src="/finance-store-v2.js?v=20260407b"></script>
+    <script src="/finance-calculations-v2.js?v=20260407b"></script>
+    <script src="/app-shell.js?v=20260407b"></script>
+    <script>
+      window.AuthSession.requireAuth();
+    </script>
+  </head>
+  <body data-page="recebimentos">
+    <main class="page-shell">
+      <section class="dashboard-layout app-layout">
+        <aside id="app-sidebar" class="dashboard-sidebar"></aside>
+
+        <section class="dashboard-main app-main">
+          <header class="dashboard-topbar">
+            <div>
+              <div class="nav-pill">Recebimentos</div>
+              <h1 class="topbar-title">Pagamento e beneficio do ciclo</h1>
+              <p class="topbar-subtitle">
+                Registre o salario recebido e o VR/VA em uma area dedicada, sem
+                poluir a Base financeira.
+              </p>
+            </div>
+
+            <div class="topbar-actions">
+              <div class="page-actions">
+                <a href="/dashboard.html" class="secondary-button">Voltar para o Dashboard</a>
+              </div>
+              <div class="user-panel">
+                <div class="user-avatar" data-user-initial>U</div>
+                <div>
+                  <strong data-user-name>Usuario</strong>
+                  <small data-user-email>email@conta.com</small>
+                </div>
+              </div>
+              <button type="button" class="secondary-button" data-logout-button>
+                Logout
+              </button>
+            </div>
+          </header>
+
+          <section class="content-stack">
+            <article class="table-card">
+              <div class="card-header">
+                <div>
+                  <div class="card-label">Recebimentos</div>
+                  <h3>Controle o que entrou no ciclo atual</h3>
+                  <p class="table-caption">
+                    Salve a previsao ou confirme o recebimento do pagamento e do
+                    VR/VA. O dashboard le esses registros automaticamente.
+                  </p>
+                </div>
+                <div class="status-chip" id="receipt-status-chip">Pronto para registrar</div>
+              </div>
+
+              <section class="receipt-grid">
+                <div class="dual-grid">
+                  <article class="dashboard-card">
+                    <div class="card-header">
+                      <div>
+                        <div class="card-label">Pagamento</div>
+                        <h3>Registro principal do salario</h3>
+                      </div>
+                      <div class="status-chip" id="pagamento-status-chip">Pendente</div>
+                    </div>
+
+                    <div class="detail-list">
+                      <div class="detail-row">
+                        <span>Proxima previsao</span>
+                        <strong id="pagamento-proxima-previsao">--</strong>
+                      </div>
+                      <div class="detail-row">
+                        <span>Dias restantes</span>
+                        <strong id="pagamento-dias-restantes">0</strong>
+                      </div>
+                    </div>
+
+                    <div class="receipt-form-grid">
+                      <div class="field">
+                        <span>Data prevista</span>
+                        <input type="date" id="pagamentoDataPrevista" />
+                      </div>
+                      <div class="field">
+                        <span>Valor previsto</span>
+                        <input type="text" inputmode="decimal" id="pagamentoValorPrevisto" />
+                      </div>
+                    </div>
+
+                    <div class="button-row">
+                      <button type="button" id="save-pagamento-button" class="primary-button">
+                        Salvar recebimento
+                      </button>
+                      <button type="button" id="mark-pagamento-recebido-button" class="secondary-button">
+                        Recebido
+                      </button>
+                      <button type="button" id="edit-pagamento-button" class="secondary-button">
+                        Editar recebimento
+                      </button>
+                    </div>
+                  </article>
+
+                  <article class="dashboard-card">
+                    <div class="card-header">
+                      <div>
+                        <div class="card-label">Beneficio</div>
+                        <h3>VR/VA previsto para o ciclo</h3>
+                      </div>
+                      <div class="status-chip" id="beneficios-status-chip">Sem beneficio</div>
+                    </div>
+
+                    <article class="subtle-panel">
+                      <strong>VR/VA</strong>
+                      <div class="receipt-form-grid">
+                        <div class="field">
+                          <span>Data de recebimento</span>
+                          <input type="date" id="vrvaDataPrevista" />
+                        </div>
+                        <div class="field">
+                          <span>Valor</span>
+                          <input type="text" inputmode="decimal" id="vrvaValorPrevisto" />
+                        </div>
+                        <label class="toggle-row">
+                          <input type="checkbox" id="vrvaRecebido" />
+                          <span>Ja recebido</span>
+                        </label>
+                        <div class="field-hint" id="vrvaHint">
+                          Registre a previsao do beneficio para refletir esse valor no dashboard.
+                        </div>
+                        <div class="button-row align-start">
+                          <button type="button" id="save-vrva-button" class="secondary-button">
+                            Salvar VR/VA
+                          </button>
+                          <button type="button" id="edit-vrva-button" class="ghost-button">
+                            Editar VR/VA
+                          </button>
+                        </div>
+                      </div>
+                    </article>
+                  </article>
+                </div>
+              </section>
+
+              <div id="receipt-message" class="message-box hidden" aria-live="polite"></div>
+            </article>
+          </section>
+        </section>
+      </section>
+    </main>
+
+    <script src="/recebimentos.js?v=20260407b"></script>
+  </body>
+</html>
