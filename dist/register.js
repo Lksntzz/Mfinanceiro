@@ -1,12 +1,31 @@
+// Aguarda até que APP_CONFIG esteja disponível (carregado pelo script de config.js)
+async function waitForAppConfig(maxAttempts = 50) {
+  for (let i = 0; i < maxAttempts; i++) {
+    if (window.APP_CONFIG && window.APP_CONFIG.SUPABASE_URL) {
+      return window.APP_CONFIG;
+    }
+    await new Promise((resolve) => setTimeout(resolve, 50));
+  }
+  throw new Error('APP_CONFIG não foi carregado em tempo hábil');
+}
+
 async function getSupabase() {
   try {
+    // Garante que a configuração está disponível
+    const config = await waitForAppConfig();
+    
+    // Verifica se as variáveis estão presentes
+    if (!config.SUPABASE_URL || !config.SUPABASE_ANON_KEY) {
+      throw new Error(
+        'Variáveis do Supabase não configuradas. Defina VITE_SUPABASE_URL e VITE_SUPABASE_ANON_KEY no .env ou Vercel.'
+      );
+    }
+    
     const module = await import('../src/supabase.js');
     return module.supabase;
   } catch (error) {
     console.error('Erro ao carregar Supabase:', error);
-    throw new Error(
-      'Falha ao inicializar Supabase. Verifique se as variáveis VITE_SUPABASE_URL e VITE_SUPABASE_ANON_KEY estão configuradas.'
-    );
+    throw error;
   }
 }
 
