@@ -1,12 +1,16 @@
 require("dotenv").config();
 
 const express = require("express");
+const fs = require("fs");
 const path = require("path");
 const authRoutes = require("./src/routes/authRoutes");
 const { initializeDatabase } = require("./src/config/db");
 
 const app = express();
 const port = Number(process.env.PORT || 3000);
+const distDir = path.join(__dirname, "dist");
+const publicDir = path.join(__dirname, "public");
+const frontendDir = fs.existsSync(path.join(distDir, "index.html")) ? distDir : publicDir;
 
 // Faz o Express entender JSON no corpo das requisicoes.
 app.use(express.json());
@@ -22,15 +26,12 @@ app.use((req, res, next) => {
   next();
 });
 
-// Serve os arquivos HTML, CSS e JavaScript do frontend.
-app.use(express.static(path.join(__dirname, "public")));
-
-// Serve os arquivos do src para imports dinamicos.
-app.use('/src', express.static(path.join(__dirname, 'src')));
+// Em producao serve o frontend buildado pelo Vite; em fallback usa os arquivos estaticos.
+app.use(express.static(frontendDir));
 
 // Rota simples para verificar se a API esta no ar.
 app.get("/", (req, res) => {
-  res.sendFile(path.join(__dirname, 'public', 'index.html'));
+  res.sendFile(path.join(frontendDir, "index.html"));
 });
 
 // Importa e registra as rotas de autenticacao.
