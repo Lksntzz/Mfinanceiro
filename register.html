@@ -4,9 +4,10 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Cadastro</title>
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
     <link rel="stylesheet" href="/styles.css" />
   </head>
-  <body data-page="register">
+  <body>
     <main class="page-shell">
       <section class="auth-layout">
         <aside class="auth-panel">
@@ -51,7 +52,7 @@
             Comece a organizar sua vida financeira de forma simples, segura e inteligente.
           </p>
 
-          <form id="register-form" class="auth-form">
+          <form id="register-form" class="auth-form" action="javascript:void(0)" onsubmit="event.preventDefault(); return false;">
             <label class="field">
               <span>Nome</span>
               <input
@@ -102,6 +103,10 @@
       </section>
     </main>
 
-    <script type="module" src="/src/main.js"></script>
+    <script src="/config.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="/supabase-init.js"></script>
+    <script src="/auth.js"></script>
+    <script src="/register-static.js"></script>
   </body>
 </html>

@@ -1,52 +1,46 @@
-let supabaseInstance = null;
-
-async function getSupabase() {
-  if (!supabaseInstance) {
-    const module = await import('../src/supabase.js');
-    supabaseInstance = module.supabase;
-  }
-  return supabaseInstance;
-}
-
 const AUTH_STORAGE_KEY = "mfinanceiro_auth";
 
-async function saveAuthSession(user) {
-  const supabase = await getSupabase();
-  const session = await supabase.auth.getSession();
+function saveAuthSession(user) {
   sessionStorage.setItem(
     AUTH_STORAGE_KEY,
     JSON.stringify({
       user,
-      session: session.data.session,
       authenticatedAt: Date.now(),
     })
   );
 }
 
-async function getAuthSession() {
-  const supabase = await getSupabase();
-  const { data: { session } } = await supabase.auth.getSession();
-  if (session) {
-    return { user: session.user, session };
+function getAuthSession() {
+  const rawSession = sessionStorage.getItem(AUTH_STORAGE_KEY);
+
+  if (!rawSession) {
+    return null;
   }
-  return null;
+
+  try {
+    return JSON.parse(rawSession);
+  } catch (error) {
+    sessionStorage.removeItem(AUTH_STORAGE_KEY);
+    return null;
+  }
 }
 
 function clearAuthSession() {
   sessionStorage.removeItem(AUTH_STORAGE_KEY);
 }
 
-async function isAuthenticated() {
-  const session = await getAuthSession();
+function isAuthenticated() {
+  const session = getAuthSession();
   return Boolean(session?.user?.email);
 }
 
-async function requireAuth() {
-  if (!(await isAuthenticated())) {
+function requireAuth() {
+  if (!isAuthenticated()) {
     window.location.replace("/login.html");
     return null;
   }
-  return await getAuthSession();
+
+  return getAuthSession();
 }
 
 window.AuthSession = {

@@ -1,5 +1,6 @@
 // Aguarda até que APP_CONFIG esteja disponível (carregado pelo script de config.js)
-async function waitForAppConfig(maxAttempts = 50) {
+/* Arquivo legado desativado. O cadastro ativo esta em public/register-static.js.
+function getSupabase() {
   for (let i = 0; i < maxAttempts; i++) {
     if (window.APP_CONFIG && window.APP_CONFIG.SUPABASE_URL) {
       return window.APP_CONFIG;
@@ -77,3 +78,4 @@ registerForm.addEventListener('submit', async (event) => {
     registerButton.textContent = 'Cadastrar';
   }
 });
+*/
