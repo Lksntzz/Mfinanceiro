@@ -1,7 +1,7 @@
 import { defineConfig, loadEnv } from 'vite';
 import { resolve } from 'path';
 
-export default defineConfig(({ command, mode }) => {
+export default defineConfig(({ mode }) => {
   // Carrega variáveis do .env
   const env = loadEnv(mode, process.cwd(), '');
   const VITE_SUPABASE_URL = env.VITE_SUPABASE_URL || '';
@@ -15,7 +15,6 @@ export default defineConfig(({ command, mode }) => {
     // Não precisamos do plugin de placeholders para src/config.js
     // As envs serão lidas diretamente via import.meta.env
     base: '',
-    plugins: [],
     build: {
       rollupOptions: {
         input: {
@@ -23,11 +22,6 @@ export default defineConfig(({ command, mode }) => {
           login: resolve(__dirname, 'login.html'),
           register: resolve(__dirname, 'register.html'),
         },
-      },
-    },
-    server: {
-      proxy: {
-        '/api': 'http://localhost:3000',
       },
     },
   };

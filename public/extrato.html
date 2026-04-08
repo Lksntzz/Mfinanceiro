@@ -5,14 +5,14 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Extrato</title>
     <link rel="stylesheet" href="/styles.css?v=20260407b" />
-    <script src="/auth.js?v=20260407b"></script>
-    <script src="/config.js"></script>
+    <script src="/src/lib/auth-session.js"></script>
+    <script src="/src/lib/config.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-    <script src="/supabase-bootstrap.js?v=20260408a"></script>
-    <script src="/finance-store-v2.js?v=20260407b"></script>
-    <script src="/finance-calculations-v2.js?v=20260407b"></script>
-    <script src="/app-shell.js?v=20260407b"></script>
-    <script src="/mfinanceiro-supabase-sync.js?v=20260408a"></script>
+    <script src="/src/lib/supabase-bootstrap.js"></script>
+    <script src="/src/services/finance-store.js"></script>
+    <script src="/src/utils/finance-calculations.js"></script>
+    <script src="/src/services/app-shell.js"></script>
+    <script src="/src/services/supabase-sync.js"></script>
     <script>
       window.AuthSession.requireAuth();
     </script>
@@ -153,6 +153,6 @@
       </section>
     </main>
 
-    <script src="/extrato.js?v=20260407b"></script>
+    <script src="/src/pages/extrato.js"></script>
   </body>
 </html>

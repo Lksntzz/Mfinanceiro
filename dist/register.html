@@ -32,7 +32,7 @@
               <div class="highlight-icon">02</div>
               <div>
                 <strong>Senha protegida</strong>
-                <p class="auth-description">As credenciais sao tratadas com hash no backend.</p>
+                <p class="auth-description">As credenciais sao tratadas pelo Supabase Auth.</p>
               </div>
             </div>
             <div class="highlight-item">
@@ -103,10 +103,10 @@
       </section>
     </main>
 
-    <script src="./config.js"></script>
+    <script src="./src/lib/config.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-    <script src="./supabase-bootstrap.js"></script>
-    <script src="./auth.js"></script>
-    <script src="./register-static.js"></script>
+    <script src="./src/lib/supabase-bootstrap.js"></script>
+    <script src="./src/lib/auth-session.js"></script>
+    <script src="./src/pages/register.js"></script>
   </body>
 </html>

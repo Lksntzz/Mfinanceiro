@@ -5,14 +5,14 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Recebimentos</title>
     <link rel="stylesheet" href="/styles.css?v=20260407b" />
-    <script src="/auth.js?v=20260407b"></script>
-    <script src="/config.js"></script>
+    <script src="/src/lib/auth-session.js"></script>
+    <script src="/src/lib/config.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-    <script src="/supabase-bootstrap.js?v=20260408a"></script>
-    <script src="/finance-store-v2.js?v=20260407b"></script>
-    <script src="/finance-calculations-v2.js?v=20260407b"></script>
-    <script src="/app-shell.js?v=20260407b"></script>
-    <script src="/mfinanceiro-supabase-sync.js?v=20260408a"></script>
+    <script src="/src/lib/supabase-bootstrap.js"></script>
+    <script src="/src/services/finance-store.js"></script>
+    <script src="/src/utils/finance-calculations.js"></script>
+    <script src="/src/services/app-shell.js"></script>
+    <script src="/src/services/supabase-sync.js"></script>
     <script>
       window.AuthSession.requireAuth();
     </script>
@@ -70,7 +70,7 @@
                     <div class="card-header">
                       <div>
                         <div class="card-label">Pagamento</div>
-                        <h3>Registro principal do salario</h3>
+                        <h3>Registro principal do ciclo</h3>
                       </div>
                       <div class="status-chip" id="pagamento-status-chip">Pendente</div>
                     </div>
@@ -87,6 +87,20 @@
                     </div>
 
                     <div class="receipt-form-grid">
+                      <input type="hidden" id="pagamentoId" />
+                      <div class="field">
+                        <span>Tipo</span>
+                        <select id="pagamentoTipo">
+                          <option value="pagamento">Pagamento principal</option>
+                          <option value="adiantamento">Adiantamento</option>
+                          <option value="bonus">Bonus</option>
+                          <option value="extra">Extra</option>
+                        </select>
+                      </div>
+                      <div class="field">
+                        <span>Descricao</span>
+                        <input type="text" id="pagamentoDescricao" placeholder="Ex.: salario, bonus, acerto" />
+                      </div>
                       <div class="field">
                         <span>Data prevista</span>
                         <input type="date" id="pagamentoDataPrevista" />
@@ -108,20 +122,32 @@
                         Editar recebimento
                       </button>
                     </div>
+
+                    <div class="list-stack" id="recebimentos-list"></div>
                   </article>
 
                   <article class="dashboard-card">
                     <div class="card-header">
                       <div>
                         <div class="card-label">Beneficio</div>
-                        <h3>VR/VA previsto para o ciclo</h3>
+                        <h3>Beneficios previstos do ciclo</h3>
                       </div>
                       <div class="status-chip" id="beneficios-status-chip">Sem beneficio</div>
                     </div>
 
                     <article class="subtle-panel">
-                      <strong>VR/VA</strong>
+                      <strong>VR, VA e beneficios</strong>
                       <div class="receipt-form-grid">
+                        <input type="hidden" id="beneficioId" />
+                        <div class="field">
+                          <span>Tipo</span>
+                          <select id="beneficioTipo">
+                            <option value="vrVa">VR/VA</option>
+                            <option value="vr">VR</option>
+                            <option value="va">VA</option>
+                            <option value="outro">Outro</option>
+                          </select>
+                        </div>
                         <div class="field">
                           <span>Data de recebimento</span>
                           <input type="date" id="vrvaDataPrevista" />
@@ -130,6 +156,14 @@
                           <span>Valor</span>
                           <input type="text" inputmode="decimal" id="vrvaValorPrevisto" />
                         </div>
+                        <label class="toggle-row">
+                          <input type="checkbox" id="beneficioAtivo" checked />
+                          <span>Ativo no ciclo</span>
+                        </label>
+                        <label class="toggle-row">
+                          <input type="checkbox" id="beneficioContabilizarSaldo" checked />
+                          <span>Contabilizar no saldo</span>
+                        </label>
                         <label class="toggle-row">
                           <input type="checkbox" id="vrvaRecebido" />
                           <span>Ja recebido</span>
@@ -147,6 +181,8 @@
                         </div>
                       </div>
                     </article>
+
+                    <div class="list-stack" id="beneficios-list"></div>
                   </article>
                 </div>
               </section>
@@ -158,6 +194,6 @@
       </section>
     </main>
 
-    <script src="/recebimentos.js?v=20260407b"></script>
+    <script src="/src/pages/recebimentos.js"></script>
   </body>
 </html>

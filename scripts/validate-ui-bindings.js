@@ -3,11 +3,14 @@ const path = require("path");
 
 const baseDir = path.resolve(__dirname, "..", "public");
 const pages = [
-  ["cadastro-bancario.html", "cadastro-bancario.js"],
-  ["contas.html", "contas-v2.js"],
-  ["dashboard.html", "dashboard.js"],
-  ["investimentos.html", "investimentos.js"],
-  ["profile.html", "profile.js"],
+  ["cadastro-bancario.html", path.join("src", "pages", "cadastro-bancario.js")],
+  ["cartoes.html", path.join("src", "pages", "cartoes.js")],
+  ["contas.html", path.join("src", "pages", "contas.js")],
+  ["dashboard.html", path.join("src", "pages", "dashboard.js")],
+  ["extrato.html", path.join("src", "pages", "extrato.js")],
+  ["investimentos.html", path.join("src", "pages", "investimentos.js")],
+  ["profile.html", path.join("src", "pages", "profile.js")],
+  ["recebimentos.html", path.join("src", "pages", "recebimentos.js")],
 ];
 
 function readFile(filePath) {
@@ -59,4 +62,3 @@ results.forEach((result) => {
 if (hasErrors) {
   process.exit(1);
 }
-
