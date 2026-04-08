@@ -1,6 +1,13 @@
 async function getSupabase() {
-  const module = await import('../src/supabase.js');
-  return module.supabase;
+  try {
+    const module = await import('../src/supabase.js');
+    return module.supabase;
+  } catch (error) {
+    console.error('Erro ao carregar Supabase:', error);
+    throw new Error(
+      'Falha ao inicializar Supabase. Verifique se as variáveis VITE_SUPABASE_URL e VITE_SUPABASE_ANON_KEY estão configuradas.'
+    );
+  }
 }
 
 const loginForm = document.getElementById('login-form');
