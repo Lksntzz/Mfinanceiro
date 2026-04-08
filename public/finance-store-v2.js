@@ -1,4 +1,7 @@
-const APP_STORAGE_KEY = "mfinanceiro_app_data";
+const APP_STORAGE_KEY_BASE = "mfinanceiro_app_data";
+const STORAGE_SCOPE_SEPARATOR = "__";
+const STORAGE_OWNER_KEY = "mfinanceiro_storage_owner";
+const SCOPED_STORAGE_MIGRATION_PREFIX = "mfinanceiro_scoped_storage_migrated";
 const INSS_TABLE_2026 = [
   { limit: 1621.0, rate: 0.075 },
   { limit: 2902.84, rate: 0.09 },
@@ -48,6 +51,89 @@ const LEGACY_SECTION_STORAGE_KEYS = {
   parcelamentos: "parcelamentos",
 };
 const stateSubscribers = new Set();
+
+function getCurrentUserStorageScope() {
+  const userId = window.AuthSession?.getAuthSession?.()?.user?.id;
+
+  if (typeof userId !== "string") {
+    return "";
+  }
+
+  return userId.trim();
+}
+
+function getScopedStorageKey(baseKey, scope = getCurrentUserStorageScope()) {
+  return scope ? `${baseKey}${STORAGE_SCOPE_SEPARATOR}${scope}` : baseKey;
+}
+
+function hasStorageValue(key) {
+  return localStorage.getItem(key) !== null;
+}
+
+function shouldAllowLegacyFallback(scope = getCurrentUserStorageScope()) {
+  if (!scope) {
+    return true;
+  }
+
+  const owner = localStorage.getItem(STORAGE_OWNER_KEY);
+  return !owner || owner === scope;
+}
+
+function ensureScopedStorageMigration() {
+  const scope = getCurrentUserStorageScope();
+
+  if (!scope) {
+    return;
+  }
+
+  const migrationFlagKey = `${SCOPED_STORAGE_MIGRATION_PREFIX}${STORAGE_SCOPE_SEPARATOR}${scope}`;
+
+  if (sessionStorage.getItem(migrationFlagKey) === "true") {
+    return;
+  }
+
+  const scopedAppKey = getScopedStorageKey(APP_STORAGE_KEY_BASE, scope);
+
+  if (hasStorageValue(scopedAppKey)) {
+    sessionStorage.setItem(migrationFlagKey, "true");
+    return;
+  }
+
+  if (!shouldAllowLegacyFallback(scope)) {
+    sessionStorage.setItem(migrationFlagKey, "true");
+    return;
+  }
+
+  const legacyKeys = [
+    APP_STORAGE_KEY_BASE,
+    ...Object.values(SECTION_STORAGE_KEYS),
+    ...Object.values(LEGACY_SECTION_STORAGE_KEYS),
+  ];
+  const hasLegacyData = legacyKeys.some((key) => hasStorageValue(key));
+
+  if (!hasLegacyData) {
+    sessionStorage.setItem(migrationFlagKey, "true");
+    return;
+  }
+
+  localStorage.setItem(STORAGE_OWNER_KEY, scope);
+
+  if (hasStorageValue(APP_STORAGE_KEY_BASE)) {
+    localStorage.setItem(scopedAppKey, localStorage.getItem(APP_STORAGE_KEY_BASE));
+  }
+
+  Object.values(SECTION_STORAGE_KEYS).forEach((baseKey) => {
+    const scopedKey = getScopedStorageKey(baseKey, scope);
+
+    if (!hasStorageValue(baseKey) || hasStorageValue(scopedKey)) {
+      return;
+    }
+
+    localStorage.setItem(scopedKey, localStorage.getItem(baseKey));
+  });
+
+  sessionStorage.setItem(migrationFlagKey, "true");
+}
 
 function createId(prefix) {
   return `${prefix}_${Date.now()}_${Math.random().toString(16).slice(2, 8)}`;
@@ -191,21 +277,40 @@ function readJsonStorage(key) {
 }
 
 function readSectionSnapshot(key, ...legacyKeys) {
-  return [key, ...legacyKeys].reduce((snapshot, currentKey) => {
-    if (snapshot !== null && snapshot !== undefined) {
-      return snapshot;
-    }
+  ensureScopedStorageMigration();
 
-    if (!currentKey) {
-      return snapshot;
-    }
+  const scopedSnapshot = readJsonStorage(getScopedStorageKey(key));
 
-    return readJsonStorage(currentKey);
-  }, null);
+  if (scopedSnapshot !== null && scopedSnapshot !== undefined) {
+    return scopedSnapshot;
+  }
+
+  if (!shouldAllowLegacyFallback()) {
+    return null;
+  }
+
+  return [key, ...legacyKeys].reduce(
+    (snapshot, currentKey) => {
+      if (snapshot !== null && snapshot !== undefined) {
+        return snapshot;
+      }
+
+      if (!currentKey) {
+        return snapshot;
+      }
+
+      return readJsonStorage(currentKey);
+    },
+    null
+  );
 }
 
 function writeJsonStorage(key, value) {
   localStorage.setItem(key, JSON.stringify(value));
+}
+
+function writeScopedJsonStorage(baseKey, value) {
+  writeJsonStorage(getScopedStorageKey(baseKey), value);
 }
 
 function roundCurrency(value) {
@@ -584,7 +689,7 @@ function mergeData(base, incoming) {
 
 function loadAppData() {
   const defaultData = getDefaultAppData();
-  const rootData = readJsonStorage(APP_STORAGE_KEY);
+  const rootData = readSectionSnapshot(APP_STORAGE_KEY_BASE);
   let hydratedData = rootData ? mergeData(defaultData, rootData) : defaultData;
 
   const sectionSnapshots = {
@@ -783,13 +888,13 @@ function dispatchFinanceUpdate(source) {
 }
 
 function persistSectionSnapshots(data) {
-  writeJsonStorage(SECTION_STORAGE_KEYS.profile, data.profile || {});
-  writeJsonStorage(SECTION_STORAGE_KEYS.banking, data.banking || {});
-  writeJsonStorage(
+  writeScopedJsonStorage(SECTION_STORAGE_KEYS.profile, data.profile || {});
+  writeScopedJsonStorage(SECTION_STORAGE_KEYS.banking, data.banking || {});
+  writeScopedJsonStorage(
     SECTION_STORAGE_KEYS.pagamento,
     data.recebimentos?.pagamento || {}
   );
-  writeJsonStorage(
+  writeScopedJsonStorage(
     SECTION_STORAGE_KEYS.beneficios,
     {
       ...(data.recebimentos?.beneficios || {}),
@@ -798,36 +903,41 @@ function persistSectionSnapshots(data) {
       },
     }
   );
-  writeJsonStorage(SECTION_STORAGE_KEYS.contasFixas, data.contasFixas || []);
-  writeJsonStorage(SECTION_STORAGE_KEYS.contasDiaADia, data.contasDiaADia || []);
-  writeJsonStorage(
+  writeScopedJsonStorage(SECTION_STORAGE_KEYS.contasFixas, data.contasFixas || []);
+  writeScopedJsonStorage(SECTION_STORAGE_KEYS.contasDiaADia, data.contasDiaADia || []);
+  writeScopedJsonStorage(
     SECTION_STORAGE_KEYS.contasDiaADiaManuais,
     (data.contasDiaADia || []).filter((item) => item.origem !== "importado")
   );
-  writeJsonStorage(
+  writeScopedJsonStorage(
     SECTION_STORAGE_KEYS.contasDiaADiaImportadas,
     (data.contasDiaADia || []).filter((item) => item.origem === "importado")
   );
-  writeJsonStorage(SECTION_STORAGE_KEYS.cartoes, data.cartoes || []);
-  writeJsonStorage(
+  writeScopedJsonStorage(SECTION_STORAGE_KEYS.cartoes, data.cartoes || []);
+  writeScopedJsonStorage(
     SECTION_STORAGE_KEYS.lancamentosCartao,
     data.lancamentosCartao || []
   );
-  writeJsonStorage(SECTION_STORAGE_KEYS.investimentos, data.investimentos || {});
-  writeJsonStorage(SECTION_STORAGE_KEYS.parcelamentos, data.parcelamentos || []);
+  writeScopedJsonStorage(SECTION_STORAGE_KEYS.investimentos, data.investimentos || {});
+  writeScopedJsonStorage(SECTION_STORAGE_KEYS.parcelamentos, data.parcelamentos || []);
 }
 
 function saveAppData(data) {
-  writeJsonStorage(APP_STORAGE_KEY, data);
-  persistSectionSnapshots(data);
-  dispatchFinanceUpdate("local-storage");
-  return data;
+  return replaceAppData(data, "local-storage");
 }
 
-function updateAppData(updater) {
+function replaceAppData(data, source = "local-storage") {
+  const nextData = mergeData(getDefaultAppData(), data || {});
+  writeScopedJsonStorage(APP_STORAGE_KEY_BASE, nextData);
+  persistSectionSnapshots(nextData);
+  dispatchFinanceUpdate(source);
+  return nextData;
+}
+
+function updateAppData(updater, source = "local-storage") {
   const currentData = loadAppData();
   const nextData = updater(JSON.parse(JSON.stringify(currentData)));
-  return saveAppData(nextData);
+  return replaceAppData(nextData, source);
 }
 
 function salvarCadastroBancario(payload) {
@@ -871,7 +981,7 @@ function salvarCadastroBancario(payload) {
         },
       },
     };
-    writeJsonStorage(SECTION_STORAGE_KEYS.banking, draft.banking);
+    writeScopedJsonStorage(SECTION_STORAGE_KEYS.banking, draft.banking);
     return draft;
   });
 }
@@ -1280,6 +1390,7 @@ window.FinanceStore = {
   editarParcelamento,
   getDefaultAppData,
   loadAppData,
+  replaceAppData,
   subscribe,
   salvarCadastroBancario,
   salvarBeneficios,

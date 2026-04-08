@@ -842,6 +842,7 @@ function calcularResumoFinanceiro(data, referenceDate = new Date()) {
   const saldoAposGastosVariaveis = saldoDisponivel - dailyExpenses.total;
   const diasRestantes = paymentInfo.daysRemaining;
   const limiteDiario = diasRestantes > 0 ? saldoDisponivel / diasRestantes : 0;
+  const saldoRestante = saldoDisponivel;
   const percentualSugerido = Number(data.investimentos?.percentualSugerido || 10);
   const percentualEscolhido = Number(
     data.investimentos?.percentualEscolhido ?? percentualSugerido
@@ -867,9 +868,13 @@ function calcularResumoFinanceiro(data, referenceDate = new Date()) {
     totalGastosDiaADia: dailyExpenses.total,
     valorComprometido,
     saldoDisponivel,
+    saldoRestante,
+    saldo_restante: saldoRestante,
     saldoAposGastosVariaveis,
     diasRestantes,
+    dias_restantes: diasRestantes,
     limiteDiario,
+    limite_diario: limiteDiario,
     investimento: {
       percentage: percentualSugerido,
       chosenPercentage: percentualEscolhido,

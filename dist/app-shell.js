@@ -206,7 +206,19 @@ function fillUserData() {
 
 function bindLogoutButtons() {
   document.querySelectorAll("[data-logout-button]").forEach((button) => {
-    button.onclick = () => {
+    button.onclick = async () => {
+      try {
+        const supabase =
+          window.SupabaseClient ||
+          (window.__supabaseReady ? await window.__supabaseReady : null);
+
+        if (supabase?.auth?.signOut) {
+          await supabase.auth.signOut();
+        }
+      } catch (error) {
+        console.error("Falha ao encerrar a sessao do Supabase:", error);
+      }
+
       window.AuthSession.clearAuthSession();
       window.location.replace("/login.html");
     };
