@@ -2,7 +2,7 @@ let supabaseInstance = null;
 
 async function getSupabase() {
   if (!supabaseInstance) {
-    const module = await import('/src/supabase.js');
+    const module = await import('../src/supabase.js');
     supabaseInstance = module.supabase;
   }
   return supabaseInstance;
