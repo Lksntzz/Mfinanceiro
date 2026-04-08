@@ -48,13 +48,11 @@ async function requireAuth() {
   }
   return await getAuthSession();
 }
-}
 
 window.AuthSession = {
   clearAuthSession,
   getAuthSession,
   isAuthenticated,
   requireAuth,
-  saveAuthSession,
   saveAuthSession,
 };
