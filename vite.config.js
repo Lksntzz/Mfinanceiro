@@ -11,25 +11,11 @@ export default defineConfig(({ command, mode }) => {
   console.log('[Vite] VITE_SUPABASE_ANON_KEY carregado:', VITE_SUPABASE_ANON_KEY ? 'OK' : 'VAZIO');
 
   return {
-    define: {
-      // Fallback para import.meta.env se necessário
-      'import.meta.env.VITE_SUPABASE_URL': JSON.stringify(VITE_SUPABASE_URL),
-      'import.meta.env.VITE_SUPABASE_ANON_KEY': JSON.stringify(VITE_SUPABASE_ANON_KEY),
-    },
-    plugins: [
-      // Plugin para substituir placeholders no arquivo de configuração
-      {
-        name: 'inject-env',
-        transform(code, id) {
-          if (id.includes('src/config.js')) {
-            console.log('[Vite Plugin] Injetando variáveis em config.js');
-            return code
-              .replace('__VITE_SUPABASE_URL__', VITE_SUPABASE_URL)
-              .replace('__VITE_SUPABASE_ANON_KEY__', VITE_SUPABASE_ANON_KEY);
-          }
-        },
-      },
-    ],
+    // Vite já expõe import.meta.env para módulos
+    // Não precisamos do plugin de placeholders para src/config.js
+    // As envs serão lidas diretamente via import.meta.env
+    base: '',
+    plugins: [],
     build: {
       rollupOptions: {
         input: {
