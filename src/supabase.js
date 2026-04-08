@@ -1,4 +1,4 @@
-import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js/+esm';
+import { createClient } from '@supabase/supabase-js';
 
 let supabaseInstance = null;
 
@@ -9,8 +9,8 @@ function initializeSupabaseClient() {
   }
 
   // Lê configuração injetada globalmente via window.APP_CONFIG ou diretamente via Vite
-  const SUPABASE_URL = window.APP_CONFIG?.SUPABASE_URL || import.meta.env.VITE_SUPABASE_URL;
-  const SUPABASE_ANON_KEY = window.APP_CONFIG?.SUPABASE_ANON_KEY || import.meta.env.VITE_SUPABASE_ANON_KEY;
+  const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL;
+  const SUPABASE_ANON_KEY = import.meta.env.VITE_SUPABASE_ANON_KEY;
 
   // Validação clara com debug
   const invalidUrl =
@@ -21,11 +21,6 @@ function initializeSupabaseClient() {
   if (invalidUrl) {
     console.error('[Supabase] Erro crítico: VITE_SUPABASE_URL inválido');
     console.error('[Supabase] URL lido:', SUPABASE_URL);
-    console.error('[Supabase] window.APP_CONFIG:', window.APP_CONFIG);
-    console.error('[Supabase] import.meta.env:', {
-      VITE_SUPABASE_URL: import.meta.env?.VITE_SUPABASE_URL,
-      VITE_SUPABASE_ANON_KEY: import.meta.env?.VITE_SUPABASE_ANON_KEY ? '[REDUZIDO]' : 'undefined',
-    });
     throw new Error(
       'VITE_SUPABASE_URL não configurado corretamente. Deve ser um URL HTTP ou HTTPS.'
     );
@@ -39,7 +34,6 @@ function initializeSupabaseClient() {
     );
   }
 
-  console.log('[Supabase] Client inicializado com sucesso');
   supabaseInstance = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
   return supabaseInstance;
 }
@@ -54,4 +48,4 @@ const supabase = new Proxy({}, {
   },
 });
 
-export { supabase };
+export { initializeSupabaseClient, supabase };

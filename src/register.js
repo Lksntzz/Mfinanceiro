@@ -1,4 +1,4 @@
-import { supabase } from './src/supabase.js';
+import { supabase } from './supabase.js';
 
 const registerForm = document.getElementById('register-form');
 const registerButton = document.getElementById('register-button');
@@ -20,7 +20,7 @@ registerForm.addEventListener('submit', async (event) => {
   registerButton.textContent = 'Cadastrando...';
 
   try {
-    const { data, error } = await supabase.auth.signUp({
+    const { error } = await supabase.auth.signUp({
       email,
       password,
     });
