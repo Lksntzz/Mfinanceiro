@@ -11,12 +11,20 @@ function showMessage(type, text) {
   messageBox.className = `message-box ${type}`;
 }
 
-function getSupabase() {
-  if (!window.SupabaseClient) {
-    throw new Error('Cliente do Supabase nao foi inicializado.');
+async function getSupabase() {
+  if (window.SupabaseClient) {
+    return window.SupabaseClient;
   }
 
-  return window.SupabaseClient;
+  if (window.__supabaseReady) {
+    return window.__supabaseReady;
+  }
+
+  if (window.SupabaseInitError) {
+    throw window.SupabaseInitError;
+  }
+
+  throw new Error('Cliente do Supabase nao foi inicializado.');
 }
 
 if (!registerForm) {
@@ -34,7 +42,7 @@ registerForm.addEventListener('submit', async (event) => {
   registerButton.textContent = 'Cadastrando...';
 
   try {
-    const supabase = getSupabase();
+    const supabase = await getSupabase();
     const { error } = await supabase.auth.signUp({
       email,
       password,
