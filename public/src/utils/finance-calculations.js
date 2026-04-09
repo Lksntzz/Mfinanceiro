@@ -1302,11 +1302,14 @@ function buildCategorySeries(entries) {
     return accumulator;
   }, new Map());
 
+  const totalGeral = [...categoryTotals.values()].reduce((sum, val) => sum + val, 0);
+
   return [...categoryTotals.entries()]
     .sort((left, right) => right[1] - left[1])
     .map(([categoria, total]) => ({
       categoria,
       total,
+      percentual: totalGeral > 0 ? (total / totalGeral) * 100 : 0,
     }));
 }
 

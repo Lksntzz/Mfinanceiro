@@ -2239,12 +2239,16 @@ p {
 }
 
 .dashboard-tab-panels {
-  min-height: calc(100vh - 138px);
+  min-height: 0;
+  height: 100%;
+  overflow-y: auto;
+  overflow-x: hidden;
 }
 
 .dashboard-tab-panel {
   display: none;
-  min-height: calc(100vh - 138px);
+  min-height: 0;
+  height: 100%;
 }
 
 .dashboard-tab-panel.is-active {
@@ -2966,8 +2970,9 @@ p {
 
 .projection-chart-axis-y {
   left: 0;
-  top: 16px;
-  bottom: 44px;
+  top: 0 !important;
+  bottom: 0 !important;
+  height: 100% !important;
   width: 42px;
 }
 
@@ -6300,7 +6305,7 @@ p {
 
   [data-page="dashboard"] .projection-chart {
     min-height: 144px;
-    padding: 4px 78px 16px 30px;
+    padding: 4px 78px 16px 60px;
   }
 
   [data-page="dashboard"] .projection-chart-svg {
@@ -6308,7 +6313,7 @@ p {
   }
 
   [data-page="dashboard"] .projection-chart-axis-y {
-    width: 24px;
+    width: 60px;
     top: 6px;
   }
 
@@ -6821,8 +6826,9 @@ p {
   [data-page="dashboard"] .dashboard-primary-chart-shell,
   [data-page="dashboard"] #chart-bars {
     width: 100%;
-    height: 100%;
     min-height: 0;
+    flex: 1;
+    overflow: visible;
   }
 
   [data-page="dashboard"] .summary-grid,
@@ -6836,6 +6842,9 @@ p {
     padding: 0;
     background: transparent;
     border: 0;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
   }
 
   [data-page="dashboard"] .dashboard-budget-surface {
@@ -6858,6 +6867,12 @@ p {
     display: flex;
     flex-direction: column;
     overflow: hidden;
+  }
+  [data-page="dashboard"] .dashboard-list-surface .trend-list {
+    flex: 1;
+    overflow-y: auto;
+    min-height: 0;
+    padding-right: 4px;
   }
 
   [data-page="dashboard"] .compact-category-list,
@@ -7282,18 +7297,12 @@ body[data-page="dashboard"] .dashboard-tab-panel.is-active {
 }
 
 body[data-page="dashboard"] .dashboard-overview-shell.dashboard-grid {
-  display: grid;
-  grid-template-rows:
-    auto
-    auto
-    minmax(0, 1.35fr)
-    auto
-    minmax(0, 0.92fr)
-    auto;
+  display: flex;
+  flex-direction: column;
   gap: 10px;
   min-height: 0;
-  height: 100%;
-  overflow: hidden;
+  height: auto;
+  overflow: visible;
 }
 
 body[data-page="dashboard"] .metrics-row {
@@ -7378,19 +7387,19 @@ body[data-page="dashboard"] .dashboard-main-row.chart-row > * {
 
 body[data-page="dashboard"] .dashboard-balance-surface.chart-card {
   min-height: 0;
-  display: grid;
-  grid-template-rows: auto minmax(0, 1fr);
+  display: flex;
+  flex-direction: column;
   padding: 14px 16px;
   overflow: hidden;
 }
 
 body[data-page="dashboard"] .dashboard-period-surface.summary-card {
   min-height: 0;
-  display: grid;
-  grid-template-rows: auto auto minmax(0, 1fr);
+  display: flex;
+  flex-direction: column;
   gap: 10px;
   padding: 14px 16px;
-  overflow: hidden;
+  overflow: visible;
 }
 
 body[data-page="dashboard"] .mini-stats.dashboard-balance-mini-stats {
@@ -7415,24 +7424,27 @@ body[data-page="dashboard"] .section-title {
 
 body[data-page="dashboard"] .chart-shell.dashboard-primary-chart-shell.chart-area {
   min-height: 0;
-  height: 100%;
+  flex: 1;
   overflow: visible;
 }
 
 body[data-page="dashboard"] #chart-bars {
-  height: 100%;
+  flex: 1;
   min-height: 0;
 }
 
 body[data-page="dashboard"] .dashboard-period-grid {
   display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
   gap: 8px;
 }
 
 body[data-page="dashboard"] .dashboard-period-stat {
   min-height: 78px;
   padding: 10px 12px;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
 }
 
 body[data-page="dashboard"] .dashboard-budget-surface.budget-bar-wrap {
@@ -7451,7 +7463,7 @@ body[data-page="dashboard"] .dashboard-budget-progress-top strong {
 body[data-page="dashboard"] .bottom-card {
   min-height: 0;
   padding: 12px 14px;
-  overflow: hidden;
+  overflow: visible;
 }
 
 body[data-page="dashboard"] .bottom-card .section-title {
@@ -7462,7 +7474,7 @@ body[data-page="dashboard"] .compact-category-list,
 body[data-page="dashboard"] .recent-transactions-list,
 body[data-page="dashboard"] .compact-trend-list {
   min-height: 0;
-  overflow: hidden;
+  overflow: auto;
 }
 
 body[data-page="dashboard"] .compact-category-list > :nth-child(n + 4),
