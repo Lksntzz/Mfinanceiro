@@ -3862,3 +3862,933 @@ p {
   border-radius: 11px;
   padding: 0 16px;
 }
+
+/* Compact fit from screenshot review */
+.dashboard-main-premium {
+  padding: 10px 12px 8px;
+}
+
+.dashboard-premium-header {
+  min-height: 54px;
+  padding: 7px 12px;
+  border-radius: 12px;
+  margin-bottom: 8px;
+}
+
+.dashboard-premium-header::after {
+  bottom: -9px;
+}
+
+.dashboard-brand-mark {
+  font-size: 1.75rem;
+}
+
+.dashboard-brand-copy h1 {
+  font-size: 0.94rem;
+}
+
+.dashboard-top-tabs {
+  gap: 2px;
+  padding: 2px;
+}
+
+.dashboard-tab-button {
+  padding: 8px 14px;
+  font-size: 0.8rem;
+}
+
+.dashboard-header-meta {
+  gap: 6px;
+}
+
+.dashboard-payment-spotlight {
+  min-width: 186px;
+  padding: 7px 10px;
+  border-radius: 10px;
+}
+
+.dashboard-payment-spotlight strong {
+  font-size: 0.72rem;
+}
+
+.dashboard-payment-spotlight small {
+  font-size: 0.8rem;
+}
+
+.dashboard-logout-button {
+  min-width: 40px;
+  padding-inline: 8px;
+}
+
+.dashboard-tab-panels,
+.dashboard-tab-panel,
+.dashboard-overview-shell {
+  min-height: calc(100vh - 92px);
+}
+
+.dashboard-overview-shell {
+  gap: 8px;
+  grid-template-rows: auto auto minmax(0, 1.16fr) minmax(0, 0.86fr) auto;
+}
+
+.dashboard-metrics-row,
+.dashboard-hero-row,
+.dashboard-main-row,
+.dashboard-bottom-row {
+  gap: 8px;
+}
+
+.dashboard-metric-card,
+.dashboard-surface,
+.dashboard-hero-card {
+  border-radius: 12px;
+}
+
+.dashboard-metric-card {
+  min-height: 126px;
+}
+
+.dashboard-metric-card .metric-card-top {
+  padding: 12px 14px 5px;
+}
+
+.dashboard-metric-card .metric-value {
+  margin-top: 4px;
+  font-size: 1.65rem;
+}
+
+.dashboard-metric-card .metric-subtitle {
+  min-height: 22px;
+  font-size: 0.72rem;
+  line-height: 1.35;
+}
+
+.dashboard-metric-card .metric-icon {
+  width: 38px;
+  height: 38px;
+  border-radius: 11px;
+  font-size: 0.76rem;
+}
+
+.dashboard-metric-card .daily-limit-progress {
+  margin: 0 14px 8px;
+}
+
+.daily-limit-progress-top {
+  margin-bottom: 6px;
+  font-size: 0.68rem;
+}
+
+.daily-limit-progress-track {
+  height: 6px;
+}
+
+.dashboard-metric-card .metric-trend {
+  margin: 0 14px 10px;
+  padding: 4px 8px;
+}
+
+.metric-trend-badge {
+  min-height: 20px;
+  padding: 3px 8px;
+  font-size: 0.68rem;
+}
+
+.metric-trend-text {
+  font-size: 0.73rem;
+}
+
+.dashboard-hero-row {
+  grid-template-columns: 1fr 1fr;
+}
+
+.dashboard-hero-card {
+  min-height: 74px;
+  padding: 11px 13px;
+}
+
+.dashboard-card-eyebrow {
+  margin-bottom: 5px;
+}
+
+.dashboard-hero-card strong {
+  font-size: 0.88rem;
+  line-height: 1.25;
+}
+
+.dashboard-hero-card p {
+  margin-top: 4px;
+  font-size: 0.76rem;
+  line-height: 1.35;
+}
+
+.dashboard-inline-link-button {
+  min-height: 32px;
+  padding: 0 12px;
+  font-size: 0.74rem;
+}
+
+.dashboard-main-row {
+  grid-template-columns: minmax(0, 1.72fr) minmax(285px, 0.78fr);
+}
+
+.dashboard-surface {
+  padding: 13px;
+}
+
+.card-header {
+  margin-bottom: 7px;
+}
+
+.card-header h3 {
+  font-size: 0.9rem;
+}
+
+.table-caption,
+.chart-caption {
+  font-size: 0.71rem;
+}
+
+.status-chip,
+.dashboard-inline-chip {
+  min-height: 26px;
+  padding: 4px 9px;
+  font-size: 0.68rem;
+}
+
+.dashboard-primary-chart-shell {
+  min-height: 220px;
+}
+
+.projection-chart {
+  min-height: 214px;
+  padding: 6px 12px 24px 42px;
+}
+
+.projection-chart-svg {
+  height: 184px;
+}
+
+.projection-chart-axis {
+  font-size: 0.68rem;
+}
+
+.projection-chart-axis-y {
+  top: 14px;
+  width: 38px;
+}
+
+.projection-chart-axis-x {
+  left: 52px;
+  right: 90px;
+}
+
+.projection-line-path {
+  stroke-width: 2.6;
+}
+
+.projection-point {
+  stroke-width: 2;
+}
+
+.projection-chart-callout {
+  top: 78px;
+  right: 4px;
+  width: 102px;
+  padding: 9px 10px;
+}
+
+.projection-chart-callout span {
+  font-size: 0.66rem;
+}
+
+.projection-chart-callout strong {
+  font-size: 0.72rem;
+}
+
+.projection-chart-callout em {
+  font-size: 0.8rem;
+}
+
+.dashboard-balance-mini-stats {
+  gap: 8px;
+  margin-top: 10px;
+}
+
+.dashboard-balance-mini-stats .mini-stat,
+.dashboard-period-stat,
+.dashboard-period-support-card {
+  padding: 11px;
+  border-radius: 10px;
+}
+
+.dashboard-balance-mini-stats .mini-stat strong,
+.dashboard-period-stat strong,
+.dashboard-period-support-card strong {
+  font-size: 0.88rem;
+}
+
+.dashboard-balance-mini-stats .mini-stat span,
+.dashboard-period-stat span,
+.dashboard-period-support-card span,
+.dashboard-period-stat small,
+.dashboard-period-support-card small {
+  font-size: 0.7rem;
+}
+
+.dashboard-period-grid,
+.dashboard-period-support-grid {
+  gap: 8px;
+}
+
+.period-filter-row.dashboard-period-tabs {
+  gap: 6px;
+}
+
+.period-filter-button {
+  min-height: 30px;
+  padding: 0 12px;
+  font-size: 0.78rem;
+}
+
+.dashboard-budget-progress {
+  padding: 10px 12px;
+  border-radius: 10px;
+}
+
+.dashboard-budget-progress-top {
+  margin-bottom: 7px;
+  font-size: 0.72rem;
+}
+
+.dashboard-budget-progress-track {
+  height: 8px;
+}
+
+.dashboard-bottom-row {
+  grid-template-columns: 1.02fr 1.02fr 1.06fr;
+}
+
+.compact-category-list,
+.recent-transactions-list,
+.compact-trend-list {
+  max-height: 168px;
+}
+
+.category-bar-row {
+  gap: 7px 9px;
+  padding: 7px 0;
+}
+
+.category-bar-icon,
+.recent-transaction-icon {
+  width: 38px;
+  height: 38px;
+  border-radius: 11px;
+}
+
+.category-bar-meta strong,
+.category-bar-side strong,
+.recent-transaction-main strong,
+.recent-transaction-value,
+.trend-list strong {
+  font-size: 0.82rem;
+}
+
+.category-bar-meta span,
+.recent-transaction-main span,
+.recent-transaction-side span,
+.list-text small {
+  font-size: 0.72rem;
+}
+
+.category-bar-track {
+  margin-left: 47px;
+  height: 6px;
+}
+
+.recent-transaction-item {
+  padding: 8px 0;
+  gap: 10px;
+}
+
+.trend-list li {
+  padding: 9px 10px;
+  border-radius: 10px;
+}
+
+.trend-dot {
+  width: 28px;
+  height: 28px;
+  border-radius: 8px;
+  font-size: 0.7rem;
+}
+
+.dashboard-premium-footer {
+  min-height: 46px;
+  padding: 8px 10px;
+  border-radius: 10px;
+}
+
+.dashboard-footer-tip strong {
+  font-size: 0.8rem;
+}
+
+.dashboard-footer-tip p {
+  font-size: 0.72rem;
+}
+
+.dashboard-footer-actions {
+  gap: 8px;
+}
+
+.dashboard-footer-actions .primary-button,
+.dashboard-footer-actions .secondary-button {
+  min-height: 34px;
+  padding: 0 13px;
+  font-size: 0.78rem;
+}
+
+/* Final visual pass */
+.dashboard-main-premium {
+  background:
+    radial-gradient(circle at 18% 0%, rgba(78, 64, 201, 0.12), transparent 26%),
+    radial-gradient(circle at 100% 0%, rgba(36, 114, 214, 0.08), transparent 22%),
+    linear-gradient(180deg, #090d1b 0%, #0a1020 100%);
+}
+
+.dashboard-premium-header {
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.03),
+    0 10px 22px rgba(0, 0, 0, 0.18);
+}
+
+.dashboard-brand-mark {
+  color: #705cff;
+  text-shadow: 0 0 18px rgba(112, 92, 255, 0.18);
+}
+
+.dashboard-brand-copy h1 {
+  color: #f2f5fc;
+}
+
+.dashboard-tab-button {
+  font-weight: 700;
+  letter-spacing: -0.01em;
+}
+
+.dashboard-tab-button.is-active {
+  color: #ffffff;
+}
+
+.dashboard-payment-spotlight,
+.dashboard-metric-card,
+.dashboard-surface,
+.dashboard-hero-card {
+  backdrop-filter: blur(8px);
+}
+
+.dashboard-metric-card {
+  border-color: rgba(92, 105, 154, 0.18);
+}
+
+.dashboard-metric-balance {
+  background:
+    radial-gradient(circle at 100% 0%, rgba(88, 209, 156, 0.14), transparent 24%),
+    linear-gradient(135deg, rgba(10, 62, 51, 0.98) 0%, rgba(10, 49, 42, 0.98) 100%);
+}
+
+.dashboard-metric-limit {
+  background:
+    radial-gradient(circle at 100% 0%, rgba(101, 153, 255, 0.15), transparent 24%),
+    linear-gradient(135deg, rgba(18, 43, 94, 0.98) 0%, rgba(16, 36, 82, 0.98) 100%);
+}
+
+.dashboard-metric-days {
+  background:
+    radial-gradient(circle at 100% 0%, rgba(180, 110, 255, 0.14), transparent 24%),
+    linear-gradient(135deg, rgba(51, 29, 93, 0.98) 0%, rgba(38, 23, 71, 0.98) 100%);
+}
+
+.dashboard-metric-spending {
+  background:
+    radial-gradient(circle at 100% 0%, rgba(255, 202, 88, 0.12), transparent 24%),
+    linear-gradient(135deg, rgba(88, 72, 22, 0.98) 0%, rgba(67, 55, 18, 0.98) 100%);
+}
+
+.dashboard-metric-card .metric-label,
+.dashboard-hero-card .card-label,
+.dashboard-surface .card-label {
+  color: #eef2ff;
+}
+
+.dashboard-metric-card .metric-value,
+.dashboard-hero-card strong,
+.dashboard-surface h3,
+.dashboard-period-stat strong,
+.dashboard-period-support-card strong,
+.dashboard-balance-mini-stats .mini-stat strong {
+  color: #fbfcff;
+}
+
+.dashboard-metric-card .metric-subtitle,
+.table-caption,
+.chart-caption,
+.dashboard-hero-card p,
+.dashboard-footer-tip p,
+.recent-transaction-main span,
+.recent-transaction-side span,
+.category-bar-meta span,
+.list-text small {
+  color: #aeb9d1;
+}
+
+.dashboard-hero-card-alert {
+  border-color: rgba(130, 63, 87, 0.22);
+}
+
+.dashboard-hero-card-insight {
+  border-color: rgba(61, 92, 166, 0.22);
+}
+
+.dashboard-inline-link-button {
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.04);
+}
+
+.projection-chart {
+  border-radius: 14px;
+  background:
+    linear-gradient(180deg, rgba(17, 25, 47, 0.48) 0%, rgba(12, 19, 37, 0.2) 100%);
+  border: 1px solid rgba(82, 95, 144, 0.14);
+}
+
+.projection-grid-line:first-of-type {
+  opacity: 0.5;
+}
+
+.projection-zero-line {
+  stroke-dasharray: 0;
+}
+
+.projection-chart-callout {
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.04),
+    0 10px 20px rgba(0, 0, 0, 0.16);
+}
+
+.dashboard-period-stat,
+.dashboard-period-support-card,
+.dashboard-balance-mini-stats .mini-stat,
+.dashboard-budget-progress,
+.trend-list li {
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.02);
+}
+
+.category-bar-fill,
+.dashboard-budget-progress-fill {
+  box-shadow: 0 0 18px rgba(255, 102, 168, 0.18);
+}
+
+.dashboard-premium-footer {
+  border-color: rgba(65, 91, 165, 0.18);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.03);
+}
+
+/* Surgical fit pass */
+.dashboard-main-premium {
+  padding: 18px 20px 16px;
+}
+
+.dashboard-overview-shell {
+  gap: 10px;
+}
+
+.dashboard-app-shortcuts {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+  margin: 10px 0 8px;
+}
+
+.dashboard-app-shortcut {
+  display: inline-flex;
+  align-items: center;
+  min-height: 32px;
+  padding: 0 12px;
+  border-radius: 11px;
+  border: 1px solid rgba(79, 99, 159, 0.26);
+  background: rgba(14, 20, 39, 0.88);
+  color: #cfd8ee;
+  font-size: 0.78rem;
+  font-weight: 700;
+  letter-spacing: -0.01em;
+  text-decoration: none;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.03);
+  transition: border-color 0.2s ease, background 0.2s ease, transform 0.2s ease;
+}
+
+.dashboard-app-shortcut:hover {
+  border-color: rgba(101, 129, 220, 0.45);
+  background: rgba(21, 30, 57, 0.96);
+  transform: translateY(-1px);
+}
+
+.dashboard-premium-header {
+  min-height: 72px;
+  padding: 9px 16px;
+  border-radius: 18px;
+}
+
+.dashboard-brand {
+  gap: 9px;
+}
+
+.dashboard-brand-mark {
+  font-size: 1.15rem;
+  letter-spacing: -0.05em;
+}
+
+.dashboard-brand-kicker {
+  display: none;
+}
+
+.dashboard-brand-copy h1 {
+  font-size: 1rem;
+  letter-spacing: -0.03em;
+}
+
+.dashboard-top-tabs {
+  gap: 10px;
+}
+
+.dashboard-tab-button {
+  min-height: 34px;
+  padding: 0 16px;
+  border-radius: 12px;
+  font-size: 0.83rem;
+}
+
+.dashboard-header-meta {
+  gap: 10px;
+}
+
+.dashboard-payment-spotlight {
+  min-width: 212px;
+  max-width: 212px;
+  min-height: 58px;
+  padding: 8px 12px;
+  border-radius: 14px;
+}
+
+.dashboard-payment-label {
+  font-size: 0.56rem;
+  letter-spacing: 0.18em;
+}
+
+.dashboard-payment-spotlight strong {
+  font-size: 0.84rem;
+  line-height: 1.12;
+}
+
+.dashboard-payment-spotlight small {
+  font-size: 0.55rem;
+}
+
+.user-panel {
+  min-height: 58px;
+  padding: 8px 12px;
+  gap: 10px;
+}
+
+.user-avatar {
+  width: 36px;
+  height: 36px;
+}
+
+.user-panel strong {
+  font-size: 0.92rem;
+}
+
+.user-panel small {
+  font-size: 0.74rem;
+}
+
+.dashboard-logout-button {
+  min-height: 48px;
+  padding-inline: 15px;
+}
+
+.dashboard-metrics-row {
+  gap: 10px;
+}
+
+.dashboard-metric-card {
+  min-height: 112px;
+  padding: 16px 17px 14px;
+  border-radius: 18px;
+}
+
+.dashboard-metric-card .metric-card-top {
+  gap: 10px;
+}
+
+.dashboard-metric-card .metric-label {
+  font-size: 0.74rem;
+}
+
+.dashboard-metric-card .metric-value {
+  margin-top: 5px;
+  font-size: 1.7rem;
+  line-height: 1.02;
+}
+
+.dashboard-metric-card .metric-subtitle {
+  margin-top: 8px;
+  max-width: 95%;
+  font-size: 0.77rem;
+  line-height: 1.45;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.dashboard-metric-card .metric-icon {
+  width: 48px;
+  height: 48px;
+  border-radius: 14px;
+  font-size: 1rem;
+}
+
+.dashboard-metric-card .metric-trend,
+.dashboard-metric-card .daily-limit-progress {
+  margin-top: 10px;
+}
+
+.dashboard-metric-card .metric-trend {
+  min-height: 34px;
+  padding: 6px 10px;
+  font-size: 0.74rem;
+}
+
+.dashboard-metric-card .daily-limit-progress {
+  padding: 9px 11px 10px;
+}
+
+.daily-limit-progress-top {
+  margin-bottom: 7px;
+}
+
+.daily-limit-progress-top span,
+.daily-limit-progress-top strong {
+  font-size: 0.73rem;
+}
+
+.dashboard-hero-row {
+  gap: 10px;
+}
+
+.dashboard-hero-card {
+  min-height: 94px;
+  padding: 14px 16px;
+  border-radius: 18px;
+}
+
+.dashboard-card-eyebrow {
+  margin-bottom: 10px;
+}
+
+.dashboard-hero-card strong {
+  font-size: 0.98rem;
+  line-height: 1.25;
+}
+
+.dashboard-hero-card p {
+  margin-top: 6px;
+  font-size: 0.79rem;
+  line-height: 1.42;
+}
+
+.dashboard-inline-link-button {
+  min-height: 38px;
+  padding: 0 16px;
+  font-size: 0.78rem;
+}
+
+.dashboard-main-row {
+  gap: 10px;
+}
+
+.dashboard-surface {
+  padding: 14px 16px;
+  border-radius: 18px;
+}
+
+.card-header {
+  margin-bottom: 12px;
+}
+
+.card-label {
+  font-size: 0.73rem;
+}
+
+.dashboard-surface h3 {
+  margin-top: 4px;
+  font-size: 0.99rem;
+  line-height: 1.22;
+}
+
+.chart-caption,
+.table-caption {
+  margin-top: 7px;
+  font-size: 0.76rem;
+  line-height: 1.42;
+  max-width: 92%;
+}
+
+.dashboard-primary-chart-shell {
+  min-height: 194px;
+  margin-top: 8px;
+}
+
+.projection-chart {
+  min-height: 194px;
+  padding: 14px 18px 18px 58px;
+  border-radius: 16px;
+}
+
+.projection-chart-axis-y span {
+  font-size: 0.68rem;
+}
+
+.projection-chart-axis-x span {
+  font-size: 0.67rem;
+}
+
+.projection-chart-callout {
+  right: 18px;
+  bottom: 58px;
+  min-width: 116px;
+  padding: 10px 12px;
+}
+
+.projection-chart-callout span {
+  font-size: 0.64rem;
+}
+
+.projection-chart-callout strong {
+  font-size: 0.82rem;
+}
+
+.projection-chart-callout em {
+  font-size: 0.9rem;
+}
+
+.dashboard-balance-mini-stats {
+  gap: 8px;
+  margin-top: 10px;
+}
+
+.dashboard-balance-mini-stats .mini-stat {
+  min-height: 58px;
+  padding: 10px 12px;
+}
+
+.dashboard-period-grid,
+.dashboard-period-support-grid {
+  gap: 8px;
+}
+
+.dashboard-period-stat,
+.dashboard-period-support-card {
+  min-height: 88px;
+  padding: 12px 13px;
+}
+
+.dashboard-period-stat span,
+.dashboard-period-support-card span {
+  font-size: 0.72rem;
+}
+
+.dashboard-period-stat strong,
+.dashboard-period-support-card strong {
+  font-size: 1rem;
+}
+
+.dashboard-budget-progress {
+  margin-top: 10px;
+  padding: 12px 13px;
+}
+
+.dashboard-bottom-row {
+  gap: 10px;
+}
+
+.dashboard-list-surface .card-header {
+  margin-bottom: 10px;
+}
+
+.dashboard-list-surface h3 {
+  font-size: 0.94rem;
+}
+
+.compact-category-list,
+.recent-transactions-list,
+.compact-trend-list {
+  gap: 8px;
+}
+
+.category-bar-item,
+.recent-transaction,
+.trend-list li {
+  border-radius: 14px;
+}
+
+.category-bar-item {
+  padding: 10px 12px;
+}
+
+.recent-transaction {
+  padding: 10px 12px;
+}
+
+.trend-list li {
+  min-height: 72px;
+  padding: 11px 12px;
+}
+
+.dashboard-premium-footer {
+  margin-top: 2px;
+  min-height: 58px;
+  padding: 10px 14px;
+  border-radius: 16px;
+}
+
+.dashboard-footer-tip strong {
+  font-size: 0.88rem;
+}
+
+.dashboard-footer-tip p {
+  margin-top: 3px;
+  font-size: 0.76rem;
+}
+
+.dashboard-footer-actions {
+  gap: 8px;
+}
+
+@media (min-width: 1280px) {
+  .dashboard-main-premium {
+    max-width: 1380px;
+    margin-inline: auto;
+  }
+
+  .dashboard-main-row {
+    grid-template-columns: minmax(0, 1.92fr) minmax(336px, 0.96fr);
+  }
+
+  .dashboard-bottom-row {
+    grid-template-columns: minmax(0, 1.05fr) minmax(0, 1fr) minmax(0, 0.95fr);
+  }
+}
