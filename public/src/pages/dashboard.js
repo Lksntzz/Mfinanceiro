@@ -26,12 +26,29 @@ const dashboardState = {
 };
 
 const elements = {
+  dashboardTabButtons: Array.from(document.querySelectorAll("[data-dashboard-tab-link]")),
+  dashboardTabPanels: Array.from(document.querySelectorAll("[data-dashboard-panel]")),
   cycleStatusChip: document.getElementById("cycle-status-chip"),
   projectionChip: document.getElementById("projection-chip"),
   alertChip: document.getElementById("alert-chip"),
   summaryChip: document.getElementById("summary-chip"),
   nextPaymentChip: document.getElementById("next-payment-chip"),
   committedChip: document.getElementById("committed-chip"),
+  overviewCycleAlertCard: document.getElementById("overview-cycle-alert-card"),
+  overviewCycleAlertTitle: document.getElementById("overview-cycle-alert-title"),
+  overviewCycleAlertBody: document.getElementById("overview-cycle-alert-body"),
+  overviewDailyInsightCard: document.getElementById("overview-daily-insight-card"),
+  overviewInsightChip: document.getElementById("overview-insight-chip"),
+  overviewDailyInsightTitle: document.getElementById("overview-daily-insight-title"),
+  overviewDailyInsightBody: document.getElementById("overview-daily-insight-body"),
+  overviewAverageDaily: document.getElementById("overview-average-daily"),
+  overviewAverageNote: document.getElementById("overview-average-note"),
+  overviewTopCategoryNote: document.getElementById("overview-top-category-note"),
+  overviewBudgetProgressLabel: document.getElementById("overview-budget-progress-label"),
+  overviewBudgetProgressFill: document.getElementById("overview-budget-progress-fill"),
+  overviewQuickTipTitle: document.getElementById("overview-quick-tip-title"),
+  overviewQuickTipBody: document.getElementById("overview-quick-tip-body"),
+  recentTransactionsList: document.getElementById("recent-transactions-list"),
   dailySummaryChip: document.getElementById("daily-summary-chip"),
   dailySummaryList: document.getElementById("daily-summary-list"),
   chartBars: document.getElementById("chart-bars"),
@@ -61,12 +78,18 @@ const elements = {
   expensePeriodChip: document.getElementById("expense-period-chip"),
   expenseTotalDay: document.getElementById("expense-total-day"),
   expenseTotalDayNote: document.getElementById("expense-total-day-note"),
+  detailsExpenseTotalDay: document.getElementById("details-expense-total-day"),
+  detailsExpenseTotalDayNote: document.getElementById("details-expense-total-day-note"),
   expenseTotalYesterday: document.getElementById("expense-total-yesterday"),
   expenseTotalYesterdayNote: document.getElementById("expense-total-yesterday-note"),
   expenseTotalWeek: document.getElementById("expense-total-week"),
   expenseTotalWeekNote: document.getElementById("expense-total-week-note"),
+  detailsExpenseTotalWeek: document.getElementById("details-expense-total-week"),
+  detailsExpenseTotalWeekNote: document.getElementById("details-expense-total-week-note"),
   expenseTotalMonth: document.getElementById("expense-total-month"),
   expenseTotalMonthNote: document.getElementById("expense-total-month-note"),
+  detailsExpenseTotalMonth: document.getElementById("details-expense-total-month"),
+  detailsExpenseTotalMonthNote: document.getElementById("details-expense-total-month-note"),
   expensePeriodTotal: document.getElementById("expense-period-total"),
   expensePeriodCount: document.getElementById("expense-period-count"),
   expensePeriodTopCategory: document.getElementById("expense-period-top-category"),
@@ -111,6 +134,37 @@ function setChipTone(element, tone) {
   if (tone) {
     element.classList.add(`status-chip-${tone}`);
   }
+}
+
+function setSurfaceTone(element, tone) {
+  if (!element) {
+    return;
+  }
+
+  element.classList.remove(
+    "dashboard-surface-green",
+    "dashboard-surface-yellow",
+    "dashboard-surface-red",
+    "dashboard-surface-muted",
+    "dashboard-surface-blue"
+  );
+
+  if (tone) {
+    element.classList.add(`dashboard-surface-${tone}`);
+  }
+}
+
+function switchDashboardTab(tabId = "overview") {
+  elements.dashboardTabButtons.forEach((button) => {
+    const isActive = button.dataset.dashboardTabLink === tabId;
+    button.classList.toggle("is-active", isActive);
+    button.setAttribute("aria-pressed", String(isActive));
+  });
+
+  elements.dashboardTabPanels.forEach((panel) => {
+    const isActive = panel.dataset.dashboardPanel === tabId;
+    panel.classList.toggle("is-active", isActive);
+  });
 }
 
 function setDailyLimitHighlight(color) {
@@ -570,11 +624,30 @@ function buildSummaryNote(summary, fallbackText) {
   return `${summary.quantidadeLancamentos} lancamento(s) | Categoria lider: ${summary.categoriaDominante}`;
 }
 
-function renderExpenseOverview(overview, selectedSummary, intelligence) {
+function renderExpenseOverview(summary, overview, selectedSummary, intelligence) {
+  const averageDailySpend = Number(intelligence?.forecast?.averageDailySpend || 0);
+  const dominantCategory = intelligence?.dominantCategory || null;
+  const budgetBase = Math.max(
+    Number(summary?.saldoInicial || 0) + Number(summary?.projectedBenefitsInSaldo || 0),
+    Number(selectedSummary.totalGasto || 0),
+    1
+  );
+  const committedBase = Math.max(Number(selectedSummary.totalGasto || 0), 0);
+  const budgetProgress = Math.min((committedBase / budgetBase) * 100 || 0, 100);
+
   elements.expenseTotalDay.textContent = formatDashboardCurrency(overview.today.totalGasto);
   elements.expenseTotalDayNote.textContent =
     intelligence?.automaticSummaries?.day?.body ||
     buildSummaryNote(overview.today, "Sem gastos hoje.");
+  if (elements.detailsExpenseTotalDay) {
+    elements.detailsExpenseTotalDay.textContent = formatDashboardCurrency(overview.today.totalGasto);
+  }
+  if (elements.detailsExpenseTotalDayNote) {
+    elements.detailsExpenseTotalDayNote.textContent = buildSummaryNote(
+      overview.today,
+      "Sem gastos hoje."
+    );
+  }
   elements.expenseTotalYesterday.textContent = formatDashboardCurrency(
     overview.yesterday.totalGasto
   );
@@ -586,16 +659,154 @@ function renderExpenseOverview(overview, selectedSummary, intelligence) {
   elements.expenseTotalWeekNote.textContent =
     intelligence?.automaticSummaries?.week?.body ||
     buildSummaryNote(overview.week, "Sem gastos nesta semana.");
+  if (elements.detailsExpenseTotalWeek) {
+    elements.detailsExpenseTotalWeek.textContent = formatDashboardCurrency(overview.week.totalGasto);
+  }
+  if (elements.detailsExpenseTotalWeekNote) {
+    elements.detailsExpenseTotalWeekNote.textContent = buildSummaryNote(
+      overview.week,
+      "Sem gastos nesta semana."
+    );
+  }
   elements.expenseTotalMonth.textContent = formatDashboardCurrency(overview.month.totalGasto);
   elements.expenseTotalMonthNote.textContent =
     intelligence?.automaticSummaries?.month?.body ||
     buildSummaryNote(overview.month, "Sem gastos neste mes.");
+  if (elements.detailsExpenseTotalMonth) {
+    elements.detailsExpenseTotalMonth.textContent = formatDashboardCurrency(
+      overview.month.totalGasto
+    );
+  }
+  if (elements.detailsExpenseTotalMonthNote) {
+    elements.detailsExpenseTotalMonthNote.textContent = buildSummaryNote(
+      overview.month,
+      "Sem gastos neste mes."
+    );
+  }
   elements.expensePeriodChip.textContent = `${selectedSummary.label} em foco`;
   elements.expensePeriodTotal.textContent = formatDashboardCurrency(selectedSummary.totalGasto);
   elements.expensePeriodCount.textContent = `${selectedSummary.quantidadeLancamentos} lancamento(s)`;
   elements.expensePeriodTopCategory.textContent = intelligence?.dominantCategory
     ? `${intelligence.dominantCategory.categoria} (${formatPercent(intelligence.dominantCategory.percentual)}%)`
     : selectedSummary.categoriaDominante;
+  if (elements.overviewAverageDaily) {
+    elements.overviewAverageDaily.textContent = formatDashboardCurrency(averageDailySpend);
+  }
+  if (elements.overviewAverageNote) {
+    elements.overviewAverageNote.textContent =
+      averageDailySpend > 0
+        ? `Ritmo medio em ${selectedSummary.label.toLowerCase()}.`
+        : "Sem base recente";
+  }
+  if (elements.overviewTopCategoryNote) {
+    elements.overviewTopCategoryNote.textContent = dominantCategory
+      ? `${formatDashboardCurrency(dominantCategory.total)} no periodo atual.`
+      : "Aguardando gastos";
+  }
+  if (elements.overviewBudgetProgressLabel) {
+    elements.overviewBudgetProgressLabel.textContent = `${Math.round(budgetProgress)}%`;
+  }
+  if (elements.overviewBudgetProgressFill) {
+    elements.overviewBudgetProgressFill.style.width = `${budgetProgress}%`;
+  }
+}
+
+function renderOverviewSpotlights(summary, selectedSummary, expenseOverview, intelligence) {
+  const healthStatus = buildFinancialHealthStatus(summary);
+  const primaryInsight = Array.isArray(intelligence?.insightMessages)
+    ? intelligence.insightMessages[0]
+    : null;
+  const supportInsight = Array.isArray(intelligence?.insightMessages)
+    ? intelligence.insightMessages[1] || primaryInsight
+    : null;
+  const overviewTone =
+    healthStatus.color === "green"
+      ? "green"
+      : healthStatus.color === "yellow"
+        ? "yellow"
+        : healthStatus.color === "red"
+          ? "red"
+          : "muted";
+  const insightTone = supportInsight?.tone || primaryInsight?.tone || "muted";
+
+  setSurfaceTone(elements.overviewCycleAlertCard, overviewTone);
+  setSurfaceTone(elements.overviewDailyInsightCard, insightTone);
+  setChipTone(elements.cycleStatusChip, overviewTone);
+  setChipTone(elements.overviewInsightChip, insightTone);
+
+  if (elements.overviewCycleAlertTitle) {
+    elements.overviewCycleAlertTitle.textContent = healthStatus.title;
+  }
+  if (elements.overviewCycleAlertBody) {
+    elements.overviewCycleAlertBody.textContent = healthStatus.message;
+  }
+  if (elements.overviewInsightChip) {
+    elements.overviewInsightChip.textContent =
+      insightTone === "red"
+        ? "Atencao alta"
+        : insightTone === "yellow"
+          ? "Leitura ativa"
+          : insightTone === "green"
+            ? "Favoravel"
+            : "Sem base";
+  }
+  if (elements.overviewDailyInsightTitle) {
+    elements.overviewDailyInsightTitle.textContent =
+      supportInsight?.title ||
+      primaryInsight?.title ||
+      "Os insights ficam mais objetivos conforme seus dados crescem";
+  }
+  if (elements.overviewDailyInsightBody) {
+    elements.overviewDailyInsightBody.textContent =
+      supportInsight?.body ||
+      primaryInsight?.body ||
+      `Hoje soma ${formatDashboardCurrency(expenseOverview.today.totalGasto)} em ${selectedSummary.label.toLowerCase()}.`;
+  }
+  if (elements.overviewQuickTipTitle) {
+    elements.overviewQuickTipTitle.textContent =
+      primaryInsight?.label || "O proximo melhor passo aparece aqui";
+  }
+  if (elements.overviewQuickTipBody) {
+    elements.overviewQuickTipBody.textContent =
+      primaryInsight?.body ||
+      `Mantenha o foco no limite diario de ${formatDashboardCurrency(summary.limiteDiario)} e no gasto de hoje.`;
+  }
+}
+
+function renderRecentTransactions(selectedSummary) {
+  if (!elements.recentTransactionsList) {
+    return;
+  }
+
+  const recentItems = (selectedSummary.groups || [])
+    .flatMap((group) => group.items || [])
+    .slice()
+    .sort((left, right) => String(right.data || "").localeCompare(String(left.data || "")))
+    .slice(0, 5);
+
+  if (!recentItems.length) {
+    elements.recentTransactionsList.innerHTML = `
+      <div class="detail-row">
+        <span>Nenhum lancamento recente</span>
+        <strong>Adicione ou importe movimentacoes</strong>
+      </div>
+    `;
+    return;
+  }
+
+  elements.recentTransactionsList.innerHTML = recentItems
+    .map(
+      (entry) => `
+        <article class="recent-transaction-item">
+          <div class="recent-transaction-main">
+            <strong>${entry.descricao || "Lancamento"}</strong>
+            <span>${entry.categoria || "Sem categoria"} | ${extractDashboardTimeLabel(entry.data) || formatDashboardDateLong(entry.data)}</span>
+          </div>
+          <strong class="recent-transaction-value">${formatDashboardCurrency(entry.valor)}</strong>
+        </article>
+      `
+    )
+    .join("");
 }
 
 function renderExpensePeriodFilters() {
@@ -657,7 +868,7 @@ function renderExpenseCategories(summary) {
 
   elements.expenseCategoryChip.textContent = summary.categoriaDominante;
   elements.expenseCategoryList.innerHTML = summary.categorySeries
-    .slice(0, 6)
+    .slice(0, 3)
     .map((item) => {
       const width = Math.max((item.total / referenceTotal) * 100, 10);
 
@@ -982,7 +1193,7 @@ function renderDailySummary(periodSummary) {
 
 function renderAlerts(summary, alerts) {
   const healthStatus = buildFinancialHealthStatus(summary);
-  const combinedAlerts = [...healthStatus.alerts, ...alerts];
+  const combinedAlerts = [...healthStatus.alerts, ...alerts].slice(0, 4);
 
   elements.alertChip.textContent = combinedAlerts[0]?.completed
     ? "Ciclo concluido"
@@ -1260,6 +1471,15 @@ function bindExpensePeriodFilters() {
   });
 }
 
+function bindDashboardTabs() {
+  elements.dashboardTabButtons.forEach((button) => {
+    button.addEventListener("click", () => {
+      const nextTab = button.dataset.dashboardTabLink || "overview";
+      switchDashboardTab(nextTab);
+    });
+  });
+}
+
 function logDashboardIntegrationDebug(data, summary, expenseOverview, selectedSummary, intelligence) {
   if (window.__MFINANCEIRO_DEBUG_INTEGRATION__ === false) {
     return;
@@ -1350,10 +1570,12 @@ function atualizarDashboard() {
 
   renderMetrics(summary, expenseOverview);
   renderExpensePeriodFilters();
-  renderExpenseOverview(expenseOverview, selectedSummary, intelligence);
+  renderExpenseOverview(summary, expenseOverview, selectedSummary, intelligence);
+  renderOverviewSpotlights(summary, selectedSummary, expenseOverview, intelligence);
   renderInsights(summary, selectedSummary, expenseOverview, intelligence);
   renderExpenseEvolution(selectedSummary);
   renderExpenseCategories(selectedSummary);
+  renderRecentTransactions(selectedSummary);
   atualizarGraficoDashboard(summary, projection, dailySeries);
   renderDailySummary(selectedSummary);
   renderAlerts(summary, alerts);
@@ -1375,6 +1597,8 @@ document.addEventListener("visibilitychange", () => {
 });
 
 bindExpensePeriodFilters();
+bindDashboardTabs();
+switchDashboardTab("overview");
 showDashboardFeedback(window.AppShell.consumeDashboardNotice());
 if (document.readyState === "loading") {
   document.addEventListener("DOMContentLoaded", atualizarDashboard);

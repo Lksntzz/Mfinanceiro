@@ -1,10 +1,10 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="pt-BR">
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Dashboard Financeiro</title>
-    <link rel="stylesheet" href="/styles.css?v=20260407b" />
+    <link rel="stylesheet" href="/styles.css?v=20260408a" />
     <script src="/src/lib/auth-session.js"></script>
     <script src="/src/lib/config.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
@@ -18,207 +18,365 @@
     </script>
   </head>
   <body data-page="dashboard">
-    <main class="page-shell">
-      <section class="dashboard-layout app-layout">
-        <aside id="app-sidebar" class="dashboard-sidebar"></aside>
+    <main class="page-shell dashboard-page-shell">
+      <section class="dashboard-layout app-layout dashboard-layout-premium">
+        <aside id="app-sidebar" class="dashboard-sidebar dashboard-sidebar-hidden" aria-hidden="true"></aside>
 
-        <section class="dashboard-main app-main">
-          <header class="dashboard-topbar" id="visao-geral">
-            <div>
-              <div class="nav-pill" id="cycle-status-chip">Ciclo atual</div>
-              <h1 class="topbar-title">Nao deixe o dinheiro acabar antes do proximo pagamento</h1>
-              <p class="topbar-subtitle">
-                O painel combina saldo, salario, VR, contas, cartoes e dias restantes para orientar a decisao diaria.
-              </p>
+        <section class="dashboard-main app-main dashboard-main-premium">
+          <header class="dashboard-premium-header">
+            <div class="dashboard-brand">
+              <div class="dashboard-brand-mark">MF</div>
+              <div class="dashboard-brand-copy">
+                <span class="dashboard-brand-kicker">Assistente financeiro diario</span>
+                <h1>MFinanceiro</h1>
+              </div>
             </div>
 
-            <div class="topbar-actions">
-              <div class="user-panel">
-                <div class="user-avatar" data-user-initial>U</div>
-                <div>
-                  <strong data-user-name>Usuario</strong>
-                  <small data-user-email>email@conta.com</small>
-                </div>
-              </div>
-              <button type="button" class="secondary-button" data-logout-button>
-                Logout
+            <nav class="dashboard-top-tabs" aria-label="Navegacao do dashboard">
+              <button type="button" class="dashboard-tab-button is-active" data-dashboard-tab-link="overview">
+                Visao Geral
               </button>
+              <button type="button" class="dashboard-tab-button" data-dashboard-tab-link="details">
+                Detalhes
+              </button>
+              <button type="button" class="dashboard-tab-button" data-dashboard-tab-link="insights">
+                Insights
+              </button>
+              <button type="button" class="dashboard-tab-button" data-dashboard-tab-link="history">
+                Historico
+              </button>
+            </nav>
+
+            <div class="dashboard-header-meta">
+              <article class="dashboard-payment-spotlight">
+                <span class="dashboard-payment-label">Proximo pagamento</span>
+                <strong id="next-payment-chip">Pagamento pendente</strong>
+                <small id="committed-chip">Sem compromissos</small>
+              </article>
+
+              <div class="topbar-actions">
+                <div class="user-panel">
+                  <div class="user-avatar" data-user-initial>U</div>
+                  <div>
+                    <strong data-user-name>Usuario</strong>
+                    <small data-user-email>email@conta.com</small>
+                  </div>
+                </div>
+                <button type="button" class="secondary-button dashboard-logout-button" data-logout-button>
+                  Sair
+                </button>
+              </div>
             </div>
           </header>
 
-          <section class="content-stack">
-            <section class="dashboard-stage dashboard-stage-top">
-              <div class="dashboard-focus-strip">
-                <div class="dashboard-focus-copy">
-                  <div class="card-label">Decisao financeira diaria</div>
-                  <h2 class="dashboard-stage-title">Quatro sinais para decidir o dia sem perder o controle do ciclo</h2>
-                  <p class="table-caption">
-                    O topo concentra o que mais importa agora: saldo livre, limite diario, tempo ate o proximo pagamento e o quanto ja saiu hoje.
-                  </p>
-                </div>
-                <div class="dashboard-stage-meta">
-                  <div class="status-chip" id="next-payment-chip">Pagamento pendente</div>
-                  <div class="status-chip" id="committed-chip">Sem compromissos</div>
-                </div>
-              </div>
+          <section class="dashboard-tab-panels">
+            <section class="dashboard-tab-panel is-active" data-dashboard-panel="overview" id="visao-geral">
+              <div class="dashboard-overview-shell">
+                <section class="dashboard-hero-row">
+                  <article class="dashboard-hero-card dashboard-hero-card-alert" id="overview-cycle-alert-card">
+                    <div class="dashboard-card-eyebrow">
+                      <span class="status-chip" id="cycle-status-chip">Ciclo atual</span>
+                      <button type="button" class="dashboard-inline-link" data-dashboard-tab-link="insights">
+                        Ver todos insights
+                      </button>
+                    </div>
+                    <strong id="overview-cycle-alert-title">
+                      O ciclo aparece aqui com leitura rapida e direta
+                    </strong>
+                    <p id="overview-cycle-alert-body">
+                      O dashboard cruza saldo, limite, ritmo de gasto e proximo pagamento para orientar sua decisao do dia.
+                    </p>
+                  </article>
 
-              <div id="dashboard-feedback" class="message-box hidden" aria-live="polite"></div>
+                  <article class="dashboard-hero-card dashboard-hero-card-insight" id="overview-daily-insight-card">
+                    <div class="dashboard-card-eyebrow">
+                      <span class="card-label">Insight do dia</span>
+                      <span class="status-chip" id="overview-insight-chip">Leitura inicial</span>
+                    </div>
+                    <strong id="overview-daily-insight-title">
+                      O insight mais importante do dia aparece aqui
+                    </strong>
+                    <p id="overview-daily-insight-body">
+                      Assim que houver dados suficientes, o painel destaca a melhor orientacao pratica para hoje.
+                    </p>
+                  </article>
+                </section>
 
-              <div class="metrics-grid metrics-grid-priority" id="desempenho">
-                <article class="dashboard-card">
-                  <div class="metric-card-top">
-                    <div>
-                      <div class="metric-label">Saldo disponivel</div>
-                      <div class="metric-value" id="card-saldo-atual">R$ 0,00</div>
-                      <div class="metric-subtitle" id="card-saldo-atual-subtitle">
-                        Informe seu saldo inicial para comecar.
+                <section class="dashboard-metrics-row" id="desempenho">
+                  <article class="dashboard-card dashboard-metric-card">
+                    <div class="metric-card-top">
+                      <div>
+                        <div class="metric-label">Saldo disponivel</div>
+                        <div class="metric-value" id="card-saldo-atual">R$ 0,00</div>
+                        <div class="metric-subtitle" id="card-saldo-atual-subtitle">
+                          Informe seu saldo inicial para comecar.
+                        </div>
                       </div>
+                      <div class="metric-icon">R$</div>
                     </div>
-                    <div class="metric-icon">R$</div>
-                  </div>
-                  <div class="metric-trend trend-up" id="card-saldo-atual-trend">Base do ciclo</div>
-                </article>
+                    <div class="metric-trend trend-up" id="card-saldo-atual-trend">Base do ciclo</div>
+                  </article>
 
-                <article class="dashboard-card dashboard-card-highlight" id="card-limite-diario-panel">
-                  <div class="metric-card-top">
-                    <div>
-                      <div class="metric-label">
-                        Limite diario
-                        <span class="info-icon" title="Este valor mostra quanto sobra por dia depois de preservar o dinheiro comprometido do ciclo.">i</span>
+                  <article class="dashboard-card dashboard-card-highlight dashboard-metric-card" id="card-limite-diario-panel">
+                    <div class="metric-card-top">
+                      <div>
+                        <div class="metric-label">
+                          Limite diario
+                          <span class="info-icon" title="Quanto ainda cabe por dia ate o proximo pagamento.">i</span>
+                        </div>
+                        <div class="metric-value" id="card-limite-diario">R$ 0,00</div>
+                        <div class="metric-subtitle" id="card-limite-diario-subtitle">
+                          O sistema mostrara o valor diario com base no saldo disponivel.
+                        </div>
                       </div>
-                      <div class="metric-value" id="card-limite-diario">R$ 0,00</div>
-                      <div class="metric-subtitle" id="card-limite-diario-subtitle">
-                        O sistema mostrara o valor diario com base no saldo disponivel.
+                      <div class="metric-icon">/d</div>
+                    </div>
+                    <div class="daily-limit-progress" aria-label="Uso do limite diario">
+                      <div class="daily-limit-progress-top">
+                        <span>Uso do limite</span>
+                        <strong id="daily-limit-progress-label">0%</strong>
+                      </div>
+                      <div class="daily-limit-progress-track">
+                        <div class="daily-limit-progress-fill daily-limit-progress-fill-muted" id="daily-limit-progress-fill"></div>
                       </div>
                     </div>
-                    <div class="metric-icon">/d</div>
-                  </div>
-                  <div class="daily-limit-progress" aria-label="Uso do limite diario">
-                    <div class="daily-limit-progress-top">
-                      <span>Uso do limite diario</span>
-                      <strong id="daily-limit-progress-label">0%</strong>
-                    </div>
-                    <div class="daily-limit-progress-track">
-                      <div class="daily-limit-progress-fill daily-limit-progress-fill-muted" id="daily-limit-progress-fill"></div>
-                    </div>
-                  </div>
-                  <div class="metric-trend trend-up" id="card-limite-diario-trend">Sem calculo</div>
-                </article>
+                    <div class="metric-trend trend-up" id="card-limite-diario-trend">Sem calculo</div>
+                  </article>
 
-                <article class="dashboard-card">
-                  <div class="metric-card-top">
-                    <div>
-                      <div class="metric-label">Dias restantes</div>
-                      <div class="metric-value" id="card-dias-restantes">0 dia(s)</div>
-                      <div class="metric-subtitle" id="card-dias-restantes-subtitle">
-                        Configure salario e dias de pagamento.
+                  <article class="dashboard-card dashboard-metric-card">
+                    <div class="metric-card-top">
+                      <div>
+                        <div class="metric-label">Dias restantes</div>
+                        <div class="metric-value" id="card-dias-restantes">0 dia(s)</div>
+                        <div class="metric-subtitle" id="card-dias-restantes-subtitle">
+                          Configure salario e dias de pagamento.
+                        </div>
                       </div>
+                      <div class="metric-icon">D</div>
                     </div>
-                    <div class="metric-icon">D</div>
-                  </div>
-                  <div class="metric-trend trend-warn" id="card-dias-restantes-trend">Pendente</div>
-                </article>
+                    <div class="metric-trend trend-warn" id="card-dias-restantes-trend">Pendente</div>
+                  </article>
 
-                <article class="dashboard-card" id="card-gasto-dia-panel">
-                  <div class="metric-card-top">
-                    <div>
-                      <div class="metric-label">
-                        Gasto do dia
-                        <span class="info-icon" title="Soma das despesas registradas na data atual para o usuario autenticado.">i</span>
+                  <article class="dashboard-card dashboard-metric-card" id="card-gasto-dia-panel">
+                    <div class="metric-card-top">
+                      <div>
+                        <div class="metric-label">
+                          Gasto de hoje
+                          <span class="info-icon" title="Soma das despesas registradas na data atual.">i</span>
+                        </div>
+                        <div class="metric-value" id="card-gasto-dia">R$ 0,00</div>
+                        <div class="metric-subtitle" id="card-gasto-dia-subtitle">
+                          Os gastos de hoje aparecem assim que forem registrados.
+                        </div>
                       </div>
-                      <div class="metric-value" id="card-gasto-dia">R$ 0,00</div>
-                      <div class="metric-subtitle" id="card-gasto-dia-subtitle">
-                        Os gastos de hoje aparecem assim que forem registrados.
+                      <div class="metric-icon">Hoje</div>
+                    </div>
+                    <div class="metric-trend trend-up" id="card-gasto-dia-trend">Sem gastos</div>
+                  </article>
+                </section>
+
+                <section class="dashboard-main-row">
+                  <article class="dashboard-surface dashboard-balance-surface">
+                    <div class="card-header">
+                      <div>
+                        <div class="card-label">Evolucao do saldo no periodo</div>
+                        <h3>Leitura visual do ciclo ate o proximo pagamento</h3>
+                        <p class="chart-caption">
+                          A projecao cruza despesas, faturas, parcelas e saldo disponivel para mostrar como o ciclo deve evoluir.
+                        </p>
+                      </div>
+                      <div class="status-chip" id="projection-chip">Sem dados</div>
+                    </div>
+
+                    <div class="chart-shell dashboard-primary-chart-shell">
+                      <div class="chart-bars" id="chart-bars"></div>
+                    </div>
+
+                    <div class="mini-stats dashboard-balance-mini-stats">
+                      <div class="mini-stat">
+                        <strong id="mini-stat-dias">0 dias</strong>
+                        <span class="chart-caption">Ate o pagamento</span>
+                      </div>
+                      <div class="mini-stat">
+                        <strong id="mini-stat-vr">R$ 0,00</strong>
+                        <span class="chart-caption">Beneficios previstos</span>
+                      </div>
+                      <div class="mini-stat">
+                        <strong id="mini-stat-investimento">R$ 0,00</strong>
+                        <span class="chart-caption">Reserva sugerida</span>
                       </div>
                     </div>
-                    <div class="metric-icon">Hoje</div>
+                  </article>
+
+                  <article class="dashboard-surface dashboard-period-surface" id="gastos-inteligentes">
+                    <div class="card-header">
+                      <div>
+                        <div class="card-label">Resumo do periodo</div>
+                        <h3>Quatro sinais para ler o comportamento atual</h3>
+                        <p class="table-caption">
+                          Total, media diaria, categoria dominante e percentual consumido com base em dados reais.
+                        </p>
+                      </div>
+                      <div class="status-chip" id="expense-period-chip">Semana</div>
+                    </div>
+
+                    <div class="period-filter-row dashboard-period-tabs" role="tablist" aria-label="Filtro de periodo do dashboard">
+                      <button type="button" class="period-filter-button active" data-expense-period="day">Dia</button>
+                      <button type="button" class="period-filter-button" data-expense-period="week">Semana</button>
+                      <button type="button" class="period-filter-button" data-expense-period="month">Mes</button>
+                    </div>
+
+                    <div class="dashboard-period-grid">
+                      <article class="dashboard-period-stat">
+                        <span>Gastos</span>
+                        <strong id="expense-period-total">R$ 0,00</strong>
+                        <small id="expense-period-count">0 lancamento(s)</small>
+                      </article>
+                      <article class="dashboard-period-stat">
+                        <span>Media diaria</span>
+                        <strong id="overview-average-daily">R$ 0,00</strong>
+                        <small id="overview-average-note">Sem base recente</small>
+                      </article>
+                      <article class="dashboard-period-stat">
+                        <span>Maior categoria</span>
+                        <strong id="expense-period-top-category">Sem categoria</strong>
+                        <small id="overview-top-category-note">Aguardando gastos</small>
+                      </article>
+                    </div>
+
+                    <div class="dashboard-budget-progress">
+                      <div class="dashboard-budget-progress-top">
+                        <span>Percentual do ciclo consumido</span>
+                        <strong id="overview-budget-progress-label">0%</strong>
+                      </div>
+                      <div class="dashboard-budget-progress-track">
+                        <div class="dashboard-budget-progress-fill" id="overview-budget-progress-fill"></div>
+                      </div>
+                    </div>
+
+                    <div class="dashboard-period-support-grid">
+                      <article class="dashboard-period-support-card">
+                        <span>Hoje</span>
+                        <strong id="expense-total-day">R$ 0,00</strong>
+                        <small id="expense-total-day-note">Sem gastos hoje.</small>
+                      </article>
+                      <article class="dashboard-period-support-card">
+                        <span>Semana</span>
+                        <strong id="expense-total-week">R$ 0,00</strong>
+                        <small id="expense-total-week-note">Sem gastos nesta semana.</small>
+                      </article>
+                      <article class="dashboard-period-support-card">
+                        <span>Mes</span>
+                        <strong id="expense-total-month">R$ 0,00</strong>
+                        <small id="expense-total-month-note">Sem gastos neste mes.</small>
+                      </article>
+                    </div>
+                  </article>
+                </section>
+
+                <section class="dashboard-bottom-row">
+                  <article class="dashboard-surface dashboard-list-surface">
+                    <div class="card-header">
+                      <div>
+                        <div class="card-label">Categorias que mais gastam</div>
+                        <h3>Top 3 do periodo em foco</h3>
+                      </div>
+                      <button type="button" class="dashboard-inline-link" data-dashboard-tab-link="details">
+                        Ver todas
+                      </button>
+                    </div>
+
+                    <div class="status-chip dashboard-inline-chip" id="expense-category-chip">Sem categorias</div>
+                    <div class="category-bar-list compact-category-list" id="expense-category-list"></div>
+                  </article>
+
+                  <article class="dashboard-surface dashboard-list-surface">
+                    <div class="card-header">
+                      <div>
+                        <div class="card-label">Ultimos lancamentos</div>
+                        <h3>Movimentacoes recentes do periodo</h3>
+                      </div>
+                      <button type="button" class="dashboard-inline-link" data-dashboard-tab-link="history">
+                        Ver historico
+                      </button>
+                    </div>
+
+                    <div class="recent-transactions-list" id="recent-transactions-list">
+                      <div class="detail-row">
+                        <span>Nenhum lancamento recente</span>
+                        <strong>Adicione ou importe movimentacoes</strong>
+                      </div>
+                    </div>
+                  </article>
+
+                  <article class="dashboard-surface dashboard-list-surface">
+                    <div class="card-header">
+                      <div>
+                        <div class="card-label">Prioridades do ciclo</div>
+                        <h3>O que merece atencao agora</h3>
+                      </div>
+                      <div class="status-chip" id="alert-chip">0 prioridade(s)</div>
+                    </div>
+
+                    <ul class="trend-list compact-trend-list" id="alert-list"></ul>
+                  </article>
+                </section>
+
+                <footer class="dashboard-premium-footer">
+                  <div class="dashboard-footer-tip">
+                    <span class="card-label">Dica rapida</span>
+                    <strong id="overview-quick-tip-title">Sua principal orientacao aparece aqui</strong>
+                    <p id="overview-quick-tip-body">
+                      O dashboard transforma saldo, ritmo e prioridades em uma acao clara para hoje.
+                    </p>
                   </div>
-                  <div class="metric-trend trend-up" id="card-gasto-dia-trend">Sem gastos</div>
-                </article>
+
+                  <div class="dashboard-footer-actions">
+                    <a href="/contas.html" class="primary-button">Novo lancamento</a>
+                    <button type="button" class="secondary-button" data-dashboard-tab-link="history">
+                      Abrir historico
+                    </button>
+                  </div>
+                </footer>
               </div>
             </section>
 
-            <section class="dashboard-stage dashboard-stage-middle">
-              <article class="table-card period-overview-card" id="gastos-inteligentes">
-              <div class="card-header">
-                <div>
-                  <div class="card-label">Graficos por periodo</div>
-                  <h3>Resumo parcial do periodo atual</h3>
-                  <p class="table-caption">
-                    O dashboard considera os lancamentos ja registrados e mostra o acumulado de hoje, da semana e do mes sem esperar o fechamento do periodo.
-                  </p>
-                </div>
-                <div class="status-chip" id="expense-period-chip">Semana</div>
-              </div>
-
-              <div class="analytics-summary-grid">
-                <article class="summary-card analytics-card">
-                  <span>Gasto de hoje</span>
-                  <strong id="expense-total-day">R$ 0,00</strong>
-                  <small id="expense-total-day-note">Sem gastos hoje.</small>
-                </article>
-                <article class="summary-card analytics-card">
-                  <span>Resumo de ontem</span>
-                  <strong id="expense-total-yesterday">R$ 0,00</strong>
-                  <small id="expense-total-yesterday-note">Sem gastos ontem.</small>
-                </article>
-                <article class="summary-card analytics-card">
-                  <span>Semana ate agora</span>
-                  <strong id="expense-total-week">R$ 0,00</strong>
-                  <small id="expense-total-week-note">Sem gastos nesta semana.</small>
-                </article>
-                <article class="summary-card analytics-card">
-                  <span>Mes ate agora</span>
-                  <strong id="expense-total-month">R$ 0,00</strong>
-                  <small id="expense-total-month-note">Sem gastos neste mes.</small>
-                </article>
-              </div>
-
-              <div class="period-filter-row" role="tablist" aria-label="Filtro de periodo do dashboard">
-                <button type="button" class="period-filter-button active" data-expense-period="day">Dia</button>
-                <button type="button" class="period-filter-button" data-expense-period="week">Semana</button>
-                <button type="button" class="period-filter-button" data-expense-period="month">Mes</button>
-              </div>
-
-              <div class="period-summary-meta">
-                <div class="mini-stat">
-                  <strong id="expense-period-total">R$ 0,00</strong>
-                  <span class="chart-caption">Total do periodo em foco</span>
-                </div>
-                <div class="mini-stat">
-                  <strong id="expense-period-count">0 lancamento(s)</strong>
-                  <span class="chart-caption">Lancamentos somados ate agora</span>
-                </div>
-                <div class="mini-stat">
-                  <strong id="expense-period-top-category">Sem categoria</strong>
-                  <span class="chart-caption">Categoria com maior gasto</span>
-                </div>
-              </div>
-              </article>
-
-              <article class="table-card insights-card" id="dashboard-insights">
-                <div class="card-header">
-                  <div>
-                    <div class="card-label">Insights inteligentes</div>
-                    <h3>Leitura pratica do seu comportamento financeiro</h3>
-                    <p class="table-caption">
-                      Interpretacoes curtas baseadas no periodo em foco, no saldo restante e no ritmo real dos seus gastos.
-                    </p>
+            <section class="dashboard-tab-panel" data-dashboard-panel="details" id="detalhes">
+              <div class="dashboard-secondary-grid">
+                <article class="dashboard-surface dashboard-secondary-surface">
+                  <div class="card-header">
+                    <div>
+                      <div class="card-label">Leitura complementar</div>
+                      <h3>Comparacao rapida de hoje, ontem, semana e mes</h3>
+                    </div>
+                    <div class="status-chip">Detalhes</div>
                   </div>
-                  <div class="status-chip" id="insights-chip">Sem dados</div>
-                </div>
 
-                <div class="insights-grid" id="insights-list">
-                  <article class="insight-item insight-item-muted">
-                    <span class="insight-label">Aguardando dados</span>
-                    <strong>Os insights aparecem conforme os gastos sao registrados</strong>
-                    <p>Adicione despesas para transformar os numeros do dashboard em orientacoes praticas.</p>
-                  </article>
-                </div>
-              </article>
+                  <div class="analytics-summary-grid">
+                    <article class="summary-card analytics-card">
+                      <span>Gasto de hoje</span>
+                      <strong id="details-expense-total-day">R$ 0,00</strong>
+                      <small id="details-expense-total-day-note">Sem gastos hoje.</small>
+                    </article>
+                    <article class="summary-card analytics-card">
+                      <span>Resumo de ontem</span>
+                      <strong id="expense-total-yesterday">R$ 0,00</strong>
+                      <small id="expense-total-yesterday-note">Sem gastos ontem.</small>
+                    </article>
+                    <article class="summary-card analytics-card">
+                      <span>Semana ate agora</span>
+                      <strong id="details-expense-total-week">R$ 0,00</strong>
+                      <small id="details-expense-total-week-note">Sem gastos nesta semana.</small>
+                    </article>
+                    <article class="summary-card analytics-card">
+                      <span>Mes ate agora</span>
+                      <strong id="details-expense-total-month">R$ 0,00</strong>
+                      <small id="details-expense-total-month-note">Sem gastos neste mes.</small>
+                    </article>
+                  </div>
+                </article>
 
-              <section class="dashboard-columns analytics-columns">
-                <article class="chart-card">
+                <article class="dashboard-surface dashboard-secondary-surface">
                   <div class="card-header">
                     <div>
                       <div class="card-label">Evolucao dos gastos</div>
@@ -230,119 +388,99 @@
                     <div class="status-chip" id="expense-evolution-chip">Sem dados</div>
                   </div>
 
-                  <div class="chart-shell">
+                  <div class="chart-shell chart-shell-secondary">
                     <div class="chart-bars" id="expense-evolution-bars"></div>
                   </div>
                 </article>
 
-                <article class="chart-card">
+                <article class="dashboard-surface dashboard-secondary-surface cycle-breakdown-card" id="resumo-ciclo">
                   <div class="card-header">
                     <div>
-                      <div class="card-label">Gastos por categoria</div>
-                      <h3>Onde o dinheiro mais saiu no periodo</h3>
-                      <p class="chart-caption">
-                        As categorias sao reordenadas automaticamente conforme o gasto parcial cresce.
+                      <div class="card-label">Resumo do ciclo atual</div>
+                      <h3>Leitura detalhada da composicao financeira</h3>
+                      <p class="table-caption">
+                        Informacoes complementares do calculo foram movidas para esta aba para preservar a tela principal compacta.
                       </p>
                     </div>
-                    <div class="status-chip" id="expense-category-chip">Sem categorias</div>
+                    <div class="status-chip" id="summary-chip">Leitura do sistema</div>
                   </div>
 
-                  <div class="category-bar-list" id="expense-category-list"></div>
+                  <table class="finance-table">
+                    <thead>
+                      <tr>
+                        <th>Bloco</th>
+                        <th>Valor</th>
+                        <th>Leitura</th>
+                      </tr>
+                    </thead>
+                    <tbody id="summary-table-body"></tbody>
+                  </table>
+                  <div id="dashboard-empty-state" class="empty-state hidden"></div>
                 </article>
-              </section>
-
-              <section class="dashboard-columns">
-                <article class="chart-card">
-                  <div class="card-header">
-                    <div>
-                      <div class="card-label">Desempenho do ciclo</div>
-                      <h3>Projecao de saldo ate o proximo pagamento</h3>
-                      <p class="chart-caption">
-                        O grafico estima como o saldo deve evoluir dia a dia, considerando contas, faturas e os lancamentos do ciclo.
-                      </p>
-                    </div>
-                    <div class="status-chip" id="projection-chip">Sem dados</div>
-                  </div>
-
-                  <div class="chart-shell">
-                    <div class="chart-bars" id="chart-bars"></div>
-
-                    <div class="mini-stats">
-                      <div class="mini-stat">
-                        <strong id="mini-stat-dias">0 dias</strong>
-                        <span class="chart-caption">Restantes ate o pagamento</span>
-                      </div>
-                      <div class="mini-stat">
-                        <strong id="mini-stat-vr">R$ 0,00</strong>
-                        <span class="chart-caption">Beneficios previstos no ciclo</span>
-                      </div>
-                      <div class="mini-stat">
-                        <strong id="mini-stat-investimento">R$ 0,00</strong>
-                        <span class="chart-caption">Sugestao de investimento</span>
-                      </div>
-                    </div>
-                  </div>
-                </article>
-
-                <article class="dashboard-card">
-                  <div class="card-header">
-                    <div>
-                      <div class="card-label">Prioridades do ciclo</div>
-                      <h3>O que precisa ser pago primeiro neste periodo</h3>
-                    </div>
-                    <div class="status-chip" id="alert-chip">0 prioridade(s)</div>
-                  </div>
-
-                  <ul class="trend-list" id="alert-list"></ul>
-                </article>
-              </section>
+              </div>
             </section>
 
-            <section class="dashboard-stage dashboard-stage-bottom">
-              <article class="table-card drawer-card" id="resumo">
-              <div class="card-header">
-                <div>
-                  <div class="card-label">Despesas por dia</div>
-                  <h3>Gaveta diaria do periodo em foco</h3>
-                  <p class="table-caption">
-                    Os lancamentos sao agrupados automaticamente por data dentro do periodo selecionado para mostrar o acumulado parcial.
-                  </p>
-                </div>
-                <div class="status-chip" id="daily-summary-chip">Sem lancamentos</div>
-              </div>
-
-              <div class="detail-list" id="daily-summary-list">
-                <div class="detail-row">
-                  <span>Resumo diario indisponivel</span>
-                  <strong>Adicione ou importe lancamentos</strong>
-                </div>
-              </div>
-              </article>
-
-              <article class="table-card cycle-breakdown-card" id="resumo-ciclo">
-                <div class="card-header">
-                  <div>
-                    <div class="card-label">Resumo do ciclo atual</div>
-                    <h3>Como o calculo esta sendo montado</h3>
-                    <p class="table-caption">
-                      Esta leitura mostra as bases que formam o valor comprometido, o saldo disponivel e o limite diario.
-                    </p>
+            <section class="dashboard-tab-panel" data-dashboard-panel="insights" id="insights">
+              <div class="dashboard-secondary-grid dashboard-insights-panel-grid">
+                <article class="dashboard-surface dashboard-secondary-surface dashboard-feedback-surface">
+                  <div class="card-header">
+                    <div>
+                      <div class="card-label">Leitura do momento</div>
+                      <h3>Sinal mais importante do ciclo</h3>
+                    </div>
+                    <button type="button" class="dashboard-inline-link" data-dashboard-tab-link="overview">
+                      Voltar para a visao geral
+                    </button>
                   </div>
-                  <div class="status-chip" id="summary-chip">Leitura do sistema</div>
-                </div>
 
-                <table class="finance-table">
-                  <thead>
-                    <tr>
-                      <th>Bloco</th>
-                      <th>Valor</th>
-                      <th>Leitura</th>
-                    </tr>
-                  </thead>
-                  <tbody id="summary-table-body"></tbody>
-                </table>
-                <div id="dashboard-empty-state" class="empty-state hidden"></div>
-              </article>
+                  <div id="dashboard-feedback" class="message-box hidden" aria-live="polite"></div>
+                </article>
+
+                <article class="dashboard-surface dashboard-secondary-surface insights-card" id="dashboard-insights">
+                  <div class="card-header">
+                    <div>
+                      <div class="card-label">Insights inteligentes</div>
+                      <h3>Leitura expandida do seu comportamento financeiro</h3>
+                      <p class="table-caption">
+                        Interpretacoes curtas, contextuais e baseadas no ledger para orientar o proximo passo.
+                      </p>
+                    </div>
+                    <div class="status-chip" id="insights-chip">Sem dados</div>
+                  </div>
+
+                  <div class="insights-grid insights-grid-expanded" id="insights-list">
+                    <article class="insight-item insight-item-muted">
+                      <span class="insight-label">Aguardando dados</span>
+                      <strong>Os insights aparecem conforme os gastos sao registrados</strong>
+                      <p>Adicione despesas para transformar os numeros do dashboard em orientacoes praticas.</p>
+                    </article>
+                  </div>
+                </article>
+              </div>
+            </section>
+
+            <section class="dashboard-tab-panel" data-dashboard-panel="history" id="historico">
+              <div class="dashboard-history-grid">
+                <article class="dashboard-surface dashboard-secondary-surface drawer-card" id="resumo">
+                  <div class="card-header">
+                    <div>
+                      <div class="card-label">Despesas por dia</div>
+                      <h3>Historico agrupado por data</h3>
+                      <p class="table-caption">
+                        Os lancamentos sao agrupados automaticamente por dia dentro do periodo selecionado.
+                      </p>
+                    </div>
+                    <div class="status-chip" id="daily-summary-chip">Sem lancamentos</div>
+                  </div>
+
+                  <div class="detail-list dashboard-history-list" id="daily-summary-list">
+                    <div class="detail-row">
+                      <span>Resumo diario indisponivel</span>
+                      <strong>Adicione ou importe lancamentos</strong>
+                    </div>
+                  </div>
+                </article>
+              </div>
             </section>
           </section>
         </section>
