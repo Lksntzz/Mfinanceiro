@@ -3,16 +3,15 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Configuracoes</title>
+    <title>Configurações — MFinanceiro</title>
+    <meta name="description" content="Preferências gerais do aplicativo MFinanceiro." />
     <link rel="stylesheet" href="/styles.css" />
-    <script src="/src/lib/config.js"></script>
     <script src="/src/lib/auth-session.js"></script>
+    <script src="/src/lib/config.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script src="/src/lib/supabase-bootstrap.js"></script>
     <script src="/src/services/finance-store.js"></script>
-    <script src="/src/utils/finance-calculations.js"></script>
     <script src="/src/services/app-shell.js"></script>
-    <script src="/src/services/supabase-sync.js"></script>
     <script>
       window.AuthSession.requireAuth();
     </script>
@@ -25,10 +24,10 @@
         <section class="dashboard-main app-main">
           <header class="dashboard-topbar">
             <div>
-              <div class="nav-pill">Configuracoes</div>
-              <h1 class="topbar-title">Preferencias gerais do aplicativo</h1>
+              <div class="nav-pill">Configurações</div>
+              <h1 class="topbar-title">Preferências gerais do aplicativo</h1>
               <p class="topbar-subtitle">
-                Esta area fica separada do Perfil e do Cadastro bancario para manter a estrutura do app clara.
+                Esta área fica separada do Perfil e do Cadastro bancário para manter a estrutura do app clara.
               </p>
             </div>
 
@@ -36,12 +35,12 @@
               <div class="user-panel">
                 <div class="user-avatar" data-user-initial>U</div>
                 <div>
-                  <strong data-user-name>Usuario</strong>
+                  <strong data-user-name>Usuário</strong>
                   <small data-user-email>email@conta.com</small>
                 </div>
               </div>
               <button type="button" class="secondary-button" data-logout-button>
-                Logout
+                Sair
               </button>
             </div>
           </header>
@@ -51,9 +50,9 @@
               <div class="card-header">
                 <div>
                   <div class="card-label">Estado atual</div>
-                  <h3>Configuracoes prontas para evoluir</h3>
+                  <h3>Configurações prontas para evoluir</h3>
                   <p class="table-caption">
-                    O app ja separa identidade, cadastro bancario, contas, investimentos e dashboard. Esta pagina fica preparada para preferencias futuras.
+                    O app já separa identidade, cadastro bancário, contas, investimentos e dashboard. Esta página fica preparada para preferências futuras.
                   </p>
                 </div>
                 <div class="status-chip">Estrutura organizada</div>
@@ -62,15 +61,15 @@
               <div class="info-card-grid">
                 <article class="summary-card">
                   <strong>Perfil</strong>
-                  <span>Foto, nome e email do usuario.</span>
+                  <span>Foto, nome e email do usuário.</span>
                 </article>
                 <article class="summary-card">
-                  <strong>Cadastro bancario</strong>
-                  <span>Saldo, salario, descontos, ciclo e VR.</span>
+                  <strong>Cadastro bancário</strong>
+                  <span>Saldo, salário, descontos, ciclo e VR.</span>
                 </article>
                 <article class="summary-card">
                   <strong>Contas</strong>
-                  <span>Contas fixas, dia a dia e cartoes reunidos em uma area unica.</span>
+                  <span>Contas fixas, dia a dia e cartões reunidos em uma área única.</span>
                 </article>
               </div>
             </article>
@@ -78,9 +77,5 @@
         </section>
       </section>
     </main>
-
-    <script>
-      window.AppShell.initAppShell();
-    </script>
   </body>
 </html>
