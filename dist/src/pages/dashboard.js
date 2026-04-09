@@ -101,6 +101,7 @@ const elements = {
   insightsChip: document.getElementById("insights-chip"),
   insightsList: document.getElementById("insights-list"),
   expensePeriodButtons: Array.from(document.querySelectorAll("[data-expense-period]")),
+  recentTransactionsSubtitle: document.getElementById("recent-transactions-subtitle"),
 };
 
 window.AppShell.initAppShell();
@@ -656,8 +657,9 @@ function renderProjection(summary, projection) {
   const areaData = `${pathData} L ${points[points.length - 1].x.toFixed(2)} ${zeroY.toFixed(2)} L ${points[0].x.toFixed(2)} ${zeroY.toFixed(2)} Z`;
   const yTicks = Array.from({ length: 5 }, (_, index) => {
     const value = maxValue - ((maxValue - minValue) / 4) * index;
-    const y = padding.top + (innerHeight / 4) * index;
-    return { value, y };
+    const yPx = padding.top + (innerHeight / 4) * index;
+    const yPercent = (yPx / chartHeight) * 100;
+    return { value, y: yPx, yPercent: yPercent };
   });
   const lastPoint = points[points.length - 1];
 
@@ -667,7 +669,7 @@ function renderProjection(summary, projection) {
         ${yTicks
           .map(
             (tick) => `
-              <span style="top:${tick.y.toFixed(2)}px">${formatDashboardCurrency(tick.value)}</span>
+              <span style="top:${tick.yPercent.toFixed(2)}%">${formatDashboardCurrency(tick.value)}</span>
             `
           )
           .join("")}
@@ -920,11 +922,18 @@ function renderRecentTransactions(selectedSummary) {
     return;
   }
 
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+
   const recentItems = (selectedSummary.groups || [])
     .flatMap((group) => group.items || [])
     .slice()
-    .sort((left, right) => String(right.data || "").localeCompare(String(left.data || "")))
-    .slice(0, 4);
+    .sort((left, right) => {
+      const leftTime = (left.dataHora || left.dataNormalizada)?.getTime?.() || 0;
+      const rightTime = (right.dataHora || right.dataNormalizada)?.getTime?.() || 0;
+      return rightTime - leftTime;
+    })
+    .slice(0, 5);
 
   if (!recentItems.length) {
     elements.recentTransactionsList.innerHTML = `
@@ -938,19 +947,29 @@ function renderRecentTransactions(selectedSummary) {
 
   elements.recentTransactionsList.innerHTML = recentItems
     .map(
-      (entry) => `
+      (entry) => {
+        const entryDate = entry.dataNormalizada || entry.dataHora;
+        const isToday = entryDate && entryDate.getTime() === today.getTime();
+        const timeLabel = extractDashboardTimeLabel(entry.data || entry.dataHora);
+        const dateLabel = isToday
+          ? (timeLabel || "Hoje")
+          : formatDashboardDateLong(entryDate);
+        const sideDateLabel = isToday && timeLabel ? timeLabel : formatDashboardDateLong(entryDate);
+
+        return `
         <article class="recent-transaction-item">
           <div class="recent-transaction-icon recent-transaction-icon-${getCategoryGlyph(entry.categoria)}"></div>
           <div class="recent-transaction-main">
             <strong>${entry.descricao || "Lancamento"}</strong>
-            <span>${entry.categoria || "Sem categoria"} | ${extractDashboardTimeLabel(entry.data) || formatDashboardDateLong(entry.data)}</span>
+            <span>${entry.categoria || "Sem categoria"} | ${dateLabel}</span>
           </div>
           <div class="recent-transaction-side">
             <strong class="recent-transaction-value">${formatDashboardCurrency(entry.valor)}</strong>
-            <span>${extractDashboardTimeLabel(entry.data) || "Hoje"}</span>
+            <span>${sideDateLabel}</span>
           </div>
         </article>
-      `
+      `;
+      }
     )
     .join("");
 }
@@ -1346,7 +1365,15 @@ function renderDailySummary(periodSummary) {
 
 function renderAlerts(summary, alerts) {
   const healthStatus = buildFinancialHealthStatus(summary);
-  const combinedAlerts = [...healthStatus.alerts, ...alerts].slice(0, 4);
+
+  // Filter cycle alerts: if health is not green, remove "completed" (tudo certo) entries
+  // to avoid contradictory messages (saldo negativo + tudo certo at same time)
+  const filteredCycleAlerts =
+    healthStatus.color !== "green"
+      ? alerts.filter((alert) => !alert.completed)
+      : alerts;
+
+  const combinedAlerts = [...healthStatus.alerts, ...filteredCycleAlerts].slice(0, 5);
 
   elements.alertChip.textContent = combinedAlerts[0]?.completed
     ? "Ciclo concluido"
@@ -1729,6 +1756,11 @@ function atualizarDashboard() {
   renderExpenseEvolution(selectedSummary);
   renderExpenseCategories(selectedSummary);
   renderRecentTransactions(selectedSummary);
+
+  // Update the subtitle of "Ultimos lancamentos" to reflect the selected period
+  if (elements.recentTransactionsSubtitle) {
+    elements.recentTransactionsSubtitle.textContent = selectedSummary.label || "Periodo atual";
+  }
   atualizarGraficoDashboard(summary, projection, dailySeries);
   renderDailySummary(selectedSummary);
   renderAlerts(summary, alerts);

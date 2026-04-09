@@ -59,9 +59,9 @@
 
           <section class="dashboard-tab-panels">
             <section class="dashboard-tab-panel is-active">
-              <div class="dashboard-secondary-grid">
+              <div class="dashboard-secondary-grid banking-page-grid">
 
-                <article class="dashboard-surface dashboard-secondary-surface">
+                <article class="dashboard-surface dashboard-secondary-surface banking-page-card">
                   <div class="card-header">
                     <div>
                       <div class="card-label">Base financeira</div>
@@ -469,6 +469,87 @@
                             </article>
                           </div>
                         </div>
+                      </section>
+
+                      <section class="form-section receipt-inline-section">
+                        <div class="card-header">
+                          <div>
+                            <div class="card-label">Recebimento principal</div>
+                            <h3>Previsao e confirmacao do pagamento</h3>
+                            <p class="table-caption">
+                              Esse bloco mantem o registro do pagamento principal do ciclo sem sair da Base financeira.
+                            </p>
+                          </div>
+                          <div class="status-chip" id="receipt-status-chip">Pronto para registrar</div>
+                        </div>
+
+                        <div class="dual-grid">
+                          <article class="dashboard-card">
+                            <div class="card-header">
+                              <div>
+                                <div class="card-label">Pagamento</div>
+                                <h4>Registro principal do ciclo</h4>
+                              </div>
+                              <div class="status-chip" id="pagamento-status-chip">Pendente</div>
+                            </div>
+
+                            <div class="detail-list">
+                              <div class="detail-row">
+                                <span>Proxima previsao</span>
+                                <strong id="pagamento-proxima-previsao">--</strong>
+                              </div>
+                              <div class="detail-row">
+                                <span>Dias restantes</span>
+                                <strong id="pagamento-dias-restantes">0</strong>
+                              </div>
+                            </div>
+
+                            <div class="receipt-form-grid">
+                              <div class="field">
+                                <span>Data prevista</span>
+                                <input type="date" id="pagamentoDataPrevista" />
+                              </div>
+                              <div class="field">
+                                <span>Valor previsto</span>
+                                <input type="text" inputmode="decimal" id="pagamentoValorPrevisto" placeholder="0,00" />
+                              </div>
+                            </div>
+
+                            <div class="button-row align-start">
+                              <button type="button" id="save-pagamento-button" class="primary-button">
+                                Salvar recebimento
+                              </button>
+                              <button type="button" id="mark-pagamento-recebido-button" class="secondary-button">
+                                Recebido
+                              </button>
+                              <button type="button" id="edit-pagamento-button" class="ghost-button">
+                                Editar recebimento
+                              </button>
+                            </div>
+                          </article>
+
+                          <article class="dashboard-card receipt-support-card">
+                            <div class="card-header">
+                              <div>
+                                <div class="card-label">Leitura rapida</div>
+                                <h4>Como isso impacta o ciclo</h4>
+                              </div>
+                            </div>
+
+                            <div class="detail-list">
+                              <div class="detail-row">
+                                <span>Status do registro</span>
+                                <strong id="receipt-inline-status-text">Aguardando previsao</strong>
+                              </div>
+                              <div class="detail-row">
+                                <span>Uso no dashboard</span>
+                                <strong>Saldo, limite e proximos dias</strong>
+                              </div>
+                            </div>
+                          </article>
+                        </div>
+
+                        <div id="receipt-message" class="message-box hidden" aria-live="polite"></div>
                       </section>
 
                       <div class="form-actions banking-form-actions">
