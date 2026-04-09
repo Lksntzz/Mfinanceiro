@@ -761,10 +761,14 @@ function renderExpenseOverview(summary, overview, selectedSummary, intelligence)
   const committedBase = Math.max(Number(selectedSummary.totalGasto || 0), 0);
   const budgetProgress = Math.min((committedBase / budgetBase) * 100 || 0, 100);
 
-  elements.expenseTotalDay.textContent = formatDashboardCurrency(overview.today.totalGasto);
-  elements.expenseTotalDayNote.textContent =
-    intelligence?.automaticSummaries?.day?.body ||
-    buildSummaryNote(overview.today, "Sem gastos hoje.");
+  if (elements.expenseTotalDay) {
+    elements.expenseTotalDay.textContent = formatDashboardCurrency(overview.today.totalGasto);
+  }
+  if (elements.expenseTotalDayNote) {
+    elements.expenseTotalDayNote.textContent =
+      intelligence?.automaticSummaries?.day?.body ||
+      buildSummaryNote(overview.today, "Sem gastos hoje.");
+  }
   if (elements.detailsExpenseTotalDay) {
     elements.detailsExpenseTotalDay.textContent = formatDashboardCurrency(overview.today.totalGasto);
   }
@@ -774,17 +778,25 @@ function renderExpenseOverview(summary, overview, selectedSummary, intelligence)
       "Sem gastos hoje."
     );
   }
-  elements.expenseTotalYesterday.textContent = formatDashboardCurrency(
-    overview.yesterday.totalGasto
-  );
-  elements.expenseTotalYesterdayNote.textContent = buildSummaryNote(
-    overview.yesterday,
-    "Sem gastos ontem."
-  );
-  elements.expenseTotalWeek.textContent = formatDashboardCurrency(overview.week.totalGasto);
-  elements.expenseTotalWeekNote.textContent =
-    intelligence?.automaticSummaries?.week?.body ||
-    buildSummaryNote(overview.week, "Sem gastos nesta semana.");
+  if (elements.expenseTotalYesterday) {
+    elements.expenseTotalYesterday.textContent = formatDashboardCurrency(
+      overview.yesterday.totalGasto
+    );
+  }
+  if (elements.expenseTotalYesterdayNote) {
+    elements.expenseTotalYesterdayNote.textContent = buildSummaryNote(
+      overview.yesterday,
+      "Sem gastos ontem."
+    );
+  }
+  if (elements.expenseTotalWeek) {
+    elements.expenseTotalWeek.textContent = formatDashboardCurrency(overview.week.totalGasto);
+  }
+  if (elements.expenseTotalWeekNote) {
+    elements.expenseTotalWeekNote.textContent =
+      intelligence?.automaticSummaries?.week?.body ||
+      buildSummaryNote(overview.week, "Sem gastos nesta semana.");
+  }
   if (elements.detailsExpenseTotalWeek) {
     elements.detailsExpenseTotalWeek.textContent = formatDashboardCurrency(overview.week.totalGasto);
   }
@@ -794,10 +806,14 @@ function renderExpenseOverview(summary, overview, selectedSummary, intelligence)
       "Sem gastos nesta semana."
     );
   }
-  elements.expenseTotalMonth.textContent = formatDashboardCurrency(overview.month.totalGasto);
-  elements.expenseTotalMonthNote.textContent =
-    intelligence?.automaticSummaries?.month?.body ||
-    buildSummaryNote(overview.month, "Sem gastos neste mes.");
+  if (elements.expenseTotalMonth) {
+    elements.expenseTotalMonth.textContent = formatDashboardCurrency(overview.month.totalGasto);
+  }
+  if (elements.expenseTotalMonthNote) {
+    elements.expenseTotalMonthNote.textContent =
+      intelligence?.automaticSummaries?.month?.body ||
+      buildSummaryNote(overview.month, "Sem gastos neste mes.");
+  }
   if (elements.detailsExpenseTotalMonth) {
     elements.detailsExpenseTotalMonth.textContent = formatDashboardCurrency(
       overview.month.totalGasto
@@ -908,7 +924,7 @@ function renderRecentTransactions(selectedSummary) {
     .flatMap((group) => group.items || [])
     .slice()
     .sort((left, right) => String(right.data || "").localeCompare(String(left.data || "")))
-    .slice(0, 5);
+    .slice(0, 4);
 
   if (!recentItems.length) {
     elements.recentTransactionsList.innerHTML = `

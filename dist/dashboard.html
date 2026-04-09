@@ -69,21 +69,6 @@
             </div>
           </header>
 
-          <nav class="dashboard-app-shortcuts" aria-label="Atalhos principais do aplicativo">
-            <a href="/cadastro-bancario.html" class="dashboard-app-shortcut">
-              Cadastro bancario
-            </a>
-            <a href="/contas.html" class="dashboard-app-shortcut">
-              Contas
-            </a>
-            <a href="/cartoes.html" class="dashboard-app-shortcut">
-              Cartoes
-            </a>
-            <a href="/investimentos.html" class="dashboard-app-shortcut">
-              Investimentos
-            </a>
-          </nav>
-
           <section class="dashboard-tab-panels">
             <section class="dashboard-tab-panel is-active" data-dashboard-panel="overview" id="visao-geral">
               <div class="dashboard-overview-shell">
@@ -94,7 +79,7 @@
                         <div class="metric-label">Saldo disponivel</div>
                         <div class="metric-value" id="card-saldo-atual">R$ 0,00</div>
                         <div class="metric-subtitle" id="card-saldo-atual-subtitle">
-                          Informe seu saldo inicial para comecar.
+                          Leitura liquida do ciclo atual.
                         </div>
                       </div>
                       <div class="metric-icon">R$</div>
@@ -111,7 +96,7 @@
                         </div>
                         <div class="metric-value" id="card-limite-diario">R$ 0,00</div>
                         <div class="metric-subtitle" id="card-limite-diario-subtitle">
-                          O sistema mostrara o valor diario com base no saldo disponivel.
+                          Valor disponivel por dia ate o pagamento.
                         </div>
                       </div>
                       <div class="metric-icon">/d</div>
@@ -134,7 +119,7 @@
                         <div class="metric-label">Dias restantes</div>
                         <div class="metric-value" id="card-dias-restantes">0 dia(s)</div>
                         <div class="metric-subtitle" id="card-dias-restantes-subtitle">
-                          Configure salario e dias de pagamento.
+                          Janela restante do ciclo atual.
                         </div>
                       </div>
                       <div class="metric-icon">D</div>
@@ -151,7 +136,7 @@
                         </div>
                         <div class="metric-value" id="card-gasto-dia">R$ 0,00</div>
                         <div class="metric-subtitle" id="card-gasto-dia-subtitle">
-                          Os gastos de hoje aparecem assim que forem registrados.
+                          Consumo registrado no dia.
                         </div>
                       </div>
                       <div class="metric-icon">Hoje</div>
@@ -169,7 +154,7 @@
                       O ciclo aparece aqui com leitura rapida e direta
                     </strong>
                     <p id="overview-cycle-alert-body">
-                      O dashboard cruza saldo, limite, ritmo de gasto e proximo pagamento para orientar sua decisao do dia.
+                      Saldo, limite e ritmo do ciclo em uma leitura curta para hoje.
                     </p>
                   </article>
 
@@ -185,7 +170,7 @@
                       O insight mais importante do dia aparece aqui
                     </strong>
                     <p id="overview-daily-insight-body">
-                      Assim que houver dados suficientes, o painel destaca a melhor orientacao pratica para hoje.
+                      O sistema destaca a melhor orientacao pratica do momento.
                     </p>
                   </article>
                 </section>
@@ -195,9 +180,9 @@
                     <div class="card-header">
                       <div>
                         <div class="card-label">Evolucao do saldo no periodo</div>
-                        <h3>Leitura visual do ciclo ate o proximo pagamento</h3>
+                        <h3>Evolucao do saldo no ciclo</h3>
                         <p class="chart-caption">
-                          A projecao cruza despesas, faturas, parcelas e saldo disponivel para mostrar como o ciclo deve evoluir.
+                          Visao do saldo ate a proxima data de pagamento.
                         </p>
                       </div>
                       <div class="status-chip" id="projection-chip">Sem dados</div>
@@ -227,9 +212,9 @@
                     <div class="card-header">
                       <div>
                         <div class="card-label">Resumo do periodo</div>
-                        <h3>Quatro sinais para ler o comportamento atual</h3>
+                        <h3>Resumo do periodo</h3>
                         <p class="table-caption">
-                          Total, media diaria, categoria dominante e percentual consumido com base em dados reais.
+                          Gastos, media diaria e categoria dominante.
                         </p>
                       </div>
                       <div class="status-chip" id="expense-period-chip">Semana</div>
@@ -258,33 +243,19 @@
                         <small id="overview-top-category-note">Aguardando gastos</small>
                       </article>
                     </div>
+                  </article>
+                </section>
 
+                <section class="dashboard-budget-row">
+                  <article class="dashboard-surface dashboard-budget-surface">
                     <div class="dashboard-budget-progress">
                       <div class="dashboard-budget-progress-top">
-                        <span>Percentual do ciclo consumido</span>
+                        <span>Percentual do orcamento utilizado</span>
                         <strong id="overview-budget-progress-label">0%</strong>
                       </div>
                       <div class="dashboard-budget-progress-track">
                         <div class="dashboard-budget-progress-fill" id="overview-budget-progress-fill"></div>
                       </div>
-                    </div>
-
-                    <div class="dashboard-period-support-grid">
-                      <article class="dashboard-period-support-card">
-                        <span>Hoje</span>
-                        <strong id="expense-total-day">R$ 0,00</strong>
-                        <small id="expense-total-day-note">Sem gastos hoje.</small>
-                      </article>
-                      <article class="dashboard-period-support-card">
-                        <span>Semana</span>
-                        <strong id="expense-total-week">R$ 0,00</strong>
-                        <small id="expense-total-week-note">Sem gastos nesta semana.</small>
-                      </article>
-                      <article class="dashboard-period-support-card">
-                        <span>Mes</span>
-                        <strong id="expense-total-month">R$ 0,00</strong>
-                        <small id="expense-total-month-note">Sem gastos neste mes.</small>
-                      </article>
                     </div>
                   </article>
                 </section>
@@ -353,6 +324,15 @@
                     </button>
                   </div>
                 </footer>
+
+                <div class="dashboard-hidden-bindings" hidden aria-hidden="true">
+                  <strong id="expense-total-day">R$ 0,00</strong>
+                  <small id="expense-total-day-note">Sem gastos hoje.</small>
+                  <strong id="expense-total-week">R$ 0,00</strong>
+                  <small id="expense-total-week-note">Sem gastos nesta semana.</small>
+                  <strong id="expense-total-month">R$ 0,00</strong>
+                  <small id="expense-total-month-note">Sem gastos neste mes.</small>
+                </div>
               </div>
             </section>
 
