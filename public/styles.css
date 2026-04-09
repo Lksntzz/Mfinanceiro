@@ -6323,8 +6323,7 @@ p {
   }
 
   [data-page="dashboard"] .projection-chart-callout {
-    width: 72px;
-    min-width: 72px;
+    width: max-content;
     padding: 5px 6px;
   }
 
@@ -6809,6 +6808,8 @@ p {
   [data-page="dashboard"] .bottom-card {
     padding: 0.75rem;
     min-height: 0;
+    display: flex;
+    flex-direction: column;
   }
 
   [data-page="dashboard"] .chart-area {
@@ -6950,6 +6951,10 @@ p {
     color: #f5a623;
     font-weight: 700;
     font-size: 1rem;
+    grid-column: 1;
+    grid-row: 1 / 3;
+    align-self: flex-start;
+    margin-top: 2px;
   }
 
   .dashboard-overview-shell .dashboard-hero-card-alert .dashboard-card-eyebrow {
@@ -6959,6 +6964,14 @@ p {
   .dashboard-overview-shell .dashboard-hero-card-alert strong {
     color: #f5a623;
     font-size: 0.82rem;
+    grid-column: 2;
+    grid-row: 1;
+  }
+
+  .dashboard-overview-shell .dashboard-hero-card-alert p {
+    grid-column: 2;
+    grid-row: 2;
+    margin-top: 2px;
   }
 
   .dashboard-overview-shell .dashboard-hero-card-insight {
@@ -6981,6 +6994,21 @@ p {
     color: #6c63ff;
     font-weight: 700;
     font-size: 1rem;
+    grid-column: 1;
+    grid-row: 1 / 4;
+    align-self: flex-start;
+    margin-top: 5px;
+  }
+
+  .dashboard-overview-shell .dashboard-hero-card-insight strong {
+    grid-column: 2 / span 2;
+    grid-row: 2;
+  }
+
+  .dashboard-overview-shell .dashboard-hero-card-insight p {
+    grid-column: 2 / span 2;
+    grid-row: 3;
+    margin-top: 2px;
   }
 
   .dashboard-overview-shell .dashboard-hero-card-insight .dashboard-card-eyebrow {
@@ -6994,9 +7022,13 @@ p {
   .dashboard-overview-shell .dashboard-hero-card-insight #overview-insight-chip {
     justify-self: start;
     margin-right: 8px;
+    grid-column: 2;
+    grid-row: 1;
   }
 
   .dashboard-overview-shell .dashboard-inline-link-button {
+    grid-column: 3;
+    grid-row: 1;
     min-height: 32px;
     padding: 0 12px;
     border-radius: 8px;
