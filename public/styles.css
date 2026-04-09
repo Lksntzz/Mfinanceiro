@@ -5295,6 +5295,208 @@ p {
   }
 }
 
+/* Extracted src dashboard translation */
+@media (min-width: 1180px) {
+  [data-page="dashboard"] {
+    background: #0d0f14;
+    color: #e8eaf0;
+  }
+
+  .dashboard-main-premium,
+  .dashboard-tab-panels,
+  .dashboard-tab-panel.is-active,
+  .dashboard-overview-shell {
+    background: #0d0f14;
+  }
+
+  .dashboard-premium-header {
+    justify-content: space-between;
+  }
+
+  .dashboard-brand-copy h1 {
+    letter-spacing: -0.02em;
+  }
+
+  .dashboard-top-tabs {
+    justify-self: center;
+  }
+
+  .dashboard-tab-button:hover:not(.is-active) {
+    color: #e8eaf0;
+    background: rgba(255, 255, 255, 0.06);
+  }
+
+  .dashboard-payment-spotlight,
+  .user-panel,
+  .dashboard-logout-button,
+  .dashboard-surface,
+  .dashboard-hero-card,
+  .dashboard-metric-card,
+  .dashboard-budget-surface,
+  .dashboard-premium-footer {
+    border-color: rgba(255, 255, 255, 0.07);
+  }
+
+  .dashboard-metric-card,
+  .dashboard-surface,
+  .dashboard-hero-card,
+  .dashboard-budget-surface,
+  .dashboard-premium-footer {
+    background: #1a1e28;
+  }
+
+  .dashboard-metric-balance {
+    background: linear-gradient(135deg, #1a1e28 0%, rgba(34, 194, 122, 0.06) 100%);
+    border-color: rgba(34, 194, 122, 0.2);
+  }
+
+  .dashboard-metric-limit {
+    background: linear-gradient(135deg, #1a1e28 0%, rgba(59, 143, 232, 0.06) 100%);
+    border-color: rgba(59, 143, 232, 0.2);
+  }
+
+  .dashboard-metric-days {
+    background: linear-gradient(135deg, #1a1e28 0%, rgba(155, 89, 245, 0.06) 100%);
+    border-color: rgba(155, 89, 245, 0.2);
+  }
+
+  .dashboard-metric-spending {
+    background: linear-gradient(135deg, #1a1e28 0%, rgba(245, 166, 35, 0.06) 100%);
+    border-color: rgba(245, 166, 35, 0.2);
+  }
+
+  .dashboard-metric-card .metric-label,
+  .dashboard-hero-card .card-label,
+  .dashboard-surface .card-label,
+  .dashboard-payment-label,
+  .table-caption,
+  .chart-caption,
+  .recent-transaction-main span,
+  .recent-transaction-side span,
+  .category-bar-meta span,
+  .list-text small,
+  .dashboard-footer-tip p {
+    color: #7a7f94;
+  }
+
+  .dashboard-metric-card .metric-value,
+  .dashboard-hero-card strong,
+  .dashboard-surface h3,
+  .dashboard-period-stat strong,
+  .dashboard-footer-tip strong,
+  .recent-transaction-value,
+  .recent-transaction-main strong,
+  .category-bar-meta strong,
+  .category-bar-side strong {
+    color: #e8eaf0;
+  }
+
+  .dashboard-metric-card .metric-icon {
+    background: #13161d;
+    border: 1px solid rgba(255, 255, 255, 0.07);
+  }
+
+  .dashboard-metric-balance .metric-icon {
+    color: #22c27a;
+  }
+
+  .dashboard-metric-limit .metric-icon {
+    color: #3b8fe8;
+  }
+
+  .dashboard-metric-days .metric-icon {
+    color: #9b59f5;
+  }
+
+  .dashboard-metric-spending .metric-icon {
+    color: #f5a623;
+  }
+
+  .dashboard-metric-card .metric-trend {
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+  }
+
+  .dashboard-card-eyebrow .status-chip,
+  .dashboard-inline-chip,
+  .dashboard-main-row .status-chip,
+  .dashboard-bottom-row .status-chip {
+    border-radius: 999px;
+    padding: 4px 9px;
+    border-color: rgba(255, 255, 255, 0.1);
+    background: #13161d;
+    color: #7a7f94;
+  }
+
+  .dashboard-hero-card-alert {
+    background: rgba(245, 166, 35, 0.06);
+    border-color: rgba(245, 166, 35, 0.25);
+  }
+
+  .dashboard-hero-card-alert strong {
+    color: #f5a623;
+  }
+
+  .dashboard-hero-card-insight {
+    background: rgba(155, 89, 245, 0.05);
+    border-color: rgba(155, 89, 245, 0.2);
+  }
+
+  .dashboard-inline-link-button {
+    background: #6c63ff;
+    border: 0;
+    color: #fff;
+    box-shadow: none;
+  }
+
+  .dashboard-inline-link-button:hover {
+    background: #7a72ff;
+    color: #fff;
+  }
+
+  .dashboard-main-row {
+    grid-template-columns: minmax(0, 1fr) 380px;
+  }
+
+  .projection-chart {
+    background: rgba(255, 255, 255, 0.02);
+  }
+
+  .projection-grid-line,
+  .projection-zero-line {
+    opacity: 0.35;
+  }
+
+  .dashboard-period-stat {
+    background: #13161d;
+  }
+
+  .dashboard-budget-progress-track,
+  .category-bar-track {
+    background: #13161d;
+  }
+
+  .dashboard-budget-progress-fill {
+    background: linear-gradient(90deg, #22c27a 0%, #f5a623 52%, #e8484a 100%);
+  }
+
+  .category-bar-fill {
+    box-shadow: none;
+  }
+
+  .recent-transaction-item,
+  .category-bar-row {
+    border-bottom-color: rgba(255, 255, 255, 0.06);
+  }
+
+  .recent-transaction-icon,
+  .category-bar-icon,
+  .trend-dot {
+    background: #13161d;
+    border: 1px solid rgba(255, 255, 255, 0.07);
+  }
+}
+
 .dashboard-premium-header {
   min-height: 72px;
   padding: 9px 16px;
@@ -5651,5 +5853,235 @@ p {
 
   .dashboard-bottom-row {
     grid-template-columns: minmax(0, 1.05fr) minmax(0, 1fr) minmax(0, 0.95fr);
+  }
+}
+
+/* Final component fidelity pass */
+@media (min-width: 1180px) {
+  .dashboard-overview-shell .dashboard-metric-card .metric-card-top {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+  }
+
+  .dashboard-overview-shell .dashboard-metric-card .metric-trend {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    width: fit-content;
+    border-radius: 999px;
+    padding: 4px 8px;
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+  }
+
+  .dashboard-overview-shell .metric-trend-badge {
+    display: inline-flex;
+    align-items: center;
+    min-height: 18px;
+    padding: 0 7px;
+    border-radius: 999px;
+    font-size: 0.64rem;
+    font-weight: 600;
+    line-height: 1;
+  }
+
+  .dashboard-overview-shell .trend-up .metric-trend-badge {
+    background: rgba(34, 194, 122, 0.16);
+    color: #22c27a;
+  }
+
+  .dashboard-overview-shell .trend-warn .metric-trend-badge {
+    background: rgba(59, 143, 232, 0.16);
+    color: #3b8fe8;
+  }
+
+  .dashboard-overview-shell .trend-danger .metric-trend-badge {
+    background: rgba(232, 72, 74, 0.16);
+    color: #e8484a;
+  }
+
+  .dashboard-overview-shell .metric-trend-text {
+    color: #c6ccda;
+    font-size: 0.69rem;
+    white-space: nowrap;
+  }
+
+  .dashboard-overview-shell .dashboard-hero-row {
+    grid-template-columns: 1fr 1fr;
+  }
+
+  .dashboard-overview-shell .dashboard-hero-card-alert {
+    display: grid;
+    grid-template-columns: 36px minmax(0, 1fr);
+    align-items: center;
+    gap: 12px;
+    background: rgba(245, 166, 35, 0.06);
+    border-color: rgba(245, 166, 35, 0.25);
+  }
+
+  .dashboard-overview-shell .dashboard-hero-card-alert::before {
+    content: "!";
+    width: 36px;
+    height: 36px;
+    border-radius: 999px;
+    display: grid;
+    place-items: center;
+    background: rgba(245, 166, 35, 0.15);
+    color: #f5a623;
+    font-weight: 700;
+    font-size: 1rem;
+  }
+
+  .dashboard-overview-shell .dashboard-hero-card-alert .dashboard-card-eyebrow {
+    display: none;
+  }
+
+  .dashboard-overview-shell .dashboard-hero-card-alert strong {
+    color: #f5a623;
+    font-size: 0.82rem;
+  }
+
+  .dashboard-overview-shell .dashboard-hero-card-insight {
+    display: grid;
+    grid-template-columns: 36px minmax(0, 1fr) auto;
+    align-items: center;
+    gap: 12px;
+    background: rgba(108, 99, 255, 0.05);
+    border-color: rgba(108, 99, 255, 0.2);
+  }
+
+  .dashboard-overview-shell .dashboard-hero-card-insight::before {
+    content: "i";
+    width: 36px;
+    height: 36px;
+    border-radius: 999px;
+    display: grid;
+    place-items: center;
+    background: rgba(108, 99, 255, 0.15);
+    color: #6c63ff;
+    font-weight: 700;
+    font-size: 1rem;
+  }
+
+  .dashboard-overview-shell .dashboard-hero-card-insight .dashboard-card-eyebrow {
+    display: contents;
+  }
+
+  .dashboard-overview-shell .dashboard-hero-card-insight .card-label {
+    display: none;
+  }
+
+  .dashboard-overview-shell .dashboard-hero-card-insight #overview-insight-chip {
+    justify-self: start;
+    margin-right: 8px;
+  }
+
+  .dashboard-overview-shell .dashboard-inline-link-button {
+    min-height: 32px;
+    padding: 0 12px;
+    border-radius: 8px;
+    background: #13161d;
+    color: #6c63ff;
+    font-size: 0.71rem;
+    font-weight: 600;
+  }
+
+  .dashboard-overview-shell .dashboard-inline-link-button:hover {
+    background: #171b24;
+    color: #8c85ff;
+  }
+
+  .dashboard-overview-shell .dashboard-period-grid {
+    grid-template-columns: repeat(3, 1fr);
+    gap: 8px;
+  }
+
+  .dashboard-overview-shell .dashboard-period-stat {
+    min-height: 0;
+    padding: 10px 12px;
+    border-radius: 8px;
+    background: #13161d;
+  }
+
+  .dashboard-overview-shell .dashboard-period-stat span {
+    margin-bottom: 4px;
+    font-size: 0.66rem;
+    color: #7a7f94;
+  }
+
+  .dashboard-overview-shell .dashboard-period-stat strong {
+    font-size: 1rem;
+    font-weight: 700;
+    letter-spacing: -0.02em;
+  }
+
+  .dashboard-overview-shell .dashboard-period-stat small {
+    margin-top: 3px;
+    font-size: 0.66rem;
+    color: #7a7f94;
+    line-height: 1.25;
+  }
+
+  .dashboard-overview-shell .dashboard-premium-footer {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    min-height: 44px;
+    background: #1a1e28;
+  }
+
+  .dashboard-overview-shell .dashboard-footer-tip {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    min-width: 0;
+  }
+
+  .dashboard-overview-shell .dashboard-footer-tip::before {
+    content: "";
+    width: 16px;
+    height: 16px;
+    border-radius: 50%;
+    flex-shrink: 0;
+    background: rgba(245, 166, 35, 0.18);
+    box-shadow: inset 0 0 0 4px rgba(245, 166, 35, 0.35);
+  }
+
+  .dashboard-overview-shell .dashboard-footer-tip .card-label {
+    display: none;
+  }
+
+  .dashboard-overview-shell .dashboard-footer-tip strong {
+    margin: 0;
+    font-size: 0.72rem;
+    font-weight: 600;
+    color: #e8eaf0;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .dashboard-overview-shell .dashboard-footer-tip p {
+    display: none;
+  }
+
+  .dashboard-overview-shell .dashboard-footer-actions .primary-button {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    min-height: 32px;
+    padding: 0 13px;
+    border-radius: 8px;
+    background: #6c63ff;
+    color: #fff;
+    font-size: 0.72rem;
+    font-weight: 700;
+  }
+
+  .dashboard-overview-shell .dashboard-footer-actions .primary-button::before {
+    content: "+";
+    font-size: 0.9rem;
+    line-height: 1;
   }
 }

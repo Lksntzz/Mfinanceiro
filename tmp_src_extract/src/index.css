@@ -1,0 +1,145 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
+
+@layer base {
+  :root {
+    --background: 222 47% 6%;
+    --foreground: 210 40% 96%;
+
+    --card: 222 41% 10%;
+    --card-foreground: 210 40% 96%;
+
+    --popover: 222 41% 10%;
+    --popover-foreground: 210 40% 96%;
+
+    --primary: 217 91% 60%;
+    --primary-foreground: 0 0% 100%;
+
+    --secondary: 222 35% 14%;
+    --secondary-foreground: 210 40% 96%;
+
+    --muted: 222 30% 16%;
+    --muted-foreground: 215 20% 55%;
+
+    --accent: 222 35% 14%;
+    --accent-foreground: 210 40% 96%;
+
+    --destructive: 0 72% 51%;
+    --destructive-foreground: 0 0% 100%;
+
+    --success: 142 71% 45%;
+    --success-foreground: 0 0% 100%;
+
+    --warning: 38 92% 50%;
+    --warning-foreground: 0 0% 100%;
+
+    --border: 222 30% 18%;
+    --input: 222 30% 18%;
+    --ring: 217 91% 60%;
+
+    --radius: 0.75rem;
+
+    --chart-green: 142 71% 45%;
+    --chart-yellow: 38 92% 50%;
+    --chart-red: 0 72% 51%;
+    --chart-blue: 217 91% 60%;
+    --chart-purple: 262 83% 58%;
+
+    --sidebar-background: 222 47% 6%;
+    --sidebar-foreground: 210 40% 96%;
+    --sidebar-primary: 217 91% 60%;
+    --sidebar-primary-foreground: 0 0% 100%;
+    --sidebar-accent: 222 35% 14%;
+    --sidebar-accent-foreground: 210 40% 96%;
+    --sidebar-border: 222 30% 18%;
+    --sidebar-ring: 217 91% 60%;
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+
+  body {
+    @apply bg-background text-foreground font-sans;
+    font-family: 'Inter', sans-serif;
+  }
+}
+
+@layer components {
+  .dashboard-grid {
+    display: grid;
+    grid-template-rows: auto auto auto 1fr auto;
+    height: 100vh;
+    width: 100vw;
+    overflow: hidden;
+    padding: 0.75rem 1.25rem;
+    gap: 0.75rem;
+  }
+
+  .metrics-row {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 0.75rem;
+  }
+
+  .alert-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 0.75rem;
+  }
+
+  .chart-row {
+    display: grid;
+    grid-template-columns: 3fr 2fr;
+    gap: 0.75rem;
+  }
+
+  .bottom-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr;
+    gap: 0.75rem;
+    min-height: 0;
+    overflow: hidden;
+  }
+
+  .dashboard-card {
+    @apply bg-card rounded-xl border border-border p-4;
+  }
+
+  .metric-value {
+    @apply text-2xl font-bold text-foreground tracking-tight;
+  }
+
+  .metric-label {
+    @apply text-sm text-muted-foreground;
+  }
+
+  .badge-success {
+    @apply text-xs font-medium px-2 py-0.5 rounded-full;
+    background: hsl(var(--success) / 0.15);
+    color: hsl(var(--success));
+  }
+
+  .badge-warning {
+    @apply text-xs font-medium px-2 py-0.5 rounded-full;
+    background: hsl(var(--warning) / 0.15);
+    color: hsl(var(--warning));
+  }
+
+  .badge-danger {
+    @apply text-xs font-medium px-2 py-0.5 rounded-full;
+    background: hsl(var(--destructive) / 0.15);
+    color: hsl(var(--destructive));
+  }
+
+  .badge-info {
+    @apply text-xs font-medium px-2 py-0.5 rounded-full;
+    background: hsl(var(--primary) / 0.15);
+    color: hsl(var(--primary));
+  }
+}
