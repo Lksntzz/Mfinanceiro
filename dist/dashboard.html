@@ -72,38 +72,8 @@
           <section class="dashboard-tab-panels">
             <section class="dashboard-tab-panel is-active" data-dashboard-panel="overview" id="visao-geral">
               <div class="dashboard-overview-shell">
-                <section class="dashboard-hero-row">
-                  <article class="dashboard-hero-card dashboard-hero-card-alert" id="overview-cycle-alert-card">
-                    <div class="dashboard-card-eyebrow">
-                      <span class="status-chip" id="cycle-status-chip">Ciclo atual</span>
-                      <button type="button" class="dashboard-inline-link" data-dashboard-tab-link="insights">
-                        Ver todos insights
-                      </button>
-                    </div>
-                    <strong id="overview-cycle-alert-title">
-                      O ciclo aparece aqui com leitura rapida e direta
-                    </strong>
-                    <p id="overview-cycle-alert-body">
-                      O dashboard cruza saldo, limite, ritmo de gasto e proximo pagamento para orientar sua decisao do dia.
-                    </p>
-                  </article>
-
-                  <article class="dashboard-hero-card dashboard-hero-card-insight" id="overview-daily-insight-card">
-                    <div class="dashboard-card-eyebrow">
-                      <span class="card-label">Insight do dia</span>
-                      <span class="status-chip" id="overview-insight-chip">Leitura inicial</span>
-                    </div>
-                    <strong id="overview-daily-insight-title">
-                      O insight mais importante do dia aparece aqui
-                    </strong>
-                    <p id="overview-daily-insight-body">
-                      Assim que houver dados suficientes, o painel destaca a melhor orientacao pratica para hoje.
-                    </p>
-                  </article>
-                </section>
-
                 <section class="dashboard-metrics-row" id="desempenho">
-                  <article class="dashboard-card dashboard-metric-card">
+                  <article class="dashboard-card dashboard-metric-card dashboard-metric-balance">
                     <div class="metric-card-top">
                       <div>
                         <div class="metric-label">Saldo disponivel</div>
@@ -117,7 +87,7 @@
                     <div class="metric-trend trend-up" id="card-saldo-atual-trend">Base do ciclo</div>
                   </article>
 
-                  <article class="dashboard-card dashboard-card-highlight dashboard-metric-card" id="card-limite-diario-panel">
+                  <article class="dashboard-card dashboard-card-highlight dashboard-metric-card dashboard-metric-limit" id="card-limite-diario-panel">
                     <div class="metric-card-top">
                       <div>
                         <div class="metric-label">
@@ -143,7 +113,7 @@
                     <div class="metric-trend trend-up" id="card-limite-diario-trend">Sem calculo</div>
                   </article>
 
-                  <article class="dashboard-card dashboard-metric-card">
+                  <article class="dashboard-card dashboard-metric-card dashboard-metric-days">
                     <div class="metric-card-top">
                       <div>
                         <div class="metric-label">Dias restantes</div>
@@ -157,7 +127,7 @@
                     <div class="metric-trend trend-warn" id="card-dias-restantes-trend">Pendente</div>
                   </article>
 
-                  <article class="dashboard-card dashboard-metric-card" id="card-gasto-dia-panel">
+                  <article class="dashboard-card dashboard-metric-card dashboard-metric-spending" id="card-gasto-dia-panel">
                     <div class="metric-card-top">
                       <div>
                         <div class="metric-label">
@@ -172,6 +142,36 @@
                       <div class="metric-icon">Hoje</div>
                     </div>
                     <div class="metric-trend trend-up" id="card-gasto-dia-trend">Sem gastos</div>
+                  </article>
+                </section>
+
+                <section class="dashboard-hero-row">
+                  <article class="dashboard-hero-card dashboard-hero-card-alert" id="overview-cycle-alert-card">
+                    <div class="dashboard-card-eyebrow">
+                      <span class="status-chip" id="cycle-status-chip">Ciclo atual</span>
+                    </div>
+                    <strong id="overview-cycle-alert-title">
+                      O ciclo aparece aqui com leitura rapida e direta
+                    </strong>
+                    <p id="overview-cycle-alert-body">
+                      O dashboard cruza saldo, limite, ritmo de gasto e proximo pagamento para orientar sua decisao do dia.
+                    </p>
+                  </article>
+
+                  <article class="dashboard-hero-card dashboard-hero-card-insight" id="overview-daily-insight-card">
+                    <div class="dashboard-card-eyebrow">
+                      <span class="card-label">Insight do dia</span>
+                      <span class="status-chip" id="overview-insight-chip">Leitura inicial</span>
+                      <button type="button" class="dashboard-inline-link dashboard-inline-link-button" data-dashboard-tab-link="insights">
+                        Ver todos insights
+                      </button>
+                    </div>
+                    <strong id="overview-daily-insight-title">
+                      O insight mais importante do dia aparece aqui
+                    </strong>
+                    <p id="overview-daily-insight-body">
+                      Assim que houver dados suficientes, o painel destaca a melhor orientacao pratica para hoje.
+                    </p>
                   </article>
                 </section>
 

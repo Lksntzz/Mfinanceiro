@@ -119,12 +119,25 @@ function setTrendTone(element, tone, text) {
   element.textContent = text;
 }
 
+function setMetricFooter(element, tone, badge, text) {
+  if (!element) {
+    return;
+  }
+
+  element.className = `metric-trend ${tone}`;
+  element.innerHTML = `
+    <span class="metric-trend-badge">${badge}</span>
+    <span class="metric-trend-text">${text}</span>
+  `;
+}
+
 function setChipTone(element, tone) {
   if (!element) {
     return;
   }
 
   element.classList.remove(
+    "status-chip-blue",
     "status-chip-green",
     "status-chip-yellow",
     "status-chip-red",
@@ -303,6 +316,32 @@ function formatDayEstimate(days) {
   return `${Math.floor(days)} dia(s)`;
 }
 
+function getCategoryGlyph(category) {
+  const value = String(category || "").toLowerCase();
+
+  if (value.includes("compra")) {
+    return "cart";
+  }
+
+  if (value.includes("transporte")) {
+    return "car";
+  }
+
+  if (value.includes("saude")) {
+    return "health";
+  }
+
+  if (value.includes("aliment")) {
+    return "bag";
+  }
+
+  if (value.includes("outro")) {
+    return "dots";
+  }
+
+  return "bag";
+}
+
 function getWeekdayLabel(date) {
   return new Intl.DateTimeFormat("pt-BR", {
     weekday: "long",
@@ -454,28 +493,34 @@ function renderMetrics(summary, expenseOverview) {
   elements.cardSaldoAtual.textContent = formatDashboardCurrency(summary.saldoDisponivel);
   elements.cardSaldoAtualSubtitle.textContent =
     summary.saldoInicial > 0 || summary.totalDespesas > 0
-      ? `${formatDashboardCurrency(summary.valorComprometido)} ja estao comprometidos.${summary.projectedBenefitsInSaldo > 0 ? ` ${formatDashboardCurrency(summary.projectedBenefitsInSaldo)} em beneficios previstos entram no saldo do ciclo.` : ""} Saldo restante segue como alias deste saldo disponivel.`
+      ? summary.projectedBenefitsInSaldo > 0
+        ? `${formatDashboardCurrency(summary.projectedBenefitsInSaldo)} em beneficios entram no ciclo.`
+        : "Saldo livre para atravessar o ciclo atual."
       : "Informe seu saldo inicial para comecar o calculo real.";
-  setTrendTone(
+  setMetricFooter(
     elements.cardSaldoAtualTrend,
     summary.saldoDisponivel >= 0 ? "trend-up" : "trend-down",
-    summary.saldoDisponivel >= 0 ? "Saldo disponivel real" : "Saldo disponivel negativo"
+    summary.saldoDisponivel >= 0 ? "Seguro" : "Risco",
+    summary.saldoDisponivel >= 0 ? "Saldo positivo" : "Saldo comprometido"
   );
 
   if (summary.paymentInfo.configured && summary.paymentInfo.nextDate) {
     elements.cardDiasRestantes.textContent = `${summary.paymentInfo.daysRemaining} dia(s)`;
     elements.cardDiasRestantesSubtitle.textContent = `Proximo pagamento em ${formatDashboardDateLong(summary.paymentInfo.nextDate)}.`;
-    setTrendTone(
+    setMetricFooter(
       elements.cardDiasRestantesTrend,
       summary.paymentInfo.daysRemaining === 0 ? "trend-warn" : "trend-up",
-      summary.paymentInfo.daysRemaining === 0 ? "Recebimento pendente" : "Pagamento previsto"
+      `ate ${summary.paymentInfo.nextDate.toLocaleDateString("pt-BR", { day: "2-digit", month: "2-digit" })}`,
+      getWeekdayLabel(summary.paymentInfo.nextDate)
     );
-    elements.nextPaymentChip.textContent = `${formatDashboardCurrency(summary.paymentInfo.value)} em ${summary.paymentInfo.daysRemaining} dia(s)`;
+    elements.nextPaymentChip.textContent = "Proximo pagamento";
+    elements.committedChip.textContent = formatDashboardDateLong(summary.paymentInfo.nextDate);
   } else {
     elements.cardDiasRestantes.textContent = "0 dia(s)";
     elements.cardDiasRestantesSubtitle.textContent = "Configure salario e dias de pagamento.";
-    setTrendTone(elements.cardDiasRestantesTrend, "trend-warn", "Pendente");
+    setMetricFooter(elements.cardDiasRestantesTrend, "trend-warn", "sem data", "Pagamento pendente");
     elements.nextPaymentChip.textContent = "Pagamento pendente";
+    elements.committedChip.textContent = "Sem data definida";
   }
 
   elements.cardLimiteDiario.textContent = formatDashboardCurrency(summary.limiteDiario);
@@ -483,10 +528,11 @@ function renderMetrics(summary, expenseOverview) {
     summary.diasRestantes > 0
       ? `${formatDashboardCurrency(summary.saldoDisponivel)} divididos por ${summary.diasRestantes} dia(s) restantes ate o proximo pagamento. ${dailyLimitStatus.detail}`
       : "Sem dias restantes validos para dividir o saldo disponivel.";
-  setTrendTone(
+  setMetricFooter(
     elements.cardLimiteDiarioTrend,
     summary.limiteDiario > 0 ? dailyLimitStatus.trendClass : "trend-warn",
-    summary.limiteDiario > 0 ? dailyLimitStatus.message : "Sem calculo"
+    summary.limiteDiario > 0 ? "Por dia" : "Sem base",
+    summary.limiteDiario > 0 ? "Ate o proximo pagamento" : "Configure o ciclo"
   );
   setDailyLimitHighlight(dailyLimitStatus.color);
   if (elements.dailyLimitProgressFill) {
@@ -507,7 +553,7 @@ function renderMetrics(summary, expenseOverview) {
       : summary.limiteDiario > 0
         ? dailyLimitStatus.detail
         : "Nenhum gasto registrado na data atual.";
-  setTrendTone(
+  setMetricFooter(
     elements.cardGastoDiaTrend,
     summary.limiteDiario > 0
       ? dailyLimitStatus.trendClass
@@ -515,22 +561,24 @@ function renderMetrics(summary, expenseOverview) {
         ? "trend-warn"
         : "trend-up",
     summary.limiteDiario > 0
-      ? dailyLimitStatus.message
+      ? todayExpenseTotal > 0
+        ? "Consumo"
+        : "Sem gastos"
+      : todayExpenseTotal > 0
+        ? "Consumo"
+        : "Sem gastos",
+    summary.limiteDiario > 0
+      ? todayExpenseTotal > 0
+        ? dailyLimitStatus.message
+        : "Voce esta no controle"
       : todayExpenseTotal > 0
         ? "Consumo em andamento"
-        : "Sem gastos"
+        : "Voce esta no controle"
   );
   setDashboardCardSignal(elements.cardGastoDiaPanel, dailyLimitStatus.color);
 
-  elements.committedChip.textContent =
-    summary.valorComprometido > 0
-      ? `${formatDashboardCurrency(summary.valorComprometido)} comprometidos`
-      : "Sem compromissos no ciclo";
-  setChipTone(elements.nextPaymentChip, summary.paymentInfo.configured ? "green" : "yellow");
-  setChipTone(
-    elements.committedChip,
-    summary.valorComprometido > 0 ? (summary.saldoDisponivel > 0 ? "yellow" : "red") : "muted"
-  );
+  setChipTone(elements.nextPaymentChip, summary.paymentInfo.configured ? "blue" : "yellow");
+  setChipTone(elements.committedChip, "muted");
 
   elements.miniStatDias.textContent = `${summary.diasRestantes} dia(s)`;
   elements.miniStatVr.textContent = formatDashboardCurrency(projectedBenefits);
@@ -568,30 +616,108 @@ function renderProjection(summary, projection) {
     return;
   }
 
-  const referenceHeight = Math.max(
-    ...projection.map((item) => Math.abs(item.balance)),
-    Math.abs(summary.saldoAtual),
-    1
-  );
+  const chartWidth = 760;
+  const chartHeight = 248;
+  const padding = { top: 20, right: 112, bottom: 42, left: 62 };
+  const balances = projection.map((item) => Number(item.balance || 0));
+  const rawMin = Math.min(...balances, 0);
+  const rawMax = Math.max(...balances, 0);
+  const amplitude = Math.max(rawMax - rawMin, 1);
+  const paddingValue = amplitude * 0.14;
+  const minValue = rawMin - paddingValue;
+  const maxValue = rawMax + paddingValue;
+  const innerWidth = chartWidth - padding.left - padding.right;
+  const innerHeight = chartHeight - padding.top - padding.bottom;
+  const zeroY =
+    padding.top + ((maxValue - 0) / Math.max(maxValue - minValue, 1)) * innerHeight;
+  const xStep = projection.length > 1 ? innerWidth / (projection.length - 1) : 0;
 
-  elements.chartBars.innerHTML = projection
-    .map((item) => {
-      const tone =
-        item.balance < 0
+  const points = projection.map((item, index) => {
+    const x = padding.left + xStep * index;
+    const y =
+      padding.top +
+      ((maxValue - Number(item.balance || 0)) / Math.max(maxValue - minValue, 1)) * innerHeight;
+    return {
+      ...item,
+      x,
+      y,
+      tone:
+        Number(item.balance || 0) < 0
           ? "danger"
-          : item.balance <= Math.max(summary.limiteDiario, 0)
+          : Number(item.balance || 0) <= Math.max(Number(summary.limiteDiario || 0), 0)
             ? "warning"
-            : "";
-      const height = Math.max((Math.abs(item.balance) / referenceHeight) * 100, 8);
+            : "safe",
+    };
+  });
 
-      return `
-        <div class="chart-bar-group">
-          <div class="chart-bar ${tone}" style="height: ${height}%"></div>
-          <span class="chart-label">${item.label}</span>
-        </div>
-      `;
-    })
-    .join("");
+  const pathData = points
+    .map((point, index) => `${index === 0 ? "M" : "L"} ${point.x.toFixed(2)} ${point.y.toFixed(2)}`)
+    .join(" ");
+  const areaData = `${pathData} L ${points[points.length - 1].x.toFixed(2)} ${zeroY.toFixed(2)} L ${points[0].x.toFixed(2)} ${zeroY.toFixed(2)} Z`;
+  const yTicks = Array.from({ length: 5 }, (_, index) => {
+    const value = maxValue - ((maxValue - minValue) / 4) * index;
+    const y = padding.top + (innerHeight / 4) * index;
+    return { value, y };
+  });
+  const lastPoint = points[points.length - 1];
+
+  elements.chartBars.innerHTML = `
+    <div class="projection-chart">
+      <div class="projection-chart-axis projection-chart-axis-y">
+        ${yTicks
+          .map(
+            (tick) => `
+              <span style="top:${tick.y.toFixed(2)}px">${formatDashboardCurrency(tick.value)}</span>
+            `
+          )
+          .join("")}
+      </div>
+      <svg class="projection-chart-svg" viewBox="0 0 ${chartWidth} ${chartHeight}" preserveAspectRatio="none" aria-label="Grafico de evolucao do saldo no periodo">
+        <defs>
+          <linearGradient id="projection-line-gradient" x1="0%" y1="0%" x2="100%" y2="0%">
+            <stop offset="0%" stop-color="#5be49d"></stop>
+            <stop offset="48%" stop-color="#ffc857"></stop>
+            <stop offset="100%" stop-color="#ff5d6c"></stop>
+          </linearGradient>
+          <linearGradient id="projection-area-gradient" x1="0%" y1="0%" x2="0%" y2="100%">
+            <stop offset="0%" stop-color="#67d8ff"></stop>
+            <stop offset="100%" stop-color="rgba(103, 216, 255, 0)"></stop>
+          </linearGradient>
+        </defs>
+        ${yTicks
+          .map(
+            (tick) => `
+              <line class="projection-grid-line" x1="${padding.left}" y1="${tick.y.toFixed(2)}" x2="${chartWidth - padding.right}" y2="${tick.y.toFixed(2)}"></line>
+            `
+          )
+          .join("")}
+        <line class="projection-zero-line" x1="${padding.left}" y1="${zeroY.toFixed(2)}" x2="${chartWidth - padding.right}" y2="${zeroY.toFixed(2)}"></line>
+        <path class="projection-area-path" d="${areaData}"></path>
+        <path class="projection-line-path" d="${pathData}"></path>
+        ${points
+          .map(
+            (point) => `
+              <circle class="projection-point projection-point-${point.tone}" cx="${point.x.toFixed(2)}" cy="${point.y.toFixed(2)}" r="4.4"></circle>
+            `
+          )
+          .join("")}
+      </svg>
+      <div class="projection-chart-axis projection-chart-axis-x">
+        ${points
+          .map(
+            (point) => `
+              <span style="left:${((point.x - padding.left) / Math.max(innerWidth, 1)) * 100}%">${point.label}</span>
+            `
+          )
+          .join("")}
+      </div>
+      <div class="projection-chart-callout projection-chart-callout-${lastPoint.tone}">
+        <span>${lastPoint.label}</span>
+        <strong>Saldo projetado</strong>
+        <em>${formatDashboardCurrency(lastPoint.balance)}</em>
+      </div>
+    </div>
+  `;
 }
 
 function atualizarGraficoDashboard(summary, projection, dailySeries) {
@@ -798,11 +924,15 @@ function renderRecentTransactions(selectedSummary) {
     .map(
       (entry) => `
         <article class="recent-transaction-item">
+          <div class="recent-transaction-icon recent-transaction-icon-${getCategoryGlyph(entry.categoria)}"></div>
           <div class="recent-transaction-main">
             <strong>${entry.descricao || "Lancamento"}</strong>
             <span>${entry.categoria || "Sem categoria"} | ${extractDashboardTimeLabel(entry.data) || formatDashboardDateLong(entry.data)}</span>
           </div>
-          <strong class="recent-transaction-value">${formatDashboardCurrency(entry.valor)}</strong>
+          <div class="recent-transaction-side">
+            <strong class="recent-transaction-value">${formatDashboardCurrency(entry.valor)}</strong>
+            <span>${extractDashboardTimeLabel(entry.data) || "Hoje"}</span>
+          </div>
         </article>
       `
     )
@@ -871,12 +1001,19 @@ function renderExpenseCategories(summary) {
     .slice(0, 3)
     .map((item) => {
       const width = Math.max((item.total / referenceTotal) * 100, 10);
+      const glyph = getCategoryGlyph(item.categoria);
 
       return `
         <div class="category-bar-row">
-          <div class="category-bar-meta">
-            <strong>${item.categoria}</strong>
-            <span>${formatDashboardCurrency(item.total)}</span>
+          <div class="category-bar-leading">
+            <div class="category-bar-icon category-bar-icon-${glyph}"></div>
+            <div class="category-bar-meta">
+              <strong>${item.categoria}</strong>
+              <span>${formatDashboardCurrency(item.total)}</span>
+            </div>
+          </div>
+          <div class="category-bar-side">
+            <strong>${formatPercent(item.percentual)}%</strong>
           </div>
           <div class="category-bar-track">
             <div class="category-bar-fill" style="width: ${width}%"></div>
