@@ -22,9 +22,9 @@
       <section class="dashboard-layout app-layout dashboard-layout-premium">
         <aside id="app-sidebar" class="dashboard-sidebar dashboard-sidebar-hidden" aria-hidden="true"></aside>
 
-        <section class="dashboard-main app-main dashboard-main-premium">
-          <header class="dashboard-premium-header">
-            <div class="dashboard-brand">
+        <section class="dashboard-main app-main dashboard-main-premium dashboard-grid-shell">
+          <header class="dashboard-premium-header nav-bar">
+            <div class="dashboard-brand nav-left">
               <div class="dashboard-brand-mark">MF</div>
               <div class="dashboard-brand-copy">
                 <span class="dashboard-brand-kicker">Assistente financeiro diario</span>
@@ -47,7 +47,7 @@
               </button>
             </nav>
 
-            <div class="dashboard-header-meta">
+            <div class="dashboard-header-meta nav-right">
               <article class="dashboard-payment-spotlight">
                 <span class="dashboard-payment-label">Proximo pagamento</span>
                 <strong id="next-payment-chip">Pagamento pendente</strong>
@@ -71,11 +71,11 @@
 
           <section class="dashboard-tab-panels">
             <section class="dashboard-tab-panel is-active" data-dashboard-panel="overview" id="visao-geral">
-              <div class="dashboard-overview-shell">
-                <section class="dashboard-metrics-row" id="desempenho">
+              <div class="dashboard-overview-shell dashboard-grid">
+                <section class="dashboard-metrics-row metrics-row" id="desempenho">
                   <article class="dashboard-card dashboard-metric-card dashboard-metric-balance">
                     <div class="metric-card-top">
-                      <div>
+                      <div class="metric-info">
                         <div class="metric-label">Saldo disponivel</div>
                         <div class="metric-value" id="card-saldo-atual">R$ 0,00</div>
                         <div class="metric-subtitle" id="card-saldo-atual-subtitle">
@@ -89,7 +89,7 @@
 
                   <article class="dashboard-card dashboard-card-highlight dashboard-metric-card dashboard-metric-limit" id="card-limite-diario-panel">
                     <div class="metric-card-top">
-                      <div>
+                      <div class="metric-info">
                         <div class="metric-label">
                           Limite diario
                           <span class="info-icon" title="Quanto ainda cabe por dia ate o proximo pagamento.">i</span>
@@ -115,7 +115,7 @@
 
                   <article class="dashboard-card dashboard-metric-card dashboard-metric-days">
                     <div class="metric-card-top">
-                      <div>
+                      <div class="metric-info">
                         <div class="metric-label">Dias restantes</div>
                         <div class="metric-value" id="card-dias-restantes">0 dia(s)</div>
                         <div class="metric-subtitle" id="card-dias-restantes-subtitle">
@@ -129,7 +129,7 @@
 
                   <article class="dashboard-card dashboard-metric-card dashboard-metric-spending" id="card-gasto-dia-panel">
                     <div class="metric-card-top">
-                      <div>
+                      <div class="metric-info">
                         <div class="metric-label">
                           Gasto de hoje
                           <span class="info-icon" title="Soma das despesas registradas na data atual.">i</span>
@@ -145,8 +145,8 @@
                   </article>
                 </section>
 
-                <section class="dashboard-hero-row">
-                  <article class="dashboard-hero-card dashboard-hero-card-alert" id="overview-cycle-alert-card">
+                <section class="dashboard-hero-row alert-row">
+                  <article class="dashboard-hero-card dashboard-hero-card-alert alert-card" id="overview-cycle-alert-card">
                     <div class="dashboard-card-eyebrow">
                       <span class="status-chip" id="cycle-status-chip">Ciclo atual</span>
                     </div>
@@ -158,7 +158,7 @@
                     </p>
                   </article>
 
-                  <article class="dashboard-hero-card dashboard-hero-card-insight" id="overview-daily-insight-card">
+                  <article class="dashboard-hero-card dashboard-hero-card-insight insight-card" id="overview-daily-insight-card">
                     <div class="dashboard-card-eyebrow">
                       <span class="card-label">Insight do dia</span>
                       <span class="status-chip" id="overview-insight-chip">Leitura inicial</span>
@@ -175,20 +175,20 @@
                   </article>
                 </section>
 
-                <section class="dashboard-main-row">
-                  <article class="dashboard-surface dashboard-balance-surface">
+                <section class="dashboard-main-row chart-row">
+                  <article class="dashboard-surface dashboard-balance-surface chart-card">
                     <div class="card-header">
                       <div>
                         <div class="card-label">Evolucao do saldo no periodo</div>
-                        <h3>Evolucao do saldo no ciclo</h3>
-                        <p class="chart-caption">
+                        <h3 class="section-title">Evolucao do saldo no ciclo</h3>
+                        <p class="chart-caption section-subtitle">
                           Visao do saldo ate a proxima data de pagamento.
                         </p>
                       </div>
-                      <div class="status-chip" id="projection-chip">Sem dados</div>
+                      <div class="status-chip btn-secondary btn-sm" id="projection-chip">Sem dados</div>
                     </div>
 
-                    <div class="chart-shell dashboard-primary-chart-shell">
+                    <div class="chart-shell dashboard-primary-chart-shell chart-area">
                       <div class="chart-bars" id="chart-bars"></div>
                     </div>
 
@@ -208,16 +208,16 @@
                     </div>
                   </article>
 
-                  <article class="dashboard-surface dashboard-period-surface" id="gastos-inteligentes">
+                  <article class="dashboard-surface dashboard-period-surface summary-card" id="gastos-inteligentes">
                     <div class="card-header">
                       <div>
                         <div class="card-label">Resumo do periodo</div>
-                        <h3>Resumo do periodo</h3>
-                        <p class="table-caption">
+                        <h3 class="section-title">Resumo do periodo</h3>
+                        <p class="table-caption section-subtitle">
                           Gastos, media diaria e categoria dominante.
                         </p>
                       </div>
-                      <div class="status-chip" id="expense-period-chip">Semana</div>
+                      <div class="status-chip btn-secondary btn-sm" id="expense-period-chip">Semana</div>
                     </div>
 
                     <div class="period-filter-row dashboard-period-tabs" role="tablist" aria-label="Filtro de periodo do dashboard">
@@ -247,7 +247,7 @@
                 </section>
 
                 <section class="dashboard-budget-row">
-                  <article class="dashboard-surface dashboard-budget-surface">
+                  <article class="dashboard-surface dashboard-budget-surface budget-bar-wrap">
                     <div class="dashboard-budget-progress">
                       <div class="dashboard-budget-progress-top">
                         <span>Percentual do orcamento utilizado</span>
@@ -260,14 +260,14 @@
                   </article>
                 </section>
 
-                <section class="dashboard-bottom-row">
-                  <article class="dashboard-surface dashboard-list-surface">
+                <section class="dashboard-bottom-row bottom-row">
+                  <article class="dashboard-surface dashboard-list-surface bottom-card">
                     <div class="card-header">
                       <div>
-                        <div class="card-label">Categorias que mais gastam</div>
-                        <h3>Top 3 do periodo em foco</h3>
+                        <h3 class="section-title">Categorias que mais gastam</h3>
+                        <p class="section-subtitle">Neste periodo</p>
                       </div>
-                      <button type="button" class="dashboard-inline-link" data-dashboard-tab-link="details">
+                      <button type="button" class="dashboard-inline-link btn-secondary btn-sm" data-dashboard-tab-link="details">
                         Ver todas
                       </button>
                     </div>
@@ -276,13 +276,13 @@
                     <div class="category-bar-list compact-category-list" id="expense-category-list"></div>
                   </article>
 
-                  <article class="dashboard-surface dashboard-list-surface">
+                  <article class="dashboard-surface dashboard-list-surface bottom-card">
                     <div class="card-header">
                       <div>
-                        <div class="card-label">Ultimos lancamentos</div>
-                        <h3>Movimentacoes recentes do periodo</h3>
+                        <h3 class="section-title">Ultimos lancamentos</h3>
+                        <p class="section-subtitle">Hoje</p>
                       </div>
-                      <button type="button" class="dashboard-inline-link" data-dashboard-tab-link="history">
+                      <button type="button" class="dashboard-inline-link btn-secondary btn-sm" data-dashboard-tab-link="history">
                         Ver historico
                       </button>
                     </div>
@@ -295,11 +295,11 @@
                     </div>
                   </article>
 
-                  <article class="dashboard-surface dashboard-list-surface">
+                  <article class="dashboard-surface dashboard-list-surface bottom-card">
                     <div class="card-header">
                       <div>
-                        <div class="card-label">Prioridades do ciclo</div>
-                        <h3>O que merece atencao agora</h3>
+                        <h3 class="section-title">Prioridades do ciclo</h3>
+                        <p class="section-subtitle">O que merece atencao agora</p>
                       </div>
                       <div class="status-chip" id="alert-chip">0 prioridade(s)</div>
                     </div>
@@ -308,7 +308,7 @@
                   </article>
                 </section>
 
-                <footer class="dashboard-premium-footer">
+                <footer class="dashboard-premium-footer bottom-bar">
                   <div class="dashboard-footer-tip">
                     <span class="card-label">Dica rapida</span>
                     <strong id="overview-quick-tip-title">Sua principal orientacao aparece aqui</strong>

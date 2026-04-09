@@ -6182,12 +6182,12 @@ p {
 
   [data-page="dashboard"] .dashboard-overview-shell {
     grid-template-rows:
-      minmax(96px, 0.86fr)
-      minmax(62px, 0.52fr)
-      minmax(188px, 1.5fr)
-      minmax(34px, 0.2fr)
-      minmax(132px, 0.84fr)
-      minmax(36px, 0.2fr);
+      minmax(88px, 0.8fr)
+      minmax(54px, 0.44fr)
+      minmax(170px, 1.34fr)
+      minmax(28px, 0.16fr)
+      minmax(116px, 0.72fr)
+      minmax(32px, 0.16fr);
     gap: 8px;
   }
 
@@ -6199,36 +6199,36 @@ p {
   }
 
   [data-page="dashboard"] .dashboard-metric-card .metric-card-top {
-    padding: 10px 12px 4px;
+    padding: 8px 10px 3px;
   }
 
   [data-page="dashboard"] .dashboard-metric-card .metric-value {
-    font-size: clamp(1.36rem, 1.45vw, 1.78rem);
+    font-size: clamp(1.22rem, 1.28vw, 1.58rem);
   }
 
   [data-page="dashboard"] .dashboard-metric-card .metric-subtitle {
-    margin-top: 4px;
-    font-size: 0.62rem;
-    line-height: 1.18;
+    margin-top: 3px;
+    font-size: 0.58rem;
+    line-height: 1.1;
   }
 
   [data-page="dashboard"] .dashboard-metric-card .metric-icon {
-    width: 32px;
-    height: 32px;
-    font-size: 0.7rem;
+    width: 28px;
+    height: 28px;
+    font-size: 0.62rem;
   }
 
   [data-page="dashboard"] .dashboard-metric-card .daily-limit-progress,
   [data-page="dashboard"] .dashboard-metric-card .metric-trend {
-    margin: 0 12px 6px;
+    margin: 0 10px 5px;
   }
 
   [data-page="dashboard"] .dashboard-metric-card .daily-limit-progress {
-    padding: 6px 8px 7px;
+    padding: 5px 7px 6px;
   }
 
   [data-page="dashboard"] .dashboard-metric-card .metric-trend {
-    padding: 3px 7px;
+    padding: 2px 6px;
   }
 
   [data-page="dashboard"] .metric-trend-badge,
@@ -6239,7 +6239,7 @@ p {
   }
 
   [data-page="dashboard"] .dashboard-hero-card {
-    padding: 8px 12px;
+    padding: 7px 10px;
   }
 
   [data-page="dashboard"] .dashboard-hero-card-alert,
@@ -6255,43 +6255,43 @@ p {
   }
 
   [data-page="dashboard"] .dashboard-hero-card strong {
-    font-size: 0.74rem;
-    line-height: 1.12;
+    font-size: 0.68rem;
+    line-height: 1.06;
   }
 
   [data-page="dashboard"] .dashboard-hero-card p {
-    margin-top: 3px;
-    font-size: 0.63rem;
-    line-height: 1.14;
+    margin-top: 2px;
+    font-size: 0.56rem;
+    line-height: 1.08;
   }
 
   [data-page="dashboard"] .dashboard-inline-link-button {
-    min-height: 28px;
-    padding: 0 10px;
-    font-size: 0.66rem;
+    min-height: 24px;
+    padding: 0 8px;
+    font-size: 0.6rem;
   }
 
   [data-page="dashboard"] .dashboard-main-row {
-    grid-template-columns: minmax(0, 1.8fr) minmax(300px, 0.9fr);
+    grid-template-columns: minmax(0, 1.85fr) minmax(280px, 0.82fr);
   }
 
   [data-page="dashboard"] .dashboard-surface {
-    padding: 10px 12px;
+    padding: 8px 10px;
   }
 
   [data-page="dashboard"] .card-header {
-    margin-bottom: 6px;
+    margin-bottom: 4px;
   }
 
   [data-page="dashboard"] .dashboard-surface h3 {
-    font-size: 0.8rem;
+    font-size: 0.72rem;
   }
 
   [data-page="dashboard"] .chart-caption,
   [data-page="dashboard"] .table-caption {
-    margin-top: 3px;
-    font-size: 0.62rem;
-    line-height: 1.14;
+    margin-top: 2px;
+    font-size: 0.56rem;
+    line-height: 1.08;
   }
 
   [data-page="dashboard"] .dashboard-primary-chart-shell {
@@ -6299,64 +6299,51 @@ p {
   }
 
   [data-page="dashboard"] .projection-chart {
-    min-height: 162px;
-    padding: 6px 92px 18px 36px;
+    min-height: 144px;
+    padding: 4px 78px 16px 30px;
   }
 
   [data-page="dashboard"] .projection-chart-svg {
-    min-height: 128px;
+    min-height: 112px;
   }
 
   [data-page="dashboard"] .projection-chart-axis-y {
-    width: 28px;
-    top: 8px;
+    width: 24px;
+    top: 6px;
   }
 
   [data-page="dashboard"] .projection-chart-axis-y span,
   [data-page="dashboard"] .projection-chart-axis-x span {
-    font-size: 0.55rem;
+    font-size: 0.5rem;
   }
 
   [data-page="dashboard"] .projection-chart-axis-x {
-    left: 38px;
-    right: 82px;
+    left: 32px;
+    right: 68px;
   }
 
   [data-page="dashboard"] .projection-chart-callout {
-    width: 82px;
-    min-width: 82px;
-    padding: 6px 7px;
+    width: 72px;
+    min-width: 72px;
+    padding: 5px 6px;
   }
 
   [data-page="dashboard"] .projection-chart-callout strong {
-    font-size: 0.62rem;
+    font-size: 0.56rem;
   }
 
   [data-page="dashboard"] .projection-chart-callout em {
-    font-size: 0.68rem;
+    font-size: 0.62rem;
   }
 
   [data-page="dashboard"] .dashboard-balance-mini-stats {
-    gap: 6px;
-    margin-top: 6px;
-  }
-
-  [data-page="dashboard"] .dashboard-balance-mini-stats .mini-stat {
-    padding: 6px 8px;
-  }
-
-  [data-page="dashboard"] .dashboard-balance-mini-stats .mini-stat strong {
-    font-size: 0.7rem;
-  }
-
-  [data-page="dashboard"] .dashboard-balance-mini-stats .mini-stat span {
-    font-size: 0.58rem;
+    display: none;
   }
 
   [data-page="dashboard"] .period-filter-button {
-    min-height: 24px;
-    padding: 0 9px;
-    font-size: 0.66rem;
+    min-height: 22px;
+    padding: 0 8px;
+    font-size: 0.6rem;
   }
 
   [data-page="dashboard"] .dashboard-period-grid {
@@ -6364,20 +6351,20 @@ p {
   }
 
   [data-page="dashboard"] .dashboard-period-stat {
-    padding: 7px 8px;
+    padding: 6px 7px;
   }
 
   [data-page="dashboard"] .dashboard-period-stat span,
   [data-page="dashboard"] .dashboard-period-stat small {
-    font-size: 0.6rem;
+    font-size: 0.54rem;
   }
 
   [data-page="dashboard"] .dashboard-period-stat strong {
-    font-size: 0.82rem;
+    font-size: 0.72rem;
   }
 
   [data-page="dashboard"] .dashboard-budget-surface {
-    padding: 6px 10px;
+    padding: 5px 8px;
   }
 
   [data-page="dashboard"] .dashboard-budget-progress-top {
@@ -6386,7 +6373,7 @@ p {
 
   [data-page="dashboard"] .dashboard-budget-progress-top span,
   [data-page="dashboard"] .dashboard-budget-progress-top strong {
-    font-size: 0.62rem;
+    font-size: 0.56rem;
   }
 
   [data-page="dashboard"] .dashboard-budget-progress-track {
@@ -6394,7 +6381,7 @@ p {
   }
 
   [data-page="dashboard"] .dashboard-list-surface {
-    padding: 10px 12px;
+    padding: 8px 10px;
   }
 
   [data-page="dashboard"] .dashboard-list-surface .card-header {
@@ -6402,7 +6389,7 @@ p {
   }
 
   [data-page="dashboard"] .dashboard-list-surface h3 {
-    font-size: 0.76rem;
+    font-size: 0.68rem;
   }
 
   [data-page="dashboard"] .dashboard-inline-chip {
@@ -6410,15 +6397,15 @@ p {
   }
 
   [data-page="dashboard"] .category-bar-row {
-    gap: 4px 7px;
-    padding: 4px 0;
+    gap: 3px 6px;
+    padding: 3px 0;
   }
 
   [data-page="dashboard"] .category-bar-icon,
   [data-page="dashboard"] .recent-transaction-icon,
   [data-page="dashboard"] .trend-dot {
-    width: 26px;
-    height: 26px;
+    width: 22px;
+    height: 22px;
   }
 
   [data-page="dashboard"] .category-bar-meta strong,
@@ -6426,30 +6413,36 @@ p {
   [data-page="dashboard"] .recent-transaction-main strong,
   [data-page="dashboard"] .recent-transaction-value,
   [data-page="dashboard"] .trend-list strong {
-    font-size: 0.68rem;
+    font-size: 0.62rem;
   }
 
   [data-page="dashboard"] .category-bar-meta span,
   [data-page="dashboard"] .recent-transaction-main span,
   [data-page="dashboard"] .recent-transaction-side span,
   [data-page="dashboard"] .list-text small {
-    font-size: 0.58rem;
+    font-size: 0.52rem;
   }
 
   [data-page="dashboard"] .category-bar-track {
-    margin-left: 33px;
+    margin-left: 28px;
     height: 4px;
   }
 
   [data-page="dashboard"] .recent-transaction-item {
-    grid-template-columns: 26px minmax(0, 1fr) auto;
-    gap: 6px;
-    padding: 4px 0;
+    grid-template-columns: 22px minmax(0, 1fr) auto;
+    gap: 5px;
+    padding: 3px 0;
   }
 
   [data-page="dashboard"] .trend-list li {
-    padding: 6px 7px;
-    gap: 7px;
+    padding: 5px 6px;
+    gap: 6px;
+  }
+
+  [data-page="dashboard"] .compact-category-list > :nth-child(n + 4),
+  [data-page="dashboard"] .recent-transactions-list > :nth-child(n + 4),
+  [data-page="dashboard"] .compact-trend-list > :nth-child(n + 4) {
+    display: none;
   }
 
   [data-page="dashboard"] .dashboard-premium-footer {
@@ -6458,12 +6451,427 @@ p {
 
   [data-page="dashboard"] .dashboard-footer-tip strong,
   [data-page="dashboard"] .dashboard-footer-actions .primary-button {
-    font-size: 0.66rem;
+    font-size: 0.6rem;
   }
 
   [data-page="dashboard"] .dashboard-footer-actions .primary-button {
+    min-height: 24px;
+    padding: 0 8px;
+  }
+}
+
+/* Downloaded dashboard fidelity refinement */
+@media (min-width: 1180px) {
+  [data-page="dashboard"] .section-title {
+    font-size: 0.8rem;
+    font-weight: 600;
+    color: #e2e8f0;
+    line-height: 1.2;
+  }
+
+  [data-page="dashboard"] .section-subtitle {
+    font-size: 0.7rem;
+    color: #64748b;
+    line-height: 1.2;
+  }
+
+  [data-page="dashboard"] .metric-info {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    min-width: 0;
+  }
+
+  [data-page="dashboard"] .daily-limit-progress-top {
+    margin-bottom: 4px;
+  }
+
+  [data-page="dashboard"] .daily-limit-progress-top span,
+  [data-page="dashboard"] .daily-limit-progress-top strong {
+    font-size: 0.64rem;
+    color: #64748b;
+  }
+
+  [data-page="dashboard"] .dashboard-hero-card-insight .dashboard-card-eyebrow {
+    width: 100%;
+    margin-bottom: 0;
+  }
+
+  [data-page="dashboard"] .dashboard-hero-card-insight strong,
+  [data-page="dashboard"] .dashboard-hero-card-insight p {
+    max-width: 100%;
+  }
+
+  [data-page="dashboard"] .btn-secondary.btn-sm,
+  [data-page="dashboard"] .dashboard-inline-link.btn-secondary.btn-sm {
+    background: #1e293b;
+    color: #e2e8f0;
+    border: 0;
+    font-size: 0.7rem;
+    font-weight: 500;
+    padding: 5px 10px;
+    border-radius: 8px;
     min-height: 28px;
-    padding: 0 10px;
+  }
+
+  [data-page="dashboard"] .dashboard-period-stat {
+    padding: 0.5rem;
+    background: #0f172a;
+    border: 1px solid rgba(30, 58, 95, 0.6);
+    border-radius: 0.6rem;
+  }
+
+  [data-page="dashboard"] .category-bar-row,
+  [data-page="dashboard"] .recent-transaction-item,
+  [data-page="dashboard"] .trend-list li {
+    border-radius: 0;
+  }
+}
+
+/* Downloaded dashboard layout adaptation */
+@media (min-width: 1180px) {
+  [data-page="dashboard"] {
+    background: #0b1120;
+    color: #e2e8f0;
+  }
+
+  [data-page="dashboard"] .dashboard-main-premium.dashboard-grid-shell {
+    background: #0b1120;
+    grid-template-rows: 52px minmax(0, 1fr);
+  }
+
+  [data-page="dashboard"] .dashboard-premium-header.nav-bar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    height: 52px;
+    min-height: 52px;
+    padding: 0 20px;
+    background: #111827;
+    border-bottom: 1px solid #1e3a5f;
+  }
+
+  [data-page="dashboard"] .nav-left {
+    display: flex;
+    align-items: center;
+    gap: 24px;
+    min-width: 0;
+  }
+
+  [data-page="dashboard"] .nav-right {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    flex-shrink: 0;
+  }
+
+  [data-page="dashboard"] .dashboard-brand-mark {
+    width: auto;
+    height: auto;
+    border-radius: 0;
+    background: transparent;
+    color: #3b82f6;
+    font-size: 1.05rem;
+    font-weight: 800;
+  }
+
+  [data-page="dashboard"] .dashboard-brand-copy h1 {
+    font-size: 1rem;
+    font-weight: 700;
+    letter-spacing: -0.02em;
+    color: #e2e8f0;
+  }
+
+  [data-page="dashboard"] .dashboard-top-tabs {
+    display: flex;
+    align-items: center;
+    gap: 2px;
+    padding: 3px;
+    background: #1e293b;
+    border-radius: 10px;
+    border: 0;
+  }
+
+  [data-page="dashboard"] .dashboard-tab-button {
+    min-height: 30px;
+    padding: 0 12px;
+    border-radius: 8px;
+    background: transparent;
+    color: #64748b;
+    font-size: 0.75rem;
+    font-weight: 500;
+  }
+
+  [data-page="dashboard"] .dashboard-tab-button.is-active {
+    background: #111827;
+    color: #e2e8f0;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
+  }
+
+  [data-page="dashboard"] .dashboard-payment-spotlight {
+    min-width: auto;
+    max-width: none;
+    min-height: auto;
+    padding: 0;
+    border: 0;
+    background: transparent;
+  }
+
+  [data-page="dashboard"] .dashboard-payment-label {
+    font-size: 0.75rem;
+    letter-spacing: 0;
+    text-transform: none;
+    color: #e2e8f0;
+    margin-bottom: 0;
+  }
+
+  [data-page="dashboard"] .dashboard-payment-spotlight strong,
+  [data-page="dashboard"] .dashboard-payment-spotlight small {
+    font-size: 0.75rem;
+    line-height: 1.2;
+  }
+
+  [data-page="dashboard"] .dashboard-payment-spotlight small {
+    color: #64748b;
+    margin-top: 0;
+  }
+
+  [data-page="dashboard"] .user-panel {
+    min-height: 28px;
+    padding: 0;
+    background: transparent;
+    border: 0;
+    gap: 8px;
+  }
+
+  [data-page="dashboard"] .user-avatar {
+    width: 28px;
+    height: 28px;
+    border-radius: 50%;
+  }
+
+  [data-page="dashboard"] .dashboard-logout-button {
+    min-height: 30px;
+    padding: 0 12px;
+    border-radius: 8px;
+    background: #1e293b;
+    border-color: #1e3a5f;
+  }
+
+  [data-page="dashboard"] .dashboard-tab-panels {
+    padding: 0.75rem 1.25rem;
+  }
+
+  [data-page="dashboard"] .dashboard-overview-shell.dashboard-grid {
+    display: grid;
+    grid-template-rows: auto auto minmax(0, 1fr) auto minmax(0, 0.88fr) auto;
+    gap: 0.5rem;
+  }
+
+  [data-page="dashboard"] .metrics-row,
+  [data-page="dashboard"] .alert-row,
+  [data-page="dashboard"] .chart-row,
+  [data-page="dashboard"] .bottom-row {
+    gap: 0.5rem;
+  }
+
+  [data-page="dashboard"] .metrics-row {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
+
+  [data-page="dashboard"] .alert-row {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  [data-page="dashboard"] .chart-row {
+    grid-template-columns: minmax(0, 3fr) minmax(420px, 2fr);
+    min-height: 0;
+  }
+
+  [data-page="dashboard"] .bottom-row {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    min-height: 0;
+  }
+
+  [data-page="dashboard"] .dashboard-card,
+  [data-page="dashboard"] .card,
+  [data-page="dashboard"] .dashboard-surface,
+  [data-page="dashboard"] .dashboard-hero-card,
+  [data-page="dashboard"] .dashboard-metric-card,
+  [data-page="dashboard"] .bottom-bar {
+    background: #111827;
+    border: 1px solid #1e3a5f;
+    border-radius: 0.75rem;
+    box-shadow: none;
+  }
+
+  [data-page="dashboard"] .metric-card {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    padding: 0.75rem;
+  }
+
+  [data-page="dashboard"] .metric-card-top {
+    width: 100%;
+  }
+
+  [data-page="dashboard"] .metric-label {
+    font-size: 0.75rem;
+    color: #64748b;
+    text-transform: none;
+    letter-spacing: 0;
+  }
+
+  [data-page="dashboard"] .metric-value {
+    font-size: 1.25rem;
+    font-weight: 700;
+    letter-spacing: -0.02em;
+  }
+
+  [data-page="dashboard"] .metric-subtitle {
+    font-size: 10px;
+    color: #64748b;
+    line-height: 1.25;
+  }
+
+  [data-page="dashboard"] .metric-icon {
+    width: 32px;
+    height: 32px;
+    border-radius: 8px;
+    background: #1e293b;
+  }
+
+  [data-page="dashboard"] .metric-trend {
+    margin-top: 2px;
+    background: transparent;
+    border: 0;
+    padding: 0;
+    min-height: 0;
+  }
+
+  [data-page="dashboard"] .metric-trend-badge {
+    font-size: 0.7rem;
+    font-weight: 500;
+    padding: 2px 8px;
+    border-radius: 999px;
+  }
+
+  [data-page="dashboard"] .trend-up .metric-trend-badge {
+    background: rgba(34, 197, 94, 0.15);
+    color: #22c55e;
+  }
+
+  [data-page="dashboard"] .trend-warn .metric-trend-badge {
+    background: rgba(59, 130, 246, 0.15);
+    color: #3b82f6;
+  }
+
+  [data-page="dashboard"] .trend-danger .metric-trend-badge {
+    background: rgba(239, 68, 68, 0.15);
+    color: #ef4444;
+  }
+
+  [data-page="dashboard"] .metric-trend-text {
+    font-size: 10px;
+    color: #64748b;
+  }
+
+  [data-page="dashboard"] .daily-limit-progress {
+    margin-top: 6px;
+    padding: 0;
+    background: transparent;
+    border: 0;
+  }
+
+  [data-page="dashboard"] .daily-limit-progress-track {
+    height: 6px;
+    background: #1e293b;
+  }
+
+  [data-page="dashboard"] .alert-card,
+  [data-page="dashboard"] .insight-card {
+    padding: 0.75rem;
+  }
+
+  [data-page="dashboard"] .dashboard-hero-card-alert {
+    border-color: rgba(245, 158, 11, 0.3);
+    background: rgba(245, 158, 11, 0.03);
+  }
+
+  [data-page="dashboard"] .dashboard-hero-card-insight {
+    justify-content: space-between;
+  }
+
+  [data-page="dashboard"] .chart-card,
+  [data-page="dashboard"] .summary-card,
+  [data-page="dashboard"] .bottom-card {
+    padding: 0.75rem;
+    min-height: 0;
+  }
+
+  [data-page="dashboard"] .chart-area {
+    position: relative;
+    flex: 1;
+    min-height: 0;
+  }
+
+  [data-page="dashboard"] .dashboard-primary-chart-shell,
+  [data-page="dashboard"] #chart-bars {
+    width: 100%;
+    height: 100%;
+    min-height: 0;
+  }
+
+  [data-page="dashboard"] .summary-grid,
+  [data-page="dashboard"] .dashboard-period-grid {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 0.5rem;
+  }
+
+  [data-page="dashboard"] .dashboard-period-stat {
+    padding: 0;
+    background: transparent;
+    border: 0;
+  }
+
+  [data-page="dashboard"] .dashboard-budget-surface {
+    padding: 0.5rem 0.75rem;
+  }
+
+  [data-page="dashboard"] .dashboard-budget-progress {
+    padding: 0;
+    border: 0;
+    background: transparent;
+    margin-top: 0;
+  }
+
+  [data-page="dashboard"] .dashboard-budget-progress-track {
+    height: 6px;
+    background: #1e293b;
+  }
+
+  [data-page="dashboard"] .dashboard-list-surface {
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+  }
+
+  [data-page="dashboard"] .compact-category-list,
+  [data-page="dashboard"] .recent-transactions-list,
+  [data-page="dashboard"] .compact-trend-list {
+    overflow-y: auto;
+    min-height: 0;
+    max-height: none;
+  }
+
+  [data-page="dashboard"] .dashboard-premium-footer.bottom-bar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0.5rem 0.75rem;
   }
 }
 
