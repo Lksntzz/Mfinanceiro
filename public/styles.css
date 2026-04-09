@@ -7504,3 +7504,173 @@ body[data-page="dashboard"] .dashboard-footer-actions .primary-button {
     grid-template-columns: 1fr;
   }
 }
+
+body[data-page="dashboard"] .dashboard-secondary-grid,
+body[data-page="dashboard"] .dashboard-history-grid {
+  display: grid;
+  gap: 10px;
+  min-height: 0;
+  height: 100%;
+  overflow: hidden;
+}
+
+body[data-page="dashboard"] .dashboard-secondary-grid {
+  grid-template-columns: minmax(0, 1.08fr) minmax(0, 1fr);
+  grid-template-rows: minmax(0, 0.78fr) minmax(0, 1fr);
+}
+
+body[data-page="dashboard"] .dashboard-secondary-grid .cycle-breakdown-card {
+  grid-column: 1 / -1;
+}
+
+body[data-page="dashboard"] .dashboard-history-grid {
+  grid-template-columns: 1fr;
+}
+
+body[data-page="dashboard"] .dashboard-secondary-surface,
+body[data-page="dashboard"] .drawer-card {
+  min-height: 0;
+  padding: 14px 16px;
+  border-radius: 14px;
+  overflow: hidden;
+  background:
+    linear-gradient(180deg, rgba(16, 21, 35, 0.96) 0%, rgba(11, 15, 25, 0.98) 100%);
+  border: 1px solid rgba(120, 133, 173, 0.14);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.02);
+}
+
+body[data-page="dashboard"] .dashboard-secondary-surface .card-header,
+body[data-page="dashboard"] .drawer-card .card-header {
+  margin-bottom: 10px;
+}
+
+body[data-page="dashboard"] .dashboard-secondary-surface h3,
+body[data-page="dashboard"] .drawer-card h3 {
+  margin: 0;
+  font-size: 1rem;
+  line-height: 1.2;
+  color: #f2f5fb;
+}
+
+body[data-page="dashboard"] .dashboard-secondary-surface .card-label,
+body[data-page="dashboard"] .drawer-card .card-label,
+body[data-page="dashboard"] .dashboard-secondary-surface .chart-caption,
+body[data-page="dashboard"] .dashboard-secondary-surface .table-caption,
+body[data-page="dashboard"] .drawer-card .table-caption {
+  font-size: 0.68rem;
+}
+
+body[data-page="dashboard"] .analytics-summary-grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 8px;
+}
+
+body[data-page="dashboard"] .analytics-card {
+  min-height: 86px;
+  padding: 12px;
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(120, 133, 173, 0.1);
+}
+
+body[data-page="dashboard"] .analytics-card span,
+body[data-page="dashboard"] .analytics-card small {
+  font-size: 0.68rem;
+  color: #91a0bd;
+}
+
+body[data-page="dashboard"] .analytics-card strong {
+  display: block;
+  margin-top: 6px;
+  font-size: 1rem;
+  color: #f2f5fb;
+}
+
+body[data-page="dashboard"] .chart-shell-secondary {
+  min-height: 0;
+  height: 100%;
+  border-radius: 12px;
+  background:
+    linear-gradient(180deg, rgba(17, 27, 45, 0.9) 0%, rgba(13, 19, 32, 0.96) 100%);
+  border: 1px solid rgba(120, 133, 173, 0.12);
+  padding: 12px;
+  overflow: visible;
+}
+
+body[data-page="dashboard"] .dashboard-feedback-surface {
+  background:
+    linear-gradient(180deg, rgba(18, 27, 49, 0.96) 0%, rgba(11, 15, 26, 0.98) 100%);
+}
+
+body[data-page="dashboard"] .insights-card {
+  display: grid;
+  grid-template-rows: auto minmax(0, 1fr);
+}
+
+body[data-page="dashboard"] .insights-grid-expanded,
+body[data-page="dashboard"] .dashboard-history-list,
+body[data-page="dashboard"] .cycle-breakdown-card {
+  max-height: none;
+  height: 100%;
+  overflow: auto;
+}
+
+body[data-page="dashboard"] .finance-table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+body[data-page="dashboard"] .finance-table th,
+body[data-page="dashboard"] .finance-table td {
+  padding: 10px 12px;
+  font-size: 0.72rem;
+}
+
+body[data-page="dashboard"] .finance-table thead th {
+  color: #8ea0bf;
+  text-align: left;
+  border-bottom: 1px solid rgba(120, 133, 173, 0.14);
+}
+
+body[data-page="dashboard"] .finance-table tbody td {
+  color: #e8edf8;
+  border-bottom: 1px solid rgba(120, 133, 173, 0.08);
+}
+
+body[data-page="dashboard"] .dashboard-inline-link {
+  min-height: 32px;
+  padding: 0 12px;
+  border-radius: 9px;
+  display: inline-flex;
+  align-items: center;
+  background: rgba(92, 101, 255, 0.12);
+  color: #8fa0ff;
+}
+
+body[data-page="dashboard"] .dashboard-inline-link:hover {
+  background: rgba(92, 101, 255, 0.18);
+  color: #b5beff;
+}
+
+body[data-page="dashboard"] .message-box {
+  border-radius: 12px;
+}
+
+@media (max-width: 980px) {
+  body[data-page="dashboard"] .dashboard-secondary-grid {
+    grid-template-columns: 1fr;
+    grid-template-rows: auto;
+    height: auto;
+  }
+
+  body[data-page="dashboard"] .analytics-summary-grid {
+    grid-template-columns: 1fr 1fr;
+  }
+}
+
+@media (max-width: 700px) {
+  body[data-page="dashboard"] .analytics-summary-grid {
+    grid-template-columns: 1fr;
+  }
+}
