@@ -6119,6 +6119,354 @@ p {
   }
 }
 
+@media (min-width: 1180px) and (max-height: 820px) {
+  [data-page="dashboard"] .dashboard-main-premium {
+    grid-template-rows: 50px minmax(0, 1fr);
+  }
+
+  [data-page="dashboard"] .dashboard-premium-header {
+    height: 50px;
+    min-height: 50px;
+    padding: 0 14px;
+  }
+
+  [data-page="dashboard"] .dashboard-brand-copy h1 {
+    font-size: 0.92rem;
+  }
+
+  [data-page="dashboard"] .dashboard-top-tabs {
+    padding: 3px;
+  }
+
+  [data-page="dashboard"] .dashboard-tab-button {
+    min-height: 28px;
+    padding: 0 12px;
+    font-size: 0.72rem;
+  }
+
+  [data-page="dashboard"] .dashboard-payment-spotlight {
+    min-width: 170px;
+    min-height: 34px;
+    padding: 4px 9px;
+  }
+
+  [data-page="dashboard"] .dashboard-payment-spotlight strong {
+    font-size: 0.72rem;
+  }
+
+  [data-page="dashboard"] .dashboard-payment-spotlight small,
+  [data-page="dashboard"] .user-panel small {
+    font-size: 0.62rem;
+  }
+
+  [data-page="dashboard"] .user-panel {
+    min-height: 34px;
+    padding: 2px 4px;
+  }
+
+  [data-page="dashboard"] .user-avatar {
+    width: 28px;
+    height: 28px;
+  }
+
+  [data-page="dashboard"] .dashboard-logout-button {
+    min-height: 30px;
+    min-width: 48px;
+    padding-inline: 10px;
+  }
+
+  [data-page="dashboard"] .dashboard-tab-panels {
+    height: calc(100vh - 50px);
+    padding: 8px;
+  }
+
+  [data-page="dashboard"] .dashboard-overview-shell {
+    grid-template-rows:
+      minmax(96px, 0.86fr)
+      minmax(62px, 0.52fr)
+      minmax(188px, 1.5fr)
+      minmax(34px, 0.2fr)
+      minmax(132px, 0.84fr)
+      minmax(36px, 0.2fr);
+    gap: 8px;
+  }
+
+  [data-page="dashboard"] .dashboard-metrics-row,
+  [data-page="dashboard"] .dashboard-hero-row,
+  [data-page="dashboard"] .dashboard-main-row,
+  [data-page="dashboard"] .dashboard-bottom-row {
+    gap: 8px;
+  }
+
+  [data-page="dashboard"] .dashboard-metric-card .metric-card-top {
+    padding: 10px 12px 4px;
+  }
+
+  [data-page="dashboard"] .dashboard-metric-card .metric-value {
+    font-size: clamp(1.36rem, 1.45vw, 1.78rem);
+  }
+
+  [data-page="dashboard"] .dashboard-metric-card .metric-subtitle {
+    margin-top: 4px;
+    font-size: 0.62rem;
+    line-height: 1.18;
+  }
+
+  [data-page="dashboard"] .dashboard-metric-card .metric-icon {
+    width: 32px;
+    height: 32px;
+    font-size: 0.7rem;
+  }
+
+  [data-page="dashboard"] .dashboard-metric-card .daily-limit-progress,
+  [data-page="dashboard"] .dashboard-metric-card .metric-trend {
+    margin: 0 12px 6px;
+  }
+
+  [data-page="dashboard"] .dashboard-metric-card .daily-limit-progress {
+    padding: 6px 8px 7px;
+  }
+
+  [data-page="dashboard"] .dashboard-metric-card .metric-trend {
+    padding: 3px 7px;
+  }
+
+  [data-page="dashboard"] .metric-trend-badge,
+  [data-page="dashboard"] .metric-trend-text,
+  [data-page="dashboard"] .daily-limit-progress-top span,
+  [data-page="dashboard"] .daily-limit-progress-top strong {
+    font-size: 0.62rem;
+  }
+
+  [data-page="dashboard"] .dashboard-hero-card {
+    padding: 8px 12px;
+  }
+
+  [data-page="dashboard"] .dashboard-hero-card-alert,
+  [data-page="dashboard"] .dashboard-hero-card-insight {
+    gap: 10px;
+  }
+
+  [data-page="dashboard"] .dashboard-hero-card-alert::before,
+  [data-page="dashboard"] .dashboard-hero-card-insight::before {
+    width: 30px;
+    height: 30px;
+    font-size: 0.86rem;
+  }
+
+  [data-page="dashboard"] .dashboard-hero-card strong {
+    font-size: 0.74rem;
+    line-height: 1.12;
+  }
+
+  [data-page="dashboard"] .dashboard-hero-card p {
+    margin-top: 3px;
+    font-size: 0.63rem;
+    line-height: 1.14;
+  }
+
+  [data-page="dashboard"] .dashboard-inline-link-button {
+    min-height: 28px;
+    padding: 0 10px;
+    font-size: 0.66rem;
+  }
+
+  [data-page="dashboard"] .dashboard-main-row {
+    grid-template-columns: minmax(0, 1.8fr) minmax(300px, 0.9fr);
+  }
+
+  [data-page="dashboard"] .dashboard-surface {
+    padding: 10px 12px;
+  }
+
+  [data-page="dashboard"] .card-header {
+    margin-bottom: 6px;
+  }
+
+  [data-page="dashboard"] .dashboard-surface h3 {
+    font-size: 0.8rem;
+  }
+
+  [data-page="dashboard"] .chart-caption,
+  [data-page="dashboard"] .table-caption {
+    margin-top: 3px;
+    font-size: 0.62rem;
+    line-height: 1.14;
+  }
+
+  [data-page="dashboard"] .dashboard-primary-chart-shell {
+    margin-top: 2px;
+  }
+
+  [data-page="dashboard"] .projection-chart {
+    min-height: 162px;
+    padding: 6px 92px 18px 36px;
+  }
+
+  [data-page="dashboard"] .projection-chart-svg {
+    min-height: 128px;
+  }
+
+  [data-page="dashboard"] .projection-chart-axis-y {
+    width: 28px;
+    top: 8px;
+  }
+
+  [data-page="dashboard"] .projection-chart-axis-y span,
+  [data-page="dashboard"] .projection-chart-axis-x span {
+    font-size: 0.55rem;
+  }
+
+  [data-page="dashboard"] .projection-chart-axis-x {
+    left: 38px;
+    right: 82px;
+  }
+
+  [data-page="dashboard"] .projection-chart-callout {
+    width: 82px;
+    min-width: 82px;
+    padding: 6px 7px;
+  }
+
+  [data-page="dashboard"] .projection-chart-callout strong {
+    font-size: 0.62rem;
+  }
+
+  [data-page="dashboard"] .projection-chart-callout em {
+    font-size: 0.68rem;
+  }
+
+  [data-page="dashboard"] .dashboard-balance-mini-stats {
+    gap: 6px;
+    margin-top: 6px;
+  }
+
+  [data-page="dashboard"] .dashboard-balance-mini-stats .mini-stat {
+    padding: 6px 8px;
+  }
+
+  [data-page="dashboard"] .dashboard-balance-mini-stats .mini-stat strong {
+    font-size: 0.7rem;
+  }
+
+  [data-page="dashboard"] .dashboard-balance-mini-stats .mini-stat span {
+    font-size: 0.58rem;
+  }
+
+  [data-page="dashboard"] .period-filter-button {
+    min-height: 24px;
+    padding: 0 9px;
+    font-size: 0.66rem;
+  }
+
+  [data-page="dashboard"] .dashboard-period-grid {
+    gap: 6px;
+  }
+
+  [data-page="dashboard"] .dashboard-period-stat {
+    padding: 7px 8px;
+  }
+
+  [data-page="dashboard"] .dashboard-period-stat span,
+  [data-page="dashboard"] .dashboard-period-stat small {
+    font-size: 0.6rem;
+  }
+
+  [data-page="dashboard"] .dashboard-period-stat strong {
+    font-size: 0.82rem;
+  }
+
+  [data-page="dashboard"] .dashboard-budget-surface {
+    padding: 6px 10px;
+  }
+
+  [data-page="dashboard"] .dashboard-budget-progress-top {
+    margin-bottom: 5px;
+  }
+
+  [data-page="dashboard"] .dashboard-budget-progress-top span,
+  [data-page="dashboard"] .dashboard-budget-progress-top strong {
+    font-size: 0.62rem;
+  }
+
+  [data-page="dashboard"] .dashboard-budget-progress-track {
+    height: 6px;
+  }
+
+  [data-page="dashboard"] .dashboard-list-surface {
+    padding: 10px 12px;
+  }
+
+  [data-page="dashboard"] .dashboard-list-surface .card-header {
+    margin-bottom: 6px;
+  }
+
+  [data-page="dashboard"] .dashboard-list-surface h3 {
+    font-size: 0.76rem;
+  }
+
+  [data-page="dashboard"] .dashboard-inline-chip {
+    margin-bottom: 6px;
+  }
+
+  [data-page="dashboard"] .category-bar-row {
+    gap: 4px 7px;
+    padding: 4px 0;
+  }
+
+  [data-page="dashboard"] .category-bar-icon,
+  [data-page="dashboard"] .recent-transaction-icon,
+  [data-page="dashboard"] .trend-dot {
+    width: 26px;
+    height: 26px;
+  }
+
+  [data-page="dashboard"] .category-bar-meta strong,
+  [data-page="dashboard"] .category-bar-side strong,
+  [data-page="dashboard"] .recent-transaction-main strong,
+  [data-page="dashboard"] .recent-transaction-value,
+  [data-page="dashboard"] .trend-list strong {
+    font-size: 0.68rem;
+  }
+
+  [data-page="dashboard"] .category-bar-meta span,
+  [data-page="dashboard"] .recent-transaction-main span,
+  [data-page="dashboard"] .recent-transaction-side span,
+  [data-page="dashboard"] .list-text small {
+    font-size: 0.58rem;
+  }
+
+  [data-page="dashboard"] .category-bar-track {
+    margin-left: 33px;
+    height: 4px;
+  }
+
+  [data-page="dashboard"] .recent-transaction-item {
+    grid-template-columns: 26px minmax(0, 1fr) auto;
+    gap: 6px;
+    padding: 4px 0;
+  }
+
+  [data-page="dashboard"] .trend-list li {
+    padding: 6px 7px;
+    gap: 7px;
+  }
+
+  [data-page="dashboard"] .dashboard-premium-footer {
+    padding: 0 10px;
+  }
+
+  [data-page="dashboard"] .dashboard-footer-tip strong,
+  [data-page="dashboard"] .dashboard-footer-actions .primary-button {
+    font-size: 0.66rem;
+  }
+
+  [data-page="dashboard"] .dashboard-footer-actions .primary-button {
+    min-height: 28px;
+    padding: 0 10px;
+  }
+}
+
 /* Final component fidelity pass */
 @media (min-width: 1180px) {
   .dashboard-overview-shell .dashboard-metric-card .metric-card-top {
