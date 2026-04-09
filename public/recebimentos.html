@@ -3,8 +3,8 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Recebimentos</title>
-    <link rel="stylesheet" href="/styles.css?v=20260407b" />
+    <title>Recebimentos — MFinanceiro</title>
+    <link rel="stylesheet" href="/styles.css?v=20260409a" />
     <script src="/src/lib/auth-session.js"></script>
     <script src="/src/lib/config.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
@@ -17,178 +17,193 @@
       window.AuthSession.requireAuth();
     </script>
   </head>
-  <body data-page="recebimentos">
-    <main class="page-shell">
-      <section class="dashboard-layout app-layout">
-        <aside id="app-sidebar" class="dashboard-sidebar"></aside>
+  <body data-page="recebimentos" class="dashboard-body">
+    <main class="page-shell dashboard-page-shell">
+      <section class="dashboard-layout app-layout dashboard-layout-premium">
+        <aside id="app-sidebar" class="dashboard-sidebar dashboard-sidebar-hidden" aria-hidden="true"></aside>
 
-        <section class="dashboard-main app-main">
-          <header class="dashboard-topbar">
-            <div>
-              <div class="nav-pill">Recebimentos</div>
-              <h1 class="topbar-title">Pagamento e beneficio do ciclo</h1>
-              <p class="topbar-subtitle">
-                Registre o salario recebido e o VR/VA em uma area dedicada, sem
-                poluir a Base financeira.
-              </p>
+        <section class="dashboard-main app-main dashboard-main-premium dashboard-grid-shell">
+          <header class="dashboard-premium-header nav-bar">
+            <div class="dashboard-brand nav-left">
+              <div class="dashboard-brand-mark">MF</div>
+              <div class="dashboard-brand-copy">
+                <span class="dashboard-brand-kicker">Recebimentos</span>
+                <h1>MFinanceiro</h1>
+              </div>
             </div>
 
-            <div class="topbar-actions">
-              <div class="page-actions">
-                <a href="/dashboard.html" class="secondary-button">Voltar para o Dashboard</a>
-              </div>
-              <div class="user-panel">
-                <div class="user-avatar" data-user-initial>U</div>
-                <div>
-                  <strong data-user-name>Usuario</strong>
-                  <small data-user-email>email@conta.com</small>
+            <nav class="dashboard-top-tabs" aria-label="Navegacao principal">
+              <a href="/dashboard.html" class="dashboard-tab-button">Visao Geral</a>
+              <span class="dashboard-nav-divider" aria-hidden="true"></span>
+              <a href="/cadastro-bancario.html" class="dashboard-setup-link">Banco</a>
+              <a href="/contas.html" class="dashboard-setup-link">Contas</a>
+              <a href="/cartoes.html" class="dashboard-setup-link">Cartoes</a>
+              <a href="/recebimentos.html" class="dashboard-setup-link is-active">Recebimentos</a>
+            </nav>
+
+            <div class="dashboard-header-meta nav-right">
+              <div class="topbar-actions">
+                <div class="user-panel">
+                  <div class="user-avatar" data-user-initial>U</div>
+                  <div>
+                    <strong data-user-name>Usuario</strong>
+                    <small data-user-email>email@conta.com</small>
+                  </div>
                 </div>
+                <button type="button" class="secondary-button dashboard-logout-button" data-logout-button>
+                  Sair
+                </button>
               </div>
-              <button type="button" class="secondary-button" data-logout-button>
-                Logout
-              </button>
             </div>
           </header>
 
-          <section class="content-stack">
-            <article class="table-card">
-              <div class="card-header">
-                <div>
-                  <div class="card-label">Recebimentos</div>
-                  <h3>Controle o que entrou no ciclo atual</h3>
-                  <p class="table-caption">
-                    Salve a previsao ou confirme o recebimento do pagamento e do
-                    VR/VA. O dashboard le esses registros automaticamente.
-                  </p>
-                </div>
-                <div class="status-chip" id="receipt-status-chip">Pronto para registrar</div>
+          <section class="dashboard-tab-panels">
+            <section class="dashboard-tab-panel is-active">
+              <div class="dashboard-secondary-grid">
+
+                <article class="dashboard-surface dashboard-secondary-surface">
+                  <div class="card-header">
+                    <div>
+                      <div class="card-label">Recebimentos</div>
+                      <h2 class="section-title">Controle o que entrou no ciclo atual</h2>
+                      <p class="table-caption section-subtitle">
+                        Salve a previsao ou confirme o recebimento do pagamento e do
+                        VR/VA. O dashboard le esses registros automaticamente.
+                      </p>
+                    </div>
+                    <div class="status-chip" id="receipt-status-chip">Pronto para registrar</div>
+                  </div>
+
+                  <section class="receipt-grid">
+                    <div class="dual-grid">
+                      <!-- Pagamento -->
+                      <article class="dashboard-card">
+                        <div class="card-header">
+                          <div>
+                            <div class="card-label">Pagamento</div>
+                            <h3>Registro principal do ciclo</h3>
+                          </div>
+                          <div class="status-chip" id="pagamento-status-chip">Pendente</div>
+                        </div>
+
+                        <div class="detail-list">
+                          <div class="detail-row">
+                            <span>Proxima previsao</span>
+                            <strong id="pagamento-proxima-previsao">--</strong>
+                          </div>
+                          <div class="detail-row">
+                            <span>Dias restantes</span>
+                            <strong id="pagamento-dias-restantes">0</strong>
+                          </div>
+                        </div>
+
+                        <div class="receipt-form-grid">
+                          <input type="hidden" id="pagamentoId" />
+                          <div class="field">
+                            <span>Tipo</span>
+                            <select id="pagamentoTipo">
+                              <option value="pagamento">Pagamento principal</option>
+                              <option value="adiantamento">Adiantamento</option>
+                              <option value="bonus">Bonus</option>
+                              <option value="extra">Extra</option>
+                            </select>
+                          </div>
+                          <div class="field">
+                            <span>Descricao</span>
+                            <input type="text" id="pagamentoDescricao" placeholder="Ex.: salario, bonus, acerto" />
+                          </div>
+                          <div class="field">
+                            <span>Data prevista</span>
+                            <input type="date" id="pagamentoDataPrevista" />
+                          </div>
+                          <div class="field">
+                            <span>Valor previsto</span>
+                            <input type="text" inputmode="decimal" id="pagamentoValorPrevisto" />
+                          </div>
+                        </div>
+
+                        <div class="button-row">
+                          <button type="button" id="save-pagamento-button" class="primary-button">
+                            Salvar recebimento
+                          </button>
+                          <button type="button" id="mark-pagamento-recebido-button" class="secondary-button">
+                            Recebido
+                          </button>
+                          <button type="button" id="edit-pagamento-button" class="secondary-button">
+                            Editar recebimento
+                          </button>
+                        </div>
+
+                        <div class="list-stack" id="recebimentos-list"></div>
+                      </article>
+
+                      <!-- Beneficios -->
+                      <article class="dashboard-card">
+                        <div class="card-header">
+                          <div>
+                            <div class="card-label">Beneficio</div>
+                            <h3>Beneficios previstos do ciclo</h3>
+                          </div>
+                          <div class="status-chip" id="beneficios-status-chip">Sem beneficio</div>
+                        </div>
+
+                        <article class="subtle-panel">
+                          <strong>VR, VA e beneficios</strong>
+                          <div class="receipt-form-grid">
+                            <input type="hidden" id="beneficioId" />
+                            <div class="field">
+                              <span>Tipo</span>
+                              <select id="beneficioTipo">
+                                <option value="vrVa">VR/VA</option>
+                                <option value="vr">VR</option>
+                                <option value="va">VA</option>
+                                <option value="outro">Outro</option>
+                              </select>
+                            </div>
+                            <div class="field">
+                              <span>Data de recebimento</span>
+                              <input type="date" id="vrvaDataPrevista" />
+                            </div>
+                            <div class="field">
+                              <span>Valor</span>
+                              <input type="text" inputmode="decimal" id="vrvaValorPrevisto" />
+                            </div>
+                            <label class="toggle-row">
+                              <input type="checkbox" id="beneficioAtivo" checked />
+                              <span>Ativo no ciclo</span>
+                            </label>
+                            <label class="toggle-row">
+                              <input type="checkbox" id="beneficioContabilizarSaldo" checked />
+                              <span>Contabilizar no saldo</span>
+                            </label>
+                            <label class="toggle-row">
+                              <input type="checkbox" id="vrvaRecebido" />
+                              <span>Ja recebido</span>
+                            </label>
+                            <div class="field-hint" id="vrvaHint">
+                              Registre a previsao do beneficio para refletir esse valor no dashboard.
+                            </div>
+                            <div class="button-row align-start">
+                              <button type="button" id="save-vrva-button" class="secondary-button">
+                                Salvar VR/VA
+                              </button>
+                              <button type="button" id="edit-vrva-button" class="ghost-button">
+                                Editar VR/VA
+                              </button>
+                            </div>
+                          </div>
+                        </article>
+
+                        <div class="list-stack" id="beneficios-list"></div>
+                      </article>
+                    </div>
+                  </section>
+
+                  <div id="receipt-message" class="message-box hidden" aria-live="polite"></div>
+                </article>
+
               </div>
-
-              <section class="receipt-grid">
-                <div class="dual-grid">
-                  <article class="dashboard-card">
-                    <div class="card-header">
-                      <div>
-                        <div class="card-label">Pagamento</div>
-                        <h3>Registro principal do ciclo</h3>
-                      </div>
-                      <div class="status-chip" id="pagamento-status-chip">Pendente</div>
-                    </div>
-
-                    <div class="detail-list">
-                      <div class="detail-row">
-                        <span>Proxima previsao</span>
-                        <strong id="pagamento-proxima-previsao">--</strong>
-                      </div>
-                      <div class="detail-row">
-                        <span>Dias restantes</span>
-                        <strong id="pagamento-dias-restantes">0</strong>
-                      </div>
-                    </div>
-
-                    <div class="receipt-form-grid">
-                      <input type="hidden" id="pagamentoId" />
-                      <div class="field">
-                        <span>Tipo</span>
-                        <select id="pagamentoTipo">
-                          <option value="pagamento">Pagamento principal</option>
-                          <option value="adiantamento">Adiantamento</option>
-                          <option value="bonus">Bonus</option>
-                          <option value="extra">Extra</option>
-                        </select>
-                      </div>
-                      <div class="field">
-                        <span>Descricao</span>
-                        <input type="text" id="pagamentoDescricao" placeholder="Ex.: salario, bonus, acerto" />
-                      </div>
-                      <div class="field">
-                        <span>Data prevista</span>
-                        <input type="date" id="pagamentoDataPrevista" />
-                      </div>
-                      <div class="field">
-                        <span>Valor previsto</span>
-                        <input type="text" inputmode="decimal" id="pagamentoValorPrevisto" />
-                      </div>
-                    </div>
-
-                    <div class="button-row">
-                      <button type="button" id="save-pagamento-button" class="primary-button">
-                        Salvar recebimento
-                      </button>
-                      <button type="button" id="mark-pagamento-recebido-button" class="secondary-button">
-                        Recebido
-                      </button>
-                      <button type="button" id="edit-pagamento-button" class="secondary-button">
-                        Editar recebimento
-                      </button>
-                    </div>
-
-                    <div class="list-stack" id="recebimentos-list"></div>
-                  </article>
-
-                  <article class="dashboard-card">
-                    <div class="card-header">
-                      <div>
-                        <div class="card-label">Beneficio</div>
-                        <h3>Beneficios previstos do ciclo</h3>
-                      </div>
-                      <div class="status-chip" id="beneficios-status-chip">Sem beneficio</div>
-                    </div>
-
-                    <article class="subtle-panel">
-                      <strong>VR, VA e beneficios</strong>
-                      <div class="receipt-form-grid">
-                        <input type="hidden" id="beneficioId" />
-                        <div class="field">
-                          <span>Tipo</span>
-                          <select id="beneficioTipo">
-                            <option value="vrVa">VR/VA</option>
-                            <option value="vr">VR</option>
-                            <option value="va">VA</option>
-                            <option value="outro">Outro</option>
-                          </select>
-                        </div>
-                        <div class="field">
-                          <span>Data de recebimento</span>
-                          <input type="date" id="vrvaDataPrevista" />
-                        </div>
-                        <div class="field">
-                          <span>Valor</span>
-                          <input type="text" inputmode="decimal" id="vrvaValorPrevisto" />
-                        </div>
-                        <label class="toggle-row">
-                          <input type="checkbox" id="beneficioAtivo" checked />
-                          <span>Ativo no ciclo</span>
-                        </label>
-                        <label class="toggle-row">
-                          <input type="checkbox" id="beneficioContabilizarSaldo" checked />
-                          <span>Contabilizar no saldo</span>
-                        </label>
-                        <label class="toggle-row">
-                          <input type="checkbox" id="vrvaRecebido" />
-                          <span>Ja recebido</span>
-                        </label>
-                        <div class="field-hint" id="vrvaHint">
-                          Registre a previsao do beneficio para refletir esse valor no dashboard.
-                        </div>
-                        <div class="button-row align-start">
-                          <button type="button" id="save-vrva-button" class="secondary-button">
-                            Salvar VR/VA
-                          </button>
-                          <button type="button" id="edit-vrva-button" class="ghost-button">
-                            Editar VR/VA
-                          </button>
-                        </div>
-                      </div>
-                    </article>
-
-                    <div class="list-stack" id="beneficios-list"></div>
-                  </article>
-                </div>
-              </section>
-
-              <div id="receipt-message" class="message-box hidden" aria-live="polite"></div>
-            </article>
+            </section>
           </section>
         </section>
       </section>
