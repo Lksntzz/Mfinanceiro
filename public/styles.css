@@ -8706,3 +8706,68 @@ body[data-page="recebimentos"] .finance-table tbody tr:hover {
     grid-template-columns: 1fr;
   }
 }
+
+/* ===== Setup pages: scroll the content area, not the main card ===== */
+@media (min-width: 1180px) {
+  body[data-page="banking"] .dashboard-tab-panels,
+  body[data-page="contas"] .dashboard-tab-panels,
+  body[data-page="cartoes"] .dashboard-tab-panels,
+  body[data-page="recebimentos"] .dashboard-tab-panels {
+    height: 100%;
+    min-height: 0;
+    overflow-y: auto;
+    overflow-x: hidden;
+    padding-right: 4px;
+    scrollbar-gutter: stable both-edges;
+  }
+
+  body[data-page="banking"] .dashboard-tab-panel,
+  body[data-page="contas"] .dashboard-tab-panel,
+  body[data-page="cartoes"] .dashboard-tab-panel,
+  body[data-page="recebimentos"] .dashboard-tab-panel,
+  body[data-page="banking"] .dashboard-tab-panel.is-active,
+  body[data-page="contas"] .dashboard-tab-panel.is-active,
+  body[data-page="cartoes"] .dashboard-tab-panel.is-active,
+  body[data-page="recebimentos"] .dashboard-tab-panel.is-active {
+    height: auto;
+    min-height: 100%;
+  }
+
+  body[data-page="banking"] .dashboard-secondary-grid,
+  body[data-page="contas"] .dashboard-secondary-grid,
+  body[data-page="cartoes"] .dashboard-secondary-grid,
+  body[data-page="recebimentos"] .dashboard-secondary-grid {
+    height: auto;
+    min-height: 100%;
+    overflow: visible;
+    align-content: start;
+    padding-bottom: 28px;
+  }
+
+  body[data-page="banking"] .dashboard-secondary-surface,
+  body[data-page="contas"] .dashboard-secondary-surface,
+  body[data-page="cartoes"] .dashboard-secondary-surface,
+  body[data-page="recebimentos"] .dashboard-secondary-surface,
+  body[data-page="banking"] .banking-page-card,
+  body[data-page="contas"] .accounts-page-card,
+  body[data-page="cartoes"] .cards-page-card,
+  body[data-page="recebimentos"] .receipts-page-card,
+  body[data-page="contas"] .section-stack {
+    height: auto;
+    min-height: 0;
+    overflow: visible;
+  }
+
+  body[data-page="banking"] .banking-page-card,
+  body[data-page="contas"] .accounts-page-card,
+  body[data-page="cartoes"] .cards-page-card,
+  body[data-page="recebimentos"] .receipts-page-card {
+    display: block;
+    grid-template-rows: none;
+  }
+
+  body[data-page="contas"] .section-stack {
+    display: grid;
+    align-content: start;
+  }
+}
