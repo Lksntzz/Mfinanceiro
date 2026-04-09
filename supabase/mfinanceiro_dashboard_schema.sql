@@ -40,6 +40,26 @@ create table if not exists public.mf_finance_expenses (
   constraint mf_finance_expenses_user_external_id_key unique (user_id, external_id)
 );
 
+create table if not exists public.mf_finance_ledger_entries (
+  id uuid primary key default gen_random_uuid(),
+  user_id uuid not null references auth.users (id) on delete cascade,
+  external_id text not null,
+  descricao text not null,
+  categoria text,
+  valor numeric(12, 2) not null default 0,
+  data date not null,
+  tipo text not null default 'saida',
+  origem text not null default 'extrato_importado',
+  arquivo_origem text,
+  linha_origem integer,
+  status_importacao text not null default 'valida',
+  motivo_rejeicao text,
+  metadata jsonb not null default '{}'::jsonb,
+  created_at timestamptz not null default now(),
+  updated_at timestamptz not null default now(),
+  constraint mf_finance_ledger_entries_user_external_id_key unique (user_id, external_id)
+);
+
 create table if not exists public.mf_finance_fixed_bills (
   id text not null,
   user_id uuid not null references auth.users (id) on delete cascade,
@@ -132,6 +152,7 @@ create table if not exists public.mf_finance_benefits (
 
 alter table public.mf_finance_profiles enable row level security;
 alter table public.mf_finance_expenses enable row level security;
+alter table public.mf_finance_ledger_entries enable row level security;
 alter table public.mf_finance_fixed_bills enable row level security;
 alter table public.mf_finance_cards enable row level security;
 alter table public.mf_finance_card_expenses enable row level security;
@@ -149,6 +170,13 @@ create policy "Users manage own finance profile"
 drop policy if exists "Users manage own finance expenses" on public.mf_finance_expenses;
 create policy "Users manage own finance expenses"
   on public.mf_finance_expenses
+  for all
+  using (auth.uid() = user_id)
+  with check (auth.uid() = user_id);
+
+drop policy if exists "Users manage own finance ledger entries" on public.mf_finance_ledger_entries;
+create policy "Users manage own finance ledger entries"
+  on public.mf_finance_ledger_entries
   for all
   using (auth.uid() = user_id)
   with check (auth.uid() = user_id);

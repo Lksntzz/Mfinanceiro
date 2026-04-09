@@ -1,5 +1,6 @@
 (function () {
   const PROFILES_TABLE = "mf_finance_profiles";
+  const LEDGER_TABLE = "mf_finance_ledger_entries";
   const EXPENSES_TABLE = "mf_finance_expenses";
   const FIXED_BILLS_TABLE = "mf_finance_fixed_bills";
   const CARDS_TABLE = "mf_finance_cards";
@@ -342,8 +343,100 @@
     };
   }
 
+  function isImportedLedgerOrigin(value) {
+    return ["importado", "extrato_importado", "extrato_importado_excel"].includes(
+      normalizeText(value).toLowerCase()
+    );
+  }
+
+  function mapLedgerRowToLocal(row) {
+    const metadata =
+      row?.metadata && typeof row.metadata === "object" ? row.metadata : {};
+
+    return {
+      ...metadata,
+      id: row.external_id || metadata.id || row.id,
+      user_id: row.user_id || metadata.user_id || "",
+      data: row.data || metadata.data || "",
+      descricao: row.descricao || metadata.descricao || "Movimentacao",
+      valor: normalizeNumber(row.valor),
+      categoria: row.categoria || metadata.categoria || "outros",
+      tipo: row.tipo || metadata.tipo || "saida",
+      origem: row.origem || metadata.origem || "extrato_importado",
+      external_id: row.external_id || metadata.external_id || "",
+      arquivo_origem: row.arquivo_origem || metadata.arquivo_origem || null,
+      linha_origem:
+        row.linha_origem !== null && row.linha_origem !== undefined
+          ? Number(row.linha_origem)
+          : metadata.linha_origem ?? null,
+      status_importacao: row.status_importacao || metadata.status_importacao || "valida",
+      motivo_rejeicao: row.motivo_rejeicao || metadata.motivo_rejeicao || "",
+      updated_at: row.updated_at || metadata.updated_at || "",
+    };
+  }
+
+  function deriveDailyExpensesFromLedgerItems(ledgerItems) {
+    return (Array.isArray(ledgerItems) ? ledgerItems : [])
+      .map((item) => mapLedgerRowToLocal(item))
+      .filter(
+        (item) =>
+          item.status_importacao === "valida" &&
+          item.tipo === "saida" &&
+          normalizeNumber(item.valor) > 0 &&
+          normalizeDateForDatabase(item.data)
+      )
+      .map((item) => ({
+        ...item,
+        id: item.external_id || item.id,
+        valor: normalizeNumber(item.valor),
+        tipo: "saida",
+        origem: item.origem || "extrato_importado",
+      }));
+  }
+
+  function buildLedgerRow(userId, movementData) {
+    const externalId = resolveExpenseExternalId(userId, movementData);
+    const normalizedDate = normalizeDateForDatabase(movementData?.data || movementData?.dataNormalizada);
+
+    return {
+      user_id: userId,
+      external_id: externalId,
+      descricao: normalizeText(movementData?.descricao, "Movimentacao") || "Movimentacao",
+      categoria: normalizeText(movementData?.categoria, "outros") || "outros",
+      valor: normalizeNumber(movementData?.valor),
+      data: normalizedDate,
+      tipo: normalizeExpenseType(movementData?.tipo, "saida"),
+      origem: normalizeText(movementData?.origem, "extrato_importado") || "extrato_importado",
+      arquivo_origem: normalizeText(movementData?.arquivo_origem || "") || null,
+      linha_origem:
+        movementData?.linha_origem !== null && movementData?.linha_origem !== undefined
+          ? Number(movementData.linha_origem)
+          : null,
+      status_importacao: normalizeText(movementData?.status_importacao, "valida") || "valida",
+      motivo_rejeicao: normalizeText(movementData?.motivo_rejeicao || "") || null,
+      metadata: {
+        ...movementData,
+        id: externalId,
+        external_id: externalId,
+        data: normalizedDate,
+        valor: normalizeNumber(movementData?.valor),
+        categoria: normalizeText(movementData?.categoria, "outros") || "outros",
+        tipo: normalizeExpenseType(movementData?.tipo, "saida"),
+        origem: normalizeText(movementData?.origem, "extrato_importado") || "extrato_importado",
+        arquivo_origem: normalizeText(movementData?.arquivo_origem || "") || null,
+        linha_origem:
+          movementData?.linha_origem !== null && movementData?.linha_origem !== undefined
+            ? Number(movementData.linha_origem)
+            : null,
+        status_importacao: normalizeText(movementData?.status_importacao, "valida") || "valida",
+      },
+      updated_at: new Date().toISOString(),
+    };
+  }
+
   function buildLocalDataFromRemote(
     profileRow,
+    ledgerRows,
     expenseRows,
     fixedBillRows,
     cardRows,
@@ -358,6 +451,14 @@
       Array.isArray(incomeRows) ? incomeRows.map(mapIncomeRowToLocal) : null,
       Array.isArray(benefitRows) ? benefitRows.map(mapBenefitRowToLocal) : null
     );
+    const { ledgerItems: localLedger } = resolveAuthoritativeLedgerLocalRows(
+      ledgerRows,
+      expenseRows,
+      "buildLocalDataFromRemote"
+    );
+    const localExpenses = Array.isArray(expenseRows) ? expenseRows.map(mapExpenseRowToLocal) : [];
+    const derivedLedgerExpenses = deriveDailyExpensesFromLedgerItems(localLedger);
+    const nextDailyExpenses = localLedger.length ? derivedLedgerExpenses : localExpenses;
 
     return {
       ...window.FinanceStore.getDefaultAppData(),
@@ -376,7 +477,8 @@
         ? cardExpenseRows.map(mapCardExpenseRowToLocal)
         : [],
       contasFixas: Array.isArray(fixedBillRows) ? fixedBillRows.map(mapFixedBillRowToLocal) : [],
-      contasDiaADia: Array.isArray(expenseRows) ? expenseRows.map(mapExpenseRowToLocal) : [],
+      ledgerMovimentacoes: localLedger,
+      contasDiaADia: nextDailyExpenses,
     };
   }
 
@@ -889,6 +991,46 @@
     );
   }
 
+  function normalizeExpenseType(value, fallback = "saida") {
+    const normalizedValue = normalizeText(value, fallback).toLowerCase();
+
+    if (["entrada", "credito", "credit", "recebimento", "income"].includes(normalizedValue)) {
+      return "entrada";
+    }
+
+    if (["saida", "debito", "debit", "despesa", "expense"].includes(normalizedValue)) {
+      return "saida";
+    }
+
+    return fallback === "entrada" ? "entrada" : "saida";
+  }
+
+  function normalizeExpenseDescriptionForKey(value) {
+    return normalizeText(value)
+      .toLowerCase()
+      .replace(/\s+/g, " ");
+  }
+
+  function buildExpenseFallbackKey(userId, expenseData) {
+    const normalizedDate = normalizeDateForDatabase(expenseData?.data || expenseData?.dataNormalizada) || "";
+    const normalizedDescription = normalizeExpenseDescriptionForKey(expenseData?.descricao);
+    const normalizedValue = normalizeNumber(expenseData?.valor).toFixed(2);
+    const normalizedType = normalizeExpenseType(
+      expenseData?.tipo,
+      normalizeNumber(expenseData?.valor) < 0 ? "entrada" : "saida"
+    );
+
+    return `expense:${userId}:${normalizedDate}:${normalizedDescription}:${normalizedValue}:${normalizedType}`;
+  }
+
+  function resolveExpenseExternalId(userId, expenseData) {
+    const explicitExternalId = normalizeText(
+      expenseData?.external_id || expenseData?.id || ""
+    );
+
+    return explicitExternalId || buildExpenseFallbackKey(userId, expenseData);
+  }
+
   function buildExpenseRow(userId, expenseData) {
     const externalId = String(
       expenseData?.external_id || expenseData?.id || window.FinanceStore?.createId?.("gasto") || ""
@@ -923,13 +1065,70 @@
       .filter((item) => item.external_id && item.data);
   }
 
+  function buildLedgerRows(userId, appData) {
+    const ledgerSource = Array.isArray(appData?.ledgerMovimentacoes) ? appData.ledgerMovimentacoes : [];
+    const manualExpenses = (Array.isArray(appData?.contasDiaADia) ? appData.contasDiaADia : []).filter(
+      (item) => !isImportedLedgerOrigin(item?.origem)
+    );
+    const seenExternalIds = new Set();
+
+    return [...ledgerSource, ...manualExpenses]
+      .map((item) => buildLedgerRow(userId, item))
+      .filter(
+        (item) =>
+          item.external_id &&
+          item.data &&
+          normalizeNumber(item.valor) > 0 &&
+          !seenExternalIds.has(item.external_id)
+      )
+      .filter((item) => {
+        seenExternalIds.add(item.external_id);
+        return true;
+      });
+  }
+
   function replaceLocalExpenses(expenses, source = REMOTE_SOURCE) {
     const localData = window.FinanceStore.loadAppData();
+    const mappedExpenses = Array.isArray(expenses) ? expenses.map(mapExpenseRowToLocal) : [];
+    const manualExpenses = mappedExpenses.filter((item) => !isImportedLedgerOrigin(item?.origem));
+    const nextLedgerMovements =
+      typeof window.FinanceStore.mergeLedgerMovementsWithManualExpenses === "function"
+        ? window.FinanceStore.mergeLedgerMovementsWithManualExpenses(
+            localData.ledgerMovimentacoes,
+            manualExpenses
+          )
+        : localData.ledgerMovimentacoes;
+    const derivedImportedExpenses = deriveDailyExpensesFromLedgerItems(nextLedgerMovements);
+    const nextDailyExpenses =
+      Array.isArray(nextLedgerMovements) && nextLedgerMovements.length
+        ? [...manualExpenses, ...derivedImportedExpenses]
+        : mappedExpenses;
 
     return window.FinanceStore.replaceAppData(
       {
         ...localData,
-        contasDiaADia: Array.isArray(expenses) ? expenses.map(mapExpenseRowToLocal) : [],
+        ledgerMovimentacoes: nextLedgerMovements,
+        contasDiaADia: nextDailyExpenses,
+      },
+      source
+    );
+  }
+
+  function replaceLocalLedgerMovements(ledgerRows, source = REMOTE_SOURCE) {
+    const localData = window.FinanceStore.loadAppData();
+    const mappedLedger = Array.isArray(ledgerRows) ? ledgerRows.map(mapLedgerRowToLocal) : [];
+    const nextDailyExpenses = deriveDailyExpensesFromLedgerItems(mappedLedger);
+
+    logLedgerSyncDebug("Ledger aplicado localmente", mappedLedger, {
+      gastosDerivados: nextDailyExpenses.length,
+      source,
+    });
+
+    return window.FinanceStore.replaceAppData(
+      {
+        ...localData,
+        ledgerMovimentacoes: mappedLedger,
+        contasDiaADia: nextDailyExpenses,
       },
       source
     );
@@ -960,6 +1159,7 @@
   function mergeRemoteState(
     localData,
     profileRow,
+    ledgerRows,
     expenseRows,
     fixedBillRows,
     cardRows,
@@ -1001,6 +1201,15 @@
           ? localData.recebimentos.beneficios.lista
           : null
     );
+    const { ledgerItems: localLedger, migratedFromLegacyExpenses } = resolveAuthoritativeLedgerLocalRows(
+      ledgerRows,
+      expenseRows,
+      "mergeRemoteState"
+    );
+    const localExpenses = Array.isArray(expenseRows)
+      ? expenseRows.map(mapExpenseRowToLocal)
+      : localData.contasDiaADia || [];
+    const derivedLedgerExpenses = deriveDailyExpensesFromLedgerItems(localLedger);
 
     return {
       ...localData,
@@ -1035,15 +1244,149 @@
       contasFixas: Array.isArray(fixedBillRows)
         ? fixedBillRows.map(mapFixedBillRowToLocal)
         : localData.contasFixas || [],
-      contasDiaADia: Array.isArray(expenseRows)
-        ? expenseRows.map(mapExpenseRowToLocal)
-        : localData.contasDiaADia || [],
+      ledgerMovimentacoes: localLedger,
+      contasDiaADia:
+        Array.isArray(ledgerRows) && ledgerRows.length
+          ? derivedLedgerExpenses
+          : migratedFromLegacyExpenses
+            ? derivedLedgerExpenses
+          : localExpenses,
     };
   }
 
   function isMissingTableError(error) {
     const message = String(error?.message || "").toLowerCase();
     return message.includes("does not exist") || message.includes("relation");
+  }
+
+  async function fetchOptionalUserRows(tableName, userId, options = {}) {
+    const supabase = await getSupabaseClient();
+    let query = supabase.from(tableName).select(options.select || "*").eq("user_id", userId);
+
+    (Array.isArray(options.orders) ? options.orders : []).forEach((orderConfig) => {
+      query = query.order(orderConfig.column, { ascending: orderConfig.ascending !== false });
+    });
+
+    const { data, error } = await query;
+
+    if (error) {
+      if (isMissingTableError(error)) {
+        console.warn(`[MFinanceiro Sync] Tabela opcional ausente: ${tableName}.`, error.message || error);
+        return [];
+      }
+
+      throw error;
+    }
+
+    return Array.isArray(data) ? data : [];
+  }
+
+  function createLedgerMissingError(error) {
+    const nextError = new Error(
+      "A tabela central mf_finance_ledger_entries nao foi encontrada no Supabase. Aplique a migration do ledger antes de continuar."
+    );
+    nextError.cause = error;
+    nextError.code = error?.code;
+    nextError.details = error?.details;
+    nextError.hint = error?.hint;
+    nextError.__mfinanceiroLedgerMissing = true;
+    return nextError;
+  }
+
+  function isLedgerMissingError(error) {
+    return Boolean(error?.__mfinanceiroLedgerMissing) || isMissingTableError(error?.cause || error);
+  }
+
+  async function fetchRequiredUserRows(tableName, userId, options = {}) {
+    const supabase = await getSupabaseClient();
+    let query = supabase.from(tableName).select(options.select || "*").eq("user_id", userId);
+
+    (Array.isArray(options.orders) ? options.orders : []).forEach((orderConfig) => {
+      query = query.order(orderConfig.column, { ascending: orderConfig.ascending !== false });
+    });
+
+    const { data, error } = await query;
+
+    if (error) {
+      if (tableName === LEDGER_TABLE && isMissingTableError(error)) {
+        throw createLedgerMissingError(error);
+      }
+
+      throw error;
+    }
+
+    return Array.isArray(data) ? data : [];
+  }
+
+  function mapLegacyExpenseRowsToLedgerLocal(expenseRows) {
+    return (Array.isArray(expenseRows) ? expenseRows : [])
+      .map((row, index) => {
+        const localExpense = mapExpenseRowToLocal(row);
+        const externalId = normalizeText(
+          row?.external_id || localExpense.id || `legacy_expense_${index + 1}`
+        );
+        const normalizedDate = normalizeDateForDatabase(localExpense.data);
+        const normalizedValue = normalizeNumber(localExpense.valor);
+
+        if (!externalId || !normalizedDate || normalizedValue <= 0) {
+          return null;
+        }
+
+        return {
+          ...localExpense,
+          id: externalId,
+          user_id: row?.user_id || "",
+          external_id: externalId,
+          data: normalizedDate,
+          categoria: localExpense.categoria || "outros",
+          valor: normalizedValue,
+          tipo: normalizeExpenseType(localExpense.tipo, "saida"),
+          origem: localExpense.origem || "manual",
+          arquivo_origem: null,
+          linha_origem: null,
+          status_importacao: "valida",
+          motivo_rejeicao: "",
+          updated_at: row?.updated_at || "",
+        };
+      })
+      .filter(Boolean);
+  }
+
+  function resolveAuthoritativeLedgerLocalRows(ledgerRows, expenseRows, context = "remote-sync") {
+    const localLedger = Array.isArray(ledgerRows) ? ledgerRows.map(mapLedgerRowToLocal) : [];
+
+    if (localLedger.length) {
+      return {
+        ledgerItems: localLedger,
+        migratedFromLegacyExpenses: false,
+      };
+    }
+
+    const migratedLedger = mapLegacyExpenseRowsToLedgerLocal(expenseRows);
+
+    if (migratedLedger.length) {
+      console.warn(
+        "[MFinanceiro Sync] Ledger vazio no Supabase. Despesas legadas foram carregadas apenas para migracao controlada ao ledger.",
+        {
+          contexto: context,
+          totalLegado: migratedLedger.length,
+        }
+      );
+    }
+
+    return {
+      ledgerItems: migratedLedger,
+      migratedFromLegacyExpenses: migratedLedger.length > 0,
+    };
+  }
+
+  function logLedgerSyncDebug(action, ledgerRows, extra = {}) {
+    const rows = Array.isArray(ledgerRows) ? ledgerRows : [];
+    console.log(`[MFinanceiro Sync] ${action}`, {
+      ledgerRegistros: rows.length,
+      amostra: rows.slice(0, 3),
+      ...extra,
+    });
   }
 
   async function fetchRemoteState(userId) {
@@ -1053,11 +1396,18 @@
       .select("*")
       .eq("user_id", userId)
       .maybeSingle();
-    const expensesRequest = supabase
-      .from(EXPENSES_TABLE)
-      .select("*")
-      .eq("user_id", userId)
-      .order("data", { ascending: false });
+    const ledgerRequest = fetchRequiredUserRows(LEDGER_TABLE, userId, {
+      orders: [
+        { column: "data", ascending: false },
+        { column: "created_at", ascending: false },
+      ],
+    });
+    const expensesRequest = fetchOptionalUserRows(EXPENSES_TABLE, userId, {
+      orders: [
+        { column: "data", ascending: false },
+        { column: "created_at", ascending: false },
+      ],
+    });
     const fixedBillsRequest = supabase
       .from(FIXED_BILLS_TABLE)
       .select("*")
@@ -1095,7 +1445,8 @@
 
     const [
       { data: profile, error: profileError },
-      { data: expenses, error: expensesError },
+      ledger,
+      expenses,
       { data: fixedBills, error: fixedBillsError },
       { data: cards, error: cardsError },
       { data: cardExpenses, error: cardExpensesError },
@@ -1104,6 +1455,7 @@
       { data: benefits, error: benefitsError },
     ] = await Promise.all([
       profileRequest,
+      ledgerRequest,
       expensesRequest,
       fixedBillsRequest,
       cardsRequest,
@@ -1115,10 +1467,6 @@
 
     if (profileError) {
       throw profileError;
-    }
-
-    if (expensesError) {
-      throw expensesError;
     }
 
     if (fixedBillsError) {
@@ -1145,8 +1493,13 @@
       throw benefitsError;
     }
 
+    logLedgerSyncDebug("Dados recebidos do Supabase", ledger || [], {
+      despesasLegadas: Array.isArray(expenses) ? expenses.length : 0,
+    });
+
     return {
       profile: profile || null,
+      ledger: ledger || [],
       expenses: expenses || [],
       fixedBills: fixedBills || [],
       cards: cards || [],
@@ -1181,6 +1534,9 @@
     return {
       userId,
       profile: mapProfileRowToLocal(remoteState.profile),
+      ledger: Array.isArray(remoteState.ledger)
+        ? remoteState.ledger.map(mapLedgerRowToLocal)
+        : [],
       expenses: Array.isArray(remoteState.expenses)
         ? remoteState.expenses.map(mapExpenseRowToLocal)
         : [],
@@ -1203,6 +1559,7 @@
         ? remoteState.benefits.map(mapBenefitRowToLocal)
         : [],
       rawProfile: remoteState.profile,
+      rawLedger: remoteState.ledger || [],
       rawExpenses: remoteState.expenses || [],
       rawFixedBills: remoteState.fixedBills || [],
       rawCards: remoteState.cards || [],
@@ -1220,6 +1577,7 @@
     return {
       userId,
       profile: remoteState.profile || null,
+      ledger: Array.isArray(remoteState.ledger) ? remoteState.ledger : [],
       expenses: Array.isArray(remoteState.expenses) ? remoteState.expenses : [],
       fixedBills: Array.isArray(remoteState.fixedBills) ? remoteState.fixedBills : [],
       cards: Array.isArray(remoteState.cards) ? remoteState.cards : [],
@@ -1229,6 +1587,7 @@
       benefits: Array.isArray(remoteState.benefits) ? remoteState.benefits : [],
       data: buildLocalDataFromRemote(
         remoteState.profile,
+        remoteState.ledger,
         remoteState.expenses,
         remoteState.fixedBills,
         remoteState.cards,
@@ -2039,6 +2398,31 @@
 
       const profile = await saveUserFinancialData(nextData);
 
+      if (options.persistLedger) {
+        const ledgerRows = buildLedgerRows(user.id, nextData);
+        const supabase = await getSupabaseClient();
+
+        try {
+          await removeDeletedLedgerEntries(user.id, ledgerRows);
+
+          if (ledgerRows.length) {
+            const { error: ledgerError } = await supabase
+              .from(LEDGER_TABLE)
+              .upsert(ledgerRows, { onConflict: "user_id,external_id" });
+
+            if (ledgerError) {
+              throw ledgerError;
+            }
+          }
+        } catch (error) {
+          if (isLedgerMissingError(error)) {
+            throw createLedgerMissingError(error?.cause || error);
+          }
+
+          throw error;
+        }
+      }
+
       if (options.persistExpenses) {
         const expenseRows = buildExpenseRows(user.id, nextData);
         const supabase = await getSupabaseClient();
@@ -2186,6 +2570,14 @@
       .catch((error) => {
         isApplyingRemoteState = false;
 
+        if (isLedgerMissingError(error)) {
+          console.warn(
+            "[MFinanceiro Sync] O ledger central ainda nao existe no Supabase. Aplique a migration mf_finance_ledger_entries para ativar o app em modo ledger-first.",
+            error
+          );
+          return null;
+        }
+
         if (isMissingTableError(error)) {
           console.warn(
             "[MFinanceiro Sync] Tabelas do Supabase ainda nao existem. Execute o SQL da pasta supabase para ativar a persistencia remota.",
@@ -2217,34 +2609,39 @@
 
   async function getExpenses() {
     const userId = await getAuthenticatedUserId();
-    const supabase = await getSupabaseClient();
-    const { data, error } = await supabase
-      .from(EXPENSES_TABLE)
-      .select("*")
-      .eq("user_id", userId)
-      .order("data", { ascending: false })
-      .order("created_at", { ascending: false });
+    const ledgerRows = await fetchRequiredUserRows(LEDGER_TABLE, userId, {
+      orders: [
+        { column: "data", ascending: false },
+        { column: "created_at", ascending: false },
+      ],
+    });
+    const localLedger = Array.isArray(ledgerRows) ? ledgerRows.map(mapLedgerRowToLocal) : [];
+    const dailyExpenses = deriveDailyExpensesFromLedgerItems(localLedger);
 
-    if (error) {
-      throw error;
-    }
+    replaceLocalLedgerMovements(ledgerRows || []);
+    logLedgerSyncDebug("Gastos derivados diretamente do ledger", ledgerRows || [], {
+      gastosSaida: dailyExpenses.length,
+    });
 
-    replaceLocalExpenses(data || []);
-    return Array.isArray(data) ? data.map(mapExpenseRowToLocal) : [];
+    return dailyExpenses;
   }
 
   async function addExpense(expenseData) {
     const userId = await getAuthenticatedUserId();
-    const expenseRow = buildExpenseRow(userId, expenseData);
+    const ledgerRow = buildLedgerRow(userId, {
+      ...expenseData,
+      origem: expenseData?.origem || "manual",
+      status_importacao: expenseData?.status_importacao || "valida",
+    });
 
-    if (!expenseRow.external_id || !expenseRow.descricao || expenseRow.valor <= 0 || !expenseRow.data) {
+    if (!ledgerRow.external_id || !ledgerRow.descricao || ledgerRow.valor <= 0 || !ledgerRow.data) {
       throw new Error("Dados invalidos para salvar a despesa.");
     }
 
     const supabase = await getSupabaseClient();
     const { data, error } = await supabase
-      .from(EXPENSES_TABLE)
-      .upsert(expenseRow, { onConflict: "user_id,external_id" })
+      .from(LEDGER_TABLE)
+      .upsert(ledgerRow, { onConflict: "user_id,external_id" })
       .select("*")
       .maybeSingle();
 
@@ -2257,7 +2654,208 @@
       data: window.FinanceStore.loadAppData(),
       persistExpenses: false,
     });
-    return mapExpenseRowToLocal(data || expenseRow);
+    return mapLedgerRowToLocal(data || ledgerRow);
+  }
+
+  async function importStatementBatch(statementItems, options = {}) {
+    const userId = await getAuthenticatedUserId();
+    const supabase = await getSupabaseClient();
+    const sourceItems = Array.isArray(statementItems) ? statementItems : [];
+    const report = {
+      totalLinhasLidas: sourceItems.length,
+      totalLinhasProcessadas: sourceItems.length,
+      totalValidas: 0,
+      totalDuplicadas: 0,
+      totalRejeitadas: 0,
+      totalEfetivamenteSalvo: 0,
+      errosPorLinha: [],
+    };
+    const existingKeys = new Set();
+    const batchKeys = new Set();
+    const processedItems = [];
+    const existingLedgerRows = await fetchRequiredUserRows(LEDGER_TABLE, userId, {
+      select: "external_id, descricao, valor, data, tipo",
+    });
+
+    [...(existingLedgerRows || [])].forEach((row) => {
+      const externalId = normalizeText(row?.external_id);
+
+      if (externalId) {
+        existingKeys.add(externalId);
+      }
+
+      existingKeys.add(
+        buildExpenseFallbackKey(userId, {
+          data: row?.data,
+          descricao: row?.descricao,
+          valor: row?.valor,
+          tipo: row?.tipo,
+        })
+      );
+    });
+
+    const validItems = sourceItems.reduce((accumulator, item, index) => {
+      const lineNumber = Number(item?.linha_origem || index + 1);
+      const rawValue = normalizeNumber(item?.valor);
+      const normalizedValue = Math.abs(rawValue);
+      const normalizedDate = normalizeDateForDatabase(item?.data || item?.dataNormalizada);
+      const normalizedDescription = normalizeText(item?.descricao);
+      const normalizedType = normalizeExpenseType(
+        item?.tipo,
+        rawValue < 0 ? "entrada" : "saida"
+      );
+      const canonicalItem = {
+        ...item,
+        user_id: userId,
+        data: normalizedDate,
+        descricao: normalizedDescription,
+        valor: normalizedValue,
+        categoria: normalizeText(item?.categoria || "outros") || "outros",
+        tipo: normalizedType,
+        origem: normalizeText(item?.origem, "extrato_importado") || "extrato_importado",
+        arquivo_origem: normalizeText(item?.arquivo_origem || options.fileName || "") || null,
+        linha_origem: Number.isFinite(lineNumber) ? lineNumber : null,
+        external_id: normalizeText(item?.external_id || ""),
+        status_importacao: item?.status_importacao || "valida",
+      };
+
+      if (canonicalItem.status_importacao === "rejeitada") {
+        report.totalRejeitadas += 1;
+        report.errosPorLinha.push({
+          linha: canonicalItem.linha_origem,
+          motivo: item?.motivo_rejeicao || "Linha rejeitada durante a leitura.",
+        });
+        processedItems.push({
+          ...canonicalItem,
+          status_importacao: "rejeitada",
+          motivo_rejeicao: item?.motivo_rejeicao || "Linha rejeitada durante a leitura.",
+        });
+        return accumulator;
+      }
+
+      if (!canonicalItem.data) {
+        report.totalRejeitadas += 1;
+        report.errosPorLinha.push({
+          linha: canonicalItem.linha_origem,
+          motivo: "Data invalida ou ausente.",
+        });
+        processedItems.push({
+          ...canonicalItem,
+          status_importacao: "rejeitada",
+          motivo_rejeicao: "Data invalida ou ausente.",
+        });
+        return accumulator;
+      }
+
+      if (!canonicalItem.descricao) {
+        report.totalRejeitadas += 1;
+        report.errosPorLinha.push({
+          linha: canonicalItem.linha_origem,
+          motivo: "Descricao ausente.",
+        });
+        processedItems.push({
+          ...canonicalItem,
+          status_importacao: "rejeitada",
+          motivo_rejeicao: "Descricao ausente.",
+        });
+        return accumulator;
+      }
+
+      if (canonicalItem.valor <= 0) {
+        report.totalRejeitadas += 1;
+        report.errosPorLinha.push({
+          linha: canonicalItem.linha_origem,
+          motivo: "Valor invalido ou igual a zero.",
+        });
+        processedItems.push({
+          ...canonicalItem,
+          status_importacao: "rejeitada",
+          motivo_rejeicao: "Valor invalido ou igual a zero.",
+        });
+        return accumulator;
+      }
+
+      const dedupeKey = canonicalItem.external_id
+        ? canonicalItem.external_id
+        : buildExpenseFallbackKey(userId, canonicalItem);
+
+      if (existingKeys.has(dedupeKey) || batchKeys.has(dedupeKey)) {
+        report.totalDuplicadas += 1;
+        report.errosPorLinha.push({
+          linha: canonicalItem.linha_origem,
+          motivo: "Movimentacao duplicada.",
+        });
+        processedItems.push({
+          ...canonicalItem,
+          external_id: dedupeKey,
+          id: dedupeKey,
+          status_importacao: "duplicada",
+          motivo_rejeicao: "Movimentacao duplicada.",
+        });
+        return accumulator;
+      }
+
+      batchKeys.add(dedupeKey);
+      report.totalValidas += 1;
+      const validItem = {
+        ...canonicalItem,
+        external_id: dedupeKey,
+        id: dedupeKey,
+        status_importacao: "valida",
+        motivo_rejeicao: "",
+      };
+      processedItems.push(validItem);
+      accumulator.push(validItem);
+      return accumulator;
+    }, []);
+
+    let savedItems = [];
+
+    if (validItems.length) {
+      const ledgerRowsToSave = validItems
+        .map((item) => buildLedgerRow(userId, item))
+        .filter((item) => item.external_id && item.data && item.valor > 0);
+      let savedLedgerRows = [];
+
+      if (ledgerRowsToSave.length) {
+        const { data: savedRows, error: saveError } = await supabase
+          .from(LEDGER_TABLE)
+          .upsert(ledgerRowsToSave, { onConflict: "user_id,external_id" })
+          .select("*");
+
+        if (saveError) {
+          throw saveError;
+        }
+
+        savedLedgerRows = Array.isArray(savedRows) ? savedRows : ledgerRowsToSave;
+      }
+
+      savedItems = Array.isArray(savedLedgerRows) ? savedLedgerRows.map(mapLedgerRowToLocal) : validItems;
+      report.totalEfetivamenteSalvo = Array.isArray(savedLedgerRows)
+        ? savedLedgerRows.length
+        : ledgerRowsToSave.length;
+    }
+
+    const snapshot = await loadUserFinancialSnapshot();
+    isApplyingRemoteState = true;
+    window.FinanceStore.replaceAppData(snapshot.data, REMOTE_SOURCE);
+    isApplyingRemoteState = false;
+    await recalculateAndUpdate("import-expenses-batch", {
+      data: snapshot.data,
+      persistExpenses: false,
+      persistLedger: false,
+    });
+
+    return {
+      userId,
+      report,
+      processedItems,
+      savedItems,
+    };
+  }
+
+  async function importExpensesBatch(expenseItems, options = {}) {
+    return importStatementBatch(expenseItems, options);
   }
 
   async function deleteExpense(id) {
@@ -2270,7 +2868,7 @@
 
     const supabase = await getSupabaseClient();
     const { data: existingExpense, error: lookupError } = await supabase
-      .from(EXPENSES_TABLE)
+      .from(LEDGER_TABLE)
       .select("id, external_id")
       .eq("user_id", userId)
       .eq("external_id", externalId)
@@ -2285,7 +2883,7 @@
     }
 
     const { error: deleteError } = await supabase
-      .from(EXPENSES_TABLE)
+      .from(LEDGER_TABLE)
       .delete()
       .eq("user_id", userId)
       .eq("external_id", existingExpense.external_id);
@@ -2295,13 +2893,19 @@
     }
 
     const currentData = window.FinanceStore.loadAppData();
-    const nextExpenses = (Array.isArray(currentData.contasDiaADia) ? currentData.contasDiaADia : []).filter(
-      (item) => String(item.id || "") !== existingExpense.external_id
+    const nextLedger = (Array.isArray(currentData.ledgerMovimentacoes)
+      ? currentData.ledgerMovimentacoes
+      : []
+    ).filter(
+      (item) =>
+        String(item.external_id || item.id || "") !== existingExpense.external_id
     );
+    const nextExpenses = deriveDailyExpensesFromLedgerItems(nextLedger);
 
     window.FinanceStore.replaceAppData(
       {
         ...currentData,
+        ledgerMovimentacoes: nextLedger,
         contasDiaADia: nextExpenses,
       },
       REMOTE_SOURCE
@@ -2346,6 +2950,31 @@
     }
   }
 
+  async function removeDeletedLedgerEntries(userId, nextLedgerRows) {
+    const currentRows = await fetchOptionalUserRows(LEDGER_TABLE, userId, {
+      select: "external_id",
+    });
+    const nextIds = new Set(nextLedgerRows.map((item) => item.external_id));
+    const idsToDelete = (currentRows || [])
+      .map((item) => item.external_id)
+      .filter((externalId) => !nextIds.has(externalId));
+
+    if (!idsToDelete.length) {
+      return;
+    }
+
+    const supabase = await getSupabaseClient();
+    const { error: deleteError } = await supabase
+      .from(LEDGER_TABLE)
+      .delete()
+      .eq("user_id", userId)
+      .in("external_id", idsToDelete);
+
+    if (deleteError) {
+      throw deleteError;
+    }
+  }
+
   async function syncRemoteState(reason = "manual") {
     if (isApplyingRemoteState) {
       return null;
@@ -2353,7 +2982,8 @@
 
     return recalculateAndUpdate(reason, {
       data: window.FinanceStore.loadAppData(),
-      persistExpenses: true,
+      persistLedger: true,
+      persistExpenses: false,
       persistFixedBills: true,
       persistCards: true,
       persistCardExpenses: true,
@@ -2395,6 +3025,8 @@
         const localData = window.FinanceStore.loadAppData();
         const remoteData = await loadUserFinancialData();
         const hasRemoteProfile = Boolean(remoteData.rawProfile);
+        const hasRemoteLedger =
+          Array.isArray(remoteData.rawLedger) && remoteData.rawLedger.length > 0;
         const hasRemoteExpenses =
           Array.isArray(remoteData.rawExpenses) && remoteData.rawExpenses.length > 0;
         const hasRemoteFixedBills =
@@ -2412,6 +3044,7 @@
 
         if (
           !hasRemoteProfile &&
+          !hasRemoteLedger &&
           !hasRemoteExpenses &&
           !hasRemoteFixedBills &&
           !hasRemoteCards &&
@@ -2432,6 +3065,7 @@
         const mergedData = mergeRemoteState(
           localData,
           remoteData.rawProfile,
+          remoteData.rawLedger,
           remoteData.rawExpenses,
           remoteData.rawFixedBills,
           remoteData.rawCards,
@@ -2440,12 +3074,14 @@
           remoteData.rawIncomes,
           remoteData.rawBenefits
         );
+        const ledgerMigrationPending = !hasRemoteLedger && hasRemoteExpenses;
         isApplyingRemoteState = true;
         window.FinanceStore.replaceAppData(mergedData, REMOTE_SOURCE);
         isApplyingRemoteState = false;
         hasHydratedRemoteState = true;
         await recalculateAndUpdate("hydrate-from-supabase", {
           data: mergedData,
+          persistLedger: ledgerMigrationPending,
           persistExpenses: false,
           persistFixedBills: false,
           persistCards: false,
@@ -2472,6 +3108,14 @@
       } catch (error) {
         isApplyingRemoteState = false;
         hasHydratedRemoteState = true;
+
+        if (isLedgerMissingError(error)) {
+          console.warn(
+            "[MFinanceiro Sync] O ledger central ainda nao existe no Supabase. A migration precisa ser aplicada antes da hidratacao remota ledger-first.",
+            error
+          );
+          return null;
+        }
 
         if (isMissingTableError(error)) {
           console.warn(
@@ -2567,6 +3211,8 @@
     addFixedBill,
     addIncome,
     addInstallment,
+    importStatementBatch,
+    importExpensesBatch,
     deleteBenefit,
     deleteCard,
     deleteCardExpense,
@@ -2577,6 +3223,16 @@
     getBenefits,
     getCardExpenses,
     getCards,
+    getLedgerMovements: async () => {
+      const userId = await getAuthenticatedUserId();
+      const rows = await fetchRequiredUserRows(LEDGER_TABLE, userId, {
+        orders: [
+          { column: "data", ascending: false },
+          { column: "created_at", ascending: false },
+        ],
+      });
+      return Array.isArray(rows) ? rows.map(mapLedgerRowToLocal) : [];
+    },
     getExpenses,
     getFixedBills,
     getIncomes,

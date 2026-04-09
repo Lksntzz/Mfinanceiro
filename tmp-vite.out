@@ -1,0 +1,33 @@
+
+> mfinanceiro@1.0.0 dev
+> vite --host 127.0.0.1
+
+[Vite] VITE_SUPABASE_URL carregado: OK
+[Vite] VITE_SUPABASE_ANON_KEY carregado: OK
+Port 5173 is in use, trying another one...
+
+  [32m[1mVITE[22m v8.0.7[39m  [2mready in [0m[1m378[22m[2m[0m ms[22m
+
+  [32m➜[39m  [1mLocal[22m:   [36mhttp://127.0.0.1:[1m5174[22m/[39m
+[2m20:19:18[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mpage reload [39m[2mtmp-edge-dom.html[22m
+[2m20:26:35[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mpage reload [39m[2mtmp-edge-profile/auth-1775690777715/Default/Extensions/Temp/scoped_dir21496_337052628/CRX_INSTALL/offscreendocument.html[22m
+[2m20:26:36[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mpage reload [39m[2mtmp-edge-profile/auth-1775690777715/Default/Extensions/Temp/scoped_dir21496_337052628/CRX_INSTALL/offscreendocument.html[22m
+[2m20:26:36[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mpage reload [39m[2mtmp-edge-profile/auth-1775690777715/Default/Extensions/ghbmnnjooekpmoecnnnilnnbdlolhkhi/1.102.1_0/offscreendocument.html[22m
+[2m20:27:19[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mpage reload [39m[2mtmp-edge-profile/auth2-1775690822353/Default/Extensions/Temp/scoped_dir19500_1490277300/CRX_INSTALL/offscreendocument.html[22m
+[2m20:27:19[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mpage reload [39m[2mtmp-edge-profile/auth2-1775690822353/Default/Extensions/Temp/scoped_dir19500_1490277300/CRX_INSTALL/offscreendocument.html[22m
+[2m20:27:19[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mpage reload [39m[2mtmp-edge-profile/auth2-1775690822353/Default/Extensions/ghbmnnjooekpmoecnnnilnnbdlolhkhi/1.102.1_0/offscreendocument.html[22m
+[2m20:53:58[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mpage reload [39m[2mverify-dashboard.html[22m
+[2m20:54:10[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mpage reload [39m[2mtmp-edge-dom.html[22m
+[2m20:54:14[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mpage reload [39m[2mtmp-edge-dom.html[22m
+[2m20:54:35[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mpage reload [39m[2mverify-dashboard.html[22m
+[2m20:54:38[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mpage reload [39m[2mtmp-edge-dom.html[22m
+[2m20:55:27[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mpage reload [39m[2mtmp-edge-dom.html[22m
+[2m20:55:39[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mpage reload [39m[2mtmp-edge-dom.html[22m
+[2m20:55:42[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mpage reload [39m[2mtmp-edge-dom.html[22m
+[2m21:14:24[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mpage reload [39m[2mtmp-edge-smoke/Default/Extensions/Temp/scoped_dir20764_28950975/CRX_INSTALL/offscreendocument.html[22m
+[2m21:14:24[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mpage reload [39m[2mtmp-edge-smoke/Default/Extensions/ghbmnnjooekpmoecnnnilnnbdlolhkhi/1.102.1_0/offscreendocument.html[22m
+[2m21:14:24[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mpage reload [39m[2mtmp-edge-smoke/Default/Extensions/Temp/scoped_dir20764_28950975/CRX_INSTALL/offscreendocument.html[22m
+[2m21:24:56[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mpage reload [39m[2mtmp-edge-smoke/Default/Extensions/ghbmnnjooekpmoecnnnilnnbdlolhkhi/1.102.1_0/offscreendocument.html[22m
+[2m21:25:12[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mpage reload [39m[2mtmp-edge-smoke/Default/Extensions/Temp/scoped_dir12624_523265401/CRX_INSTALL/offscreendocument.html[22m
+[2m21:25:12[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mpage reload [39m[2mtmp-edge-smoke/Default/Extensions/Temp/scoped_dir12624_523265401/CRX_INSTALL/offscreendocument.html[22m
+[2m21:25:12[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mpage reload [39m[2mtmp-edge-smoke/Default/Extensions/ghbmnnjooekpmoecnnnilnnbdlolhkhi/1.102.1_0/offscreendocument.html[22m

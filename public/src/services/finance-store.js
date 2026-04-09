@@ -28,6 +28,7 @@ const SECTION_STORAGE_KEYS = {
   profile: "perfilMFinanceiro",
   pagamento: "registroPagamento",
   beneficios: "beneficios",
+  ledgerMovimentacoes: "ledgerMovimentacoes",
   contasFixas: "contasFixas",
   contasDiaADia: "contasVariaveis",
   contasDiaADiaManuais: "contasVariaveisManuais",
@@ -41,6 +42,7 @@ const LEGACY_SECTION_STORAGE_KEYS = {
   banking: "mfinanceiro_banking_data",
   profile: "mfinanceiro_profile_data",
   recebimentos: "mfinanceiro_recebimentos_data",
+  ledgerMovimentacoes: "mfinanceiro_ledger_movimentacoes_data",
   contasFixas: "mfinanceiro_contas_fixas_data",
   contasDiaADia: "mfinanceiro_contas_dia_a_dia_data",
   contasDiaADiaManuais: "mfinanceiro_contas_dia_a_dia_data",
@@ -196,6 +198,97 @@ function createEmptyReceipt(defaults = {}) {
   };
 }
 
+function isImportedLedgerOrigin(value) {
+  return ["importado", "extrato_importado", "extrato_importado_excel"].includes(
+    String(value || "").trim().toLowerCase()
+  );
+}
+
+function normalizeLedgerItem(item) {
+  if (!item || typeof item !== "object") {
+    return null;
+  }
+
+  return {
+    ...item,
+    id: item.id || item.external_id || createId("ledger"),
+    user_id: item.user_id || "",
+    data: item.data || "",
+    descricao: item.descricao || "Movimentacao",
+    valor: toNumber(item.valor),
+    categoria: item.categoria || "outros",
+    tipo: item.tipo || "saida",
+    origem: item.origem || "manual",
+    external_id: item.external_id || item.id || null,
+    arquivo_origem: item.arquivo_origem || null,
+    linha_origem:
+      item.linha_origem !== null && item.linha_origem !== undefined
+        ? Number(item.linha_origem)
+        : null,
+    status_importacao: item.status_importacao || "valida",
+  };
+}
+
+function deriveDailyExpensesFromLedger(ledgerItems) {
+  return (Array.isArray(ledgerItems) ? ledgerItems : [])
+    .map((item) => normalizeLedgerItem(item))
+    .filter(Boolean)
+    .filter(
+      (item) =>
+        item.status_importacao === "valida" &&
+        item.tipo === "saida" &&
+        item.data &&
+        toNumber(item.valor) > 0
+    )
+    .map((item) => ({
+      id: item.external_id || item.id,
+      user_id: item.user_id || "",
+      descricao: item.descricao,
+      categoria: item.categoria || "outros",
+      valor: toNumber(item.valor),
+      data: item.data,
+      tipo: "saida",
+      origem: item.origem || "extrato_importado",
+      external_id: item.external_id || item.id || null,
+      arquivo_origem: item.arquivo_origem || null,
+      linha_origem: item.linha_origem ?? null,
+      status_importacao: item.status_importacao || "valida",
+    }));
+}
+
+function mergeLedgerMovementsWithManualExpenses(ledgerItems, dailyExpenses) {
+  const normalizedLedgerItems = (Array.isArray(ledgerItems) ? ledgerItems : [])
+    .map((item) => normalizeLedgerItem(item))
+    .filter(Boolean);
+  const manualItems = (Array.isArray(dailyExpenses) ? dailyExpenses : [])
+    .filter((item) => !isImportedLedgerOrigin(item?.origem))
+    .map((item) =>
+      normalizeLedgerItem({
+        ...item,
+        origem: item?.origem || "manual",
+        tipo: item?.tipo || "saida",
+        status_importacao: item?.status_importacao || "valida",
+      })
+    )
+    .filter(Boolean);
+  const seenKeys = new Set();
+
+  return [...normalizedLedgerItems, ...manualItems].filter((item) => {
+    const dedupeKey = String(
+      item?.external_id ||
+      item?.id ||
+      [item?.data, item?.descricao, item?.valor, item?.tipo, item?.origem].join("|")
+    ).trim();
+
+    if (!dedupeKey || seenKeys.has(dedupeKey)) {
+      return false;
+    }
+
+    seenKeys.add(dedupeKey);
+    return true;
+  });
+}
+
 function getDefaultAppData() {
   return {
     profile: {
@@ -246,6 +339,7 @@ function getDefaultAppData() {
         },
       },
     },
+    ledgerMovimentacoes: [],
     contasFixas: [],
     contasDiaADia: [],
     cartoes: [],
@@ -584,6 +678,10 @@ function normalizeLegacyData(data) {
     data.contasDiaADia = [];
   }
 
+  if (!Array.isArray(data.ledgerMovimentacoes)) {
+    data.ledgerMovimentacoes = [];
+  }
+
   return data;
 }
 
@@ -668,6 +766,9 @@ function mergeData(base, incoming) {
         },
       },
     },
+    ledgerMovimentacoes: Array.isArray(normalizedIncoming?.ledgerMovimentacoes)
+      ? normalizedIncoming.ledgerMovimentacoes
+      : base.ledgerMovimentacoes,
     contasFixas: Array.isArray(normalizedIncoming?.contasFixas)
       ? normalizedIncoming.contasFixas
       : base.contasFixas,
@@ -708,6 +809,10 @@ function loadAppData() {
     beneficios: readSectionSnapshot(
       SECTION_STORAGE_KEYS.beneficios,
       LEGACY_SECTION_STORAGE_KEYS.recebimentos
+    ),
+    ledgerMovimentacoes: readSectionSnapshot(
+      SECTION_STORAGE_KEYS.ledgerMovimentacoes,
+      LEGACY_SECTION_STORAGE_KEYS.ledgerMovimentacoes
     ),
     contasFixas: readSectionSnapshot(
       SECTION_STORAGE_KEYS.contasFixas,
@@ -863,6 +968,34 @@ function loadAppData() {
     };
   }
 
+  if (Array.isArray(hydratedData.ledgerMovimentacoes) && hydratedData.ledgerMovimentacoes.length) {
+    const ledgerItems = mergeLedgerMovementsWithManualExpenses(
+      hydratedData.ledgerMovimentacoes,
+      hydratedData.contasDiaADia
+    );
+    const importedItemsFromLedger = deriveDailyExpensesFromLedger(ledgerItems);
+    const manualItems = (Array.isArray(hydratedData.contasDiaADia) ? hydratedData.contasDiaADia : []).filter(
+      (item) => !isImportedLedgerOrigin(item?.origem)
+    );
+
+    hydratedData = {
+      ...hydratedData,
+      ledgerMovimentacoes: ledgerItems,
+      contasDiaADia: [...manualItems, ...importedItemsFromLedger],
+    };
+  }
+
+  if (
+    (!Array.isArray(hydratedData.ledgerMovimentacoes) || !hydratedData.ledgerMovimentacoes.length) &&
+    Array.isArray(hydratedData.contasDiaADia) &&
+    hydratedData.contasDiaADia.length
+  ) {
+    hydratedData = {
+      ...hydratedData,
+      ledgerMovimentacoes: mergeLedgerMovementsWithManualExpenses([], hydratedData.contasDiaADia),
+    };
+  }
+
   return hydratedData;
 }
 
@@ -903,15 +1036,19 @@ function persistSectionSnapshots(data) {
       },
     }
   );
+  writeScopedJsonStorage(
+    SECTION_STORAGE_KEYS.ledgerMovimentacoes,
+    data.ledgerMovimentacoes || []
+  );
   writeScopedJsonStorage(SECTION_STORAGE_KEYS.contasFixas, data.contasFixas || []);
   writeScopedJsonStorage(SECTION_STORAGE_KEYS.contasDiaADia, data.contasDiaADia || []);
   writeScopedJsonStorage(
     SECTION_STORAGE_KEYS.contasDiaADiaManuais,
-    (data.contasDiaADia || []).filter((item) => item.origem !== "importado")
+    (data.contasDiaADia || []).filter((item) => !isImportedLedgerOrigin(item?.origem))
   );
   writeScopedJsonStorage(
     SECTION_STORAGE_KEYS.contasDiaADiaImportadas,
-    (data.contasDiaADia || []).filter((item) => item.origem === "importado")
+    (data.contasDiaADia || []).filter((item) => isImportedLedgerOrigin(item?.origem))
   );
   writeScopedJsonStorage(SECTION_STORAGE_KEYS.cartoes, data.cartoes || []);
   writeScopedJsonStorage(
@@ -1007,6 +1144,10 @@ function carregarContasFixas() {
 }
 
 function carregarContasVariaveis() {
+  const ledgerSnapshot = readSectionSnapshot(
+    SECTION_STORAGE_KEYS.ledgerMovimentacoes,
+    LEGACY_SECTION_STORAGE_KEYS.ledgerMovimentacoes
+  );
   const manualItems = readSectionSnapshot(
     SECTION_STORAGE_KEYS.contasDiaADiaManuais,
     LEGACY_SECTION_STORAGE_KEYS.contasDiaADiaManuais
@@ -1015,6 +1156,19 @@ function carregarContasVariaveis() {
     SECTION_STORAGE_KEYS.contasDiaADiaImportadas,
     LEGACY_SECTION_STORAGE_KEYS.contasDiaADiaImportadas
   );
+
+  if (Array.isArray(ledgerSnapshot) && ledgerSnapshot.length) {
+    return [
+      ...(Array.isArray(manualItems)
+        ? manualItems.map((item) => ({
+            ...item,
+            origem: item.origem || "manual",
+            tipo: item.tipo || "saida",
+          }))
+        : []),
+      ...deriveDailyExpensesFromLedger(ledgerSnapshot),
+    ];
+  }
 
   if (Array.isArray(manualItems) || Array.isArray(importedItems)) {
     return [
@@ -1227,6 +1381,14 @@ function salvarContas(tipo, payload) {
     }
 
     draft[targetKey] = collection;
+
+    if (tipo !== "fixa") {
+      draft.ledgerMovimentacoes = mergeLedgerMovementsWithManualExpenses(
+        draft.ledgerMovimentacoes,
+        collection
+      );
+    }
+
     return draft;
   });
 }
@@ -1243,18 +1405,22 @@ function salvarContasVariaveisImportadas(payloads) {
   console.log("Salvando contas importadas", payloads);
 
   return updateAppData((draft) => {
-    const currentItems = Array.isArray(draft.contasDiaADia) ? draft.contasDiaADia : [];
-    const manualItems = currentItems.filter((item) => item.origem !== "importado");
-    const importedItems = Array.isArray(payloads)
-      ? payloads.map((item) => ({
-          ...item,
-          origem: "importado",
-          tipo: item.tipo || "saida",
-          valor: toNumber(item.valor),
-        }))
+    const nextLedgerItems = Array.isArray(payloads)
+      ? payloads.map((item) =>
+          normalizeLedgerItem({
+            ...item,
+            origem: item.origem || "extrato_importado",
+            tipo: item.tipo || "saida",
+            valor: toNumber(item.valor),
+            status_importacao: item.status_importacao || "valida",
+          })
+        ).filter(Boolean)
       : [];
+    const currentItems = Array.isArray(draft.contasDiaADia) ? draft.contasDiaADia : [];
+    const manualItems = currentItems.filter((item) => !isImportedLedgerOrigin(item?.origem));
 
-    draft.contasDiaADia = [...manualItems, ...importedItems];
+    draft.ledgerMovimentacoes = mergeLedgerMovementsWithManualExpenses(nextLedgerItems, manualItems);
+    draft.contasDiaADia = [...manualItems, ...deriveDailyExpensesFromLedger(nextLedgerItems)];
     return draft;
   });
 }
@@ -1367,6 +1533,14 @@ window.FinanceStore = {
   carregarBeneficios,
   carregarContasFixas,
   carregarContasVariaveis,
+  carregarLedgerMovimentacoes: () =>
+    mergeLedgerMovementsWithManualExpenses(
+      readSectionSnapshot(
+        SECTION_STORAGE_KEYS.ledgerMovimentacoes,
+        LEGACY_SECTION_STORAGE_KEYS.ledgerMovimentacoes
+      ) || loadAppData().ledgerMovimentacoes || [],
+      loadAppData().contasDiaADia || []
+    ),
   carregarGastosCartao,
   carregarInvestimentos,
   carregarLancamentosCartao,
@@ -1380,6 +1554,8 @@ window.FinanceStore = {
   calcularSalarioLiquidoBanco,
   createId,
   dispatchFinanceUpdate,
+  deriveDailyExpensesFromLedger,
+  mergeLedgerMovementsWithManualExpenses,
   editarBeneficios,
   editarCartao,
   editarContaFixa,

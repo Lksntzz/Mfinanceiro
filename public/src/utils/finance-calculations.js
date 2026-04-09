@@ -99,6 +99,80 @@ function formatDateLong(value) {
   }).format(normalizeDate(value));
 }
 
+function parseDateTimeValue(value) {
+  if (!value) {
+    return null;
+  }
+
+  if (value instanceof Date) {
+    const clonedDate = new Date(value.getTime());
+    return Number.isNaN(clonedDate.getTime()) ? null : clonedDate;
+  }
+
+  if (typeof value === "string") {
+    const trimmedValue = value.trim();
+
+    if (!trimmedValue) {
+      return null;
+    }
+
+    const isoDateMatch = trimmedValue.match(/^(\d{4})-(\d{2})-(\d{2})$/);
+    if (isoDateMatch) {
+      return new Date(Number(isoDateMatch[1]), Number(isoDateMatch[2]) - 1, Number(isoDateMatch[3]));
+    }
+
+    const brDateMatch = trimmedValue.match(/^(\d{2})\/(\d{2})\/(\d{4})(?:\s+(\d{2}):(\d{2}))?$/);
+    if (brDateMatch) {
+      return new Date(
+        Number(brDateMatch[3]),
+        Number(brDateMatch[2]) - 1,
+        Number(brDateMatch[1]),
+        Number(brDateMatch[4] || 0),
+        Number(brDateMatch[5] || 0)
+      );
+    }
+  }
+
+  const parsedDate = new Date(value);
+  return Number.isNaN(parsedDate.getTime()) ? null : parsedDate;
+}
+
+function formatTimeLabel(value) {
+  const dateTime = parseDateTimeValue(value);
+
+  if (!dateTime) {
+    return "";
+  }
+
+  return new Intl.DateTimeFormat("pt-BR", {
+    hour: "2-digit",
+    minute: "2-digit",
+  }).format(dateTime);
+}
+
+function formatPercentLabel(value) {
+  return new Intl.NumberFormat("pt-BR", {
+    style: "percent",
+    maximumFractionDigits: 0,
+  }).format((Number(value || 0)) / 100);
+}
+
+function normalizeMovementType(tipo, rawValue = 0) {
+  const normalizedType = String(tipo || "")
+    .trim()
+    .toLowerCase();
+
+  if (normalizedType === "entrada") {
+    return "entrada";
+  }
+
+  if (normalizedType === "saida") {
+    return "saida";
+  }
+
+  return normalizeNumericValue(rawValue) < 0 ? "entrada" : "saida";
+}
+
 function areSameDay(leftDate, rightDate) {
   return leftDate.getTime() === rightDate.getTime();
 }
@@ -864,34 +938,99 @@ function calcularPrioridadesDoCiclo(data, referenceDate = new Date()) {
   return pendingItems.slice(0, 6).map((item) => buildCyclePriorityMessage(item, referenceDate));
 }
 
+function getLedgerMovementItems(source) {
+  if (Array.isArray(source)) {
+    return source;
+  }
+
+  return Array.isArray(source?.ledgerMovimentacoes) ? source.ledgerMovimentacoes : [];
+}
+
+function normalizeLedgerMovement(movement, index = 0) {
+  const normalizedDate = safeNormalizeDate(
+    movement?.data || movement?.dataNormalizada || movement?.dataHora
+  );
+  const dataHora =
+    parseDateTimeValue(movement?.dataHora || movement?.data || movement?.dataNormalizada) ||
+    normalizedDate;
+  const rawValue = normalizeNumericValue(movement?.valor);
+  const normalizedValue = Math.abs(rawValue);
+  const tipo = normalizeMovementType(movement?.tipo, rawValue);
+  const statusImportacao = String(movement?.status_importacao || movement?.statusImportacao || "valida")
+    .trim()
+    .toLowerCase();
+
+  if (!normalizedDate || normalizedValue <= 0 || statusImportacao === "rejeitada") {
+    return null;
+  }
+
+  const classification = resolveMovementClassification(movement);
+
+  return {
+    ...movement,
+    id:
+      movement?.id ||
+      movement?.external_id ||
+      movement?.externalId ||
+      `movimentacao_${index + 1}`,
+    user_id: movement?.user_id || movement?.userId || "",
+    external_id: movement?.external_id || movement?.externalId || movement?.id || "",
+    data: movement?.data || movement?.dataNormalizada || "",
+    dataNormalizada: normalizedDate,
+    dataHora,
+    descricao: movement?.descricao || movement?.nome || "Movimentacao",
+    descricaoNormalizada: classification.descricaoNormalizada,
+    categoria: movement?.categoria || classification.categoriaPrincipal || "outros",
+    categoriaPrincipal: classification.categoriaPrincipal,
+    subcategoria: movement?.subcategoria || classification.subcategoria || "",
+    valor: normalizedValue,
+    valorOriginal: rawValue,
+    tipo,
+    origem: movement?.origem || "manual",
+    status_importacao: statusImportacao,
+    classificacaoAutomatica: classification.classificacaoAutomatica,
+  };
+}
+
+function getLedgerMovements(source, options = {}) {
+  const includeEntradas = options.includeEntradas !== false;
+  const includeSaidas = options.includeSaidas !== false;
+
+  return getLedgerMovementItems(source)
+    .map((movement, index) => normalizeLedgerMovement(movement, index))
+    .filter(Boolean)
+    .filter((movement) => {
+      if (movement.tipo === "entrada") {
+        return includeEntradas;
+      }
+
+      return includeSaidas;
+    })
+    .sort((left, right) => left.dataHora.getTime() - right.dataHora.getTime());
+}
+
+function getLedgerExpenseEntries(source) {
+  return getLedgerMovements(source, {
+    includeEntradas: false,
+    includeSaidas: true,
+  });
+}
+
+function getLedgerIncomeEntries(source) {
+  return getLedgerMovements(source, {
+    includeEntradas: true,
+    includeSaidas: false,
+  });
+}
+
 function getDailyExpensesSummary(data, referenceDate = new Date()) {
   const today = normalizeDate(referenceDate);
   const paymentInfo = calcularProximoPagamento(data, today);
-  const expenses = Array.isArray(data.contasDiaADia) ? data.contasDiaADia : [];
-  const allItems = expenses
-    .map((expense) => {
-      const expenseDate = safeNormalizeDate(expense.data);
-
-      if (!expenseDate) {
-        return null;
-      }
-
-      const numericValue = Math.abs(normalizeNumericValue(expense.valor));
-      const tipo =
-        expense.tipo ||
-        (normalizeNumericValue(expense.valor) < 0 ? "saida" : "entrada");
-
-      return {
-        ...expense,
-        dataNormalizada: expenseDate,
-        valor: numericValue,
-        tipo,
-      };
-    })
-    .filter(Boolean)
-    .sort((left, right) => left.dataNormalizada.getTime() - right.dataNormalizada.getTime());
-  const items = allItems.filter((expense) =>
-    isWithinRange(expense.dataNormalizada, paymentInfo.cycleStart, paymentInfo.cycleEnd)
+  const allItems = getLedgerMovements(data);
+  const items = allItems.filter(
+    (expense) =>
+      expense.tipo === "saida" &&
+      isWithinRange(expense.dataNormalizada, paymentInfo.cycleStart, paymentInfo.cycleEnd)
   );
   const categories = items.reduce((accumulator, item) => {
     const category = item.categoria || "outros";
@@ -921,39 +1060,16 @@ function getDailyExpensesSummary(data, referenceDate = new Date()) {
 }
 
 function getFinancialEntries(data) {
-  const entries = Array.isArray(data?.contasDiaADia) ? data.contasDiaADia : [];
-
-  return entries
-    .map((entry) => {
-      const entryDate = safeNormalizeDate(entry.data || entry.dataNormalizada);
-
-      if (!entryDate) {
-        return null;
-      }
-
-      const normalizedValue = Math.abs(normalizeNumericValue(entry.valor));
-      const tipo =
-        entry.tipo ||
-        (normalizeNumericValue(entry.valor) < 0 ? "saida" : "entrada");
-
-      if (tipo !== "saida" || normalizedValue <= 0) {
-        return null;
-      }
-
-      return {
-        ...entry,
-        id: entry.id || `${entryDate.toISOString()}_${normalizedValue}`,
-        dataNormalizada: entryDate,
-        valor: normalizedValue,
-        categoria: entry.categoria || "outros",
-        origem: entry.origem || "manual",
-        fonteLancamento: entry.origem === "importado" ? "extrato" : "manual",
-        descricao: entry.descricao || "Lancamento",
-        tipo: "saida",
-      };
-    })
-    .filter(Boolean)
-    .sort((left, right) => left.dataNormalizada.getTime() - right.dataNormalizada.getTime());
+  return getLedgerExpenseEntries(data).map((entry) => ({
+    ...entry,
+    fonteLancamento:
+      entry.origem === "importado" ||
+      entry.origem === "extrato_importado" ||
+      entry.origem === "extrato_importado_excel"
+        ? "extrato"
+        : "manual",
+    tipo: "saida",
+  }));
 }
 
 function getStartOfWeek(referenceDate) {
@@ -999,9 +1115,188 @@ function getEntriesWithinRange(entries, startDate, endDate) {
   );
 }
 
+function getDashboardExpenseItems(source) {
+  return getLedgerMovementItems(source);
+}
+
+function normalizeDashboardExpenseItem(expense, index = 0) {
+  const normalizedDate = safeNormalizeDate(expense?.data || expense?.dataNormalizada);
+  const dateTime = parseDateTimeValue(expense?.data || expense?.dataNormalizada);
+  const rawValue = normalizeNumericValue(expense?.valor);
+  const normalizedValue = Math.abs(rawValue);
+  const normalizedType = normalizeMovementType(expense?.tipo, rawValue);
+
+  if (!normalizedDate || normalizedValue <= 0 || normalizedType === "entrada") {
+    return null;
+  }
+
+  const classification = resolveMovementClassification(expense);
+
+  return {
+    ...expense,
+    id: expense?.id || `despesa_${index + 1}`,
+    user_id: expense?.user_id || expense?.userId || "",
+    valor: normalizedValue,
+    descricao: expense?.descricao || "Lancamento",
+    descricaoNormalizada: classification.descricaoNormalizada,
+    categoria: expense?.categoria || classification.categoriaPrincipal || "Sem categoria",
+    categoriaPrincipal: classification.categoriaPrincipal || expense?.categoria || "Sem categoria",
+    subcategoria: expense?.subcategoria || classification.subcategoria || "",
+    data: expense?.data || expense?.dataNormalizada || "",
+    dataNormalizada: normalizedDate,
+    dataHora: dateTime || normalizedDate,
+    tipo: normalizedType,
+  };
+}
+
+function normalizeDashboardExpenses(source) {
+  return getDashboardExpenseItems(source)
+    .map((expense, index) => normalizeDashboardExpenseItem(expense, index))
+    .filter(Boolean)
+    .sort((left, right) => left.dataHora.getTime() - right.dataHora.getTime());
+}
+
+function getDespesasDoDia(despesas, dataAtual = new Date()) {
+  const today = normalizeDate(dataAtual);
+
+  return normalizeDashboardExpenses(despesas).filter((despesa) =>
+    areSameDay(despesa.dataNormalizada, today)
+  );
+}
+
+function getDespesasDaSemana(despesas, dataAtual = new Date()) {
+  const today = normalizeDate(dataAtual);
+  const startOfWeek = getStartOfWeek(today);
+
+  return normalizeDashboardExpenses(despesas).filter((despesa) =>
+    isWithinRange(despesa.dataNormalizada, startOfWeek, today)
+  );
+}
+
+function getDespesasDoMes(despesas, dataAtual = new Date()) {
+  const today = normalizeDate(dataAtual);
+  const startOfMonth = getStartOfMonth(today);
+
+  return normalizeDashboardExpenses(despesas).filter((despesa) =>
+    isWithinRange(despesa.dataNormalizada, startOfMonth, today)
+  );
+}
+
+function getDespesasPorPeriodo(despesas, periodo = "week", dataAtual = new Date()) {
+  if (periodo === "day") {
+    return getDespesasDoDia(despesas, dataAtual);
+  }
+
+  if (periodo === "month") {
+    return getDespesasDoMes(despesas, dataAtual);
+  }
+
+  return getDespesasDaSemana(despesas, dataAtual);
+}
+
+function buildEvolutionChartDataForDay(periodExpenses) {
+  return {
+    labels: periodExpenses.map((expense, index) => formatTimeLabel(expense.data) || `Lanc. ${index + 1}`),
+    values: periodExpenses.map((expense) => Number(expense.valor || 0)),
+  };
+}
+
+function buildEvolutionChartDataForGroupedDays(periodExpenses, startDate, endDate) {
+  const totalsByDay = periodExpenses.reduce((accumulator, expense) => {
+    const key = expense.dataNormalizada.toISOString().slice(0, 10);
+    accumulator.set(key, (accumulator.get(key) || 0) + Number(expense.valor || 0));
+    return accumulator;
+  }, new Map());
+  const labels = [];
+  const values = [];
+  const cursor = normalizeDate(startDate);
+  const finalDate = normalizeDate(endDate);
+
+  while (cursor.getTime() <= finalDate.getTime()) {
+    const key = cursor.toISOString().slice(0, 10);
+    labels.push(formatDate(cursor));
+    values.push(Number(totalsByDay.get(key) || 0));
+    cursor.setDate(cursor.getDate() + 1);
+    cursor.setHours(0, 0, 0, 0);
+  }
+
+  return { labels, values };
+}
+
+function prepareEvolutionChartData(despesas, periodo = "week", dataAtual = new Date()) {
+  const descriptor = getExpensePeriodDescriptor(periodo, dataAtual);
+  const periodExpenses = getDespesasPorPeriodo(despesas, periodo, dataAtual);
+
+  if (periodo === "day") {
+    return {
+      period: descriptor.period,
+      labels: buildEvolutionChartDataForDay(periodExpenses).labels,
+      values: buildEvolutionChartDataForDay(periodExpenses).values,
+      items: periodExpenses,
+    };
+  }
+
+  const groupedData = buildEvolutionChartDataForGroupedDays(
+    periodExpenses,
+    descriptor.startDate,
+    descriptor.endDate
+  );
+
+  return {
+    period: descriptor.period,
+    labels: groupedData.labels,
+    values: groupedData.values,
+    items: periodExpenses,
+  };
+}
+
+function prepareCategoryChartData(despesas, periodo = "week", dataAtual = new Date()) {
+  const periodExpenses = getDespesasPorPeriodo(despesas, periodo, dataAtual);
+  const categorySeries = buildCategorySeries(periodExpenses);
+
+  return {
+    period: periodo,
+    labels: categorySeries.map((item) => item.categoria),
+    values: categorySeries.map((item) => Number(item.total || 0)),
+    items: categorySeries,
+  };
+}
+
+function prepareSummaryData(despesas, periodo = "week", dataAtual = new Date()) {
+  const periodExpenses = getDespesasPorPeriodo(despesas, periodo, dataAtual);
+  const totalGasto = periodExpenses.reduce((sum, expense) => sum + Number(expense.valor || 0), 0);
+  const categorySeries = buildCategorySeries(periodExpenses);
+  const categoriaMaiorGasto = categorySeries[0] || null;
+  const percentualCategoriaMaiorGasto =
+    categoriaMaiorGasto && totalGasto > 0
+      ? (Number(categoriaMaiorGasto.total || 0) / totalGasto) * 100
+      : 0;
+
+  return {
+    period: periodo,
+    totalGasto,
+    quantidadeLancamentos: periodExpenses.length,
+    categoriaMaiorGasto: categoriaMaiorGasto
+      ? {
+          categoria: categoriaMaiorGasto.categoria,
+          valor: Number(categoriaMaiorGasto.total || 0),
+          percentual: percentualCategoriaMaiorGasto,
+        }
+      : null,
+  };
+}
+
+function prepareDashboardChartData(despesas, periodo = "week", dataAtual = new Date()) {
+  return {
+    evolutionChartData: prepareEvolutionChartData(despesas, periodo, dataAtual),
+    categoryChartData: prepareCategoryChartData(despesas, periodo, dataAtual),
+    summaryData: prepareSummaryData(despesas, periodo, dataAtual),
+  };
+}
+
 function buildCategorySeries(entries) {
   const categoryTotals = entries.reduce((accumulator, entry) => {
-    const category = entry.categoria || "outros";
+    const category = entry.categoriaPrincipal || entry.categoria || "outros";
     const currentTotal = accumulator.get(category) || 0;
     accumulator.set(category, currentTotal + Number(entry.valor || 0));
     return accumulator;
@@ -1082,6 +1377,1096 @@ function getExpenseOverviewSummary(data, referenceDate = new Date()) {
   };
 }
 
+const CATEGORY_AUTOMATION_RULES = [
+  { categoria: "alimentacao", subcategoria: "mercado", keywords: ["mercado", "supermercado", "atacadao", "carrefour", "assai", "extra", "hortifruti"] },
+  { categoria: "alimentacao", subcategoria: "padaria", keywords: ["padaria", "pao", "confeitaria"] },
+  { categoria: "alimentacao", subcategoria: "restaurante", keywords: ["restaurante", "almoco", "janta", "churrascaria", "lanchonete"] },
+  { categoria: "alimentacao", subcategoria: "delivery", keywords: ["ifood", "delivery", "pizza", "burger", "lanche", "sushi"] },
+  { categoria: "transporte", subcategoria: "app", keywords: ["uber", "99", "inDrive", "cabify", "taxi"] },
+  { categoria: "transporte", subcategoria: "combustivel", keywords: ["combustivel", "gasolina", "etanol", "diesel", "posto"] },
+  { categoria: "transporte", subcategoria: "onibus", keywords: ["onibus", "metro", "trem", "bilhete unico", "transporte publico"] },
+  { categoria: "transporte", subcategoria: "estacionamento", keywords: ["estacionamento", "zona azul", "parking", "pedagio"] },
+  { categoria: "saude", subcategoria: "farmacia", keywords: ["farmacia", "droga", "medicamento", "remedio"] },
+  { categoria: "saude", subcategoria: "consulta", keywords: ["consulta", "medico", "clinica", "odonto", "terapia"] },
+  { categoria: "saude", subcategoria: "exame", keywords: ["exame", "laboratorio", "raio x", "ultrassom", "tomografia"] },
+  { categoria: "lazer", subcategoria: "bar", keywords: ["bar", "cervejaria", "happy hour", "pub"] },
+  { categoria: "lazer", subcategoria: "viagem", keywords: ["viagem", "hotel", "airbnb", "pousada", "passagem"] },
+  { categoria: "lazer", subcategoria: "evento", keywords: ["cinema", "show", "teatro", "evento", "ingresso"] },
+  { categoria: "moradia", subcategoria: "aluguel", keywords: ["aluguel", "locacao", "imobiliaria"] },
+  { categoria: "moradia", subcategoria: "condominio", keywords: ["condominio"] },
+  { categoria: "moradia", subcategoria: "contas da casa", keywords: ["energia", "luz", "agua", "gas", "internet", "telefone", "saneamento"] },
+  { categoria: "educacao", subcategoria: "curso", keywords: ["curso", "aula", "treinamento", "certificacao"] },
+  { categoria: "educacao", subcategoria: "faculdade", keywords: ["faculdade", "universidade", "mensalidade", "colegio", "escola"] },
+  { categoria: "educacao", subcategoria: "livros", keywords: ["livro", "apostila", "material escolar"] },
+  { categoria: "assinaturas", subcategoria: "streaming", keywords: ["netflix", "spotify", "youtube premium", "disney", "max", "prime video"] },
+  { categoria: "assinaturas", subcategoria: "software", keywords: ["adobe", "canva", "microsoft", "google one", "dropbox", "notion", "chatgpt"] },
+  { categoria: "assinaturas", subcategoria: "servicos", keywords: ["assinatura", "mensalidade", "plano"] },
+  { categoria: "compras", subcategoria: "vestuario", keywords: ["roupa", "vestuario", "calcado", "tenis", "camisa"] },
+  { categoria: "compras", subcategoria: "casa", keywords: ["loja", "shopping", "casa", "decoracao", "utilidades"] },
+  { categoria: "compras", subcategoria: "eletronicos", keywords: ["amazon", "mercado livre", "magalu", "eletronico", "celular", "notebook"] },
+  { categoria: "pets", subcategoria: "racao", keywords: ["racao", "petshop", "pet shop", "areia", "pet"] },
+  { categoria: "pets", subcategoria: "veterinario", keywords: ["veterinario", "vacina pet", "banho", "tosa"] },
+  { categoria: "trabalho", subcategoria: "equipamentos", keywords: ["equipamento", "teclado", "mouse", "monitor", "escritorio"] },
+  { categoria: "trabalho", subcategoria: "deslocamento", keywords: ["estacionamento trabalho", "combustivel trabalho", "deslocamento trabalho"] },
+  { categoria: "imprevistos", subcategoria: "manutencao", keywords: ["manutencao", "reparo", "conserto", "quebra"] },
+  { categoria: "imprevistos", subcategoria: "multa", keywords: ["multa", "juros mora", "encargo"] },
+  { categoria: "imprevistos", subcategoria: "emergencia", keywords: ["emergencia", "urgencia", "socorro"] },
+  { categoria: "rendimento", subcategoria: "rendimento", keywords: ["rendimento", "juros", "invest", "aplicacao", "resgate"] },
+  { categoria: "entrada", subcategoria: "recebimento", keywords: ["pix recebido", "salario", "pagamento recebido", "deposito", "ted recebida", "transferencia recebida"] },
+];
+
+const CATEGORY_AUTOMATION_INDEX = CATEGORY_AUTOMATION_RULES.reduce(
+  (accumulator, rule) => {
+    const categoryKey = normalizeCategoryDescription(rule?.categoria);
+    const subcategoryKey = normalizeCategoryDescription(rule?.subcategoria);
+
+    if (categoryKey && !accumulator.byCategory.has(categoryKey)) {
+      accumulator.byCategory.set(categoryKey, rule.categoria);
+    }
+
+    if (subcategoryKey && !accumulator.bySubcategory.has(subcategoryKey)) {
+      accumulator.bySubcategory.set(subcategoryKey, {
+        categoria: rule.categoria,
+        subcategoria: rule.subcategoria,
+      });
+    }
+
+    return accumulator;
+  },
+  {
+    byCategory: new Map(),
+    bySubcategory: new Map(),
+  }
+);
+
+function normalizeCategoryDescription(value) {
+  return String(value || "")
+    .toLowerCase()
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .replace(/[^a-z0-9\s]/g, " ")
+    .replace(/\s+/g, " ")
+    .trim();
+}
+
+function classifyCategoryFromDescription(description, rules = CATEGORY_AUTOMATION_RULES) {
+  const normalizedDescription = normalizeCategoryDescription(description);
+
+  if (!normalizedDescription) {
+    return null;
+  }
+
+  for (const rule of Array.isArray(rules) ? rules : []) {
+    const matchedKeyword = Array.isArray(rule?.keywords)
+      ? rule.keywords.find((keyword) => normalizedDescription.includes(normalizeCategoryDescription(keyword)))
+      : "";
+
+    if (matchedKeyword) {
+      return {
+        categoria: rule.categoria || "outros",
+        subcategoria: rule.subcategoria || "",
+        matchedKeyword,
+        confidence: "rule_match",
+      };
+    }
+  }
+
+  return null;
+}
+
+function resolveMovementClassification(movement) {
+  const explicitCategoryRaw = String(
+    movement?.categoriaPrincipal || movement?.categoria || ""
+  ).trim();
+  const explicitSubcategoryRaw = String(movement?.subcategoria || "").trim();
+  const explicitCategoryKey = normalizeCategoryDescription(explicitCategoryRaw);
+  const explicitSubcategoryKey = normalizeCategoryDescription(explicitSubcategoryRaw);
+  const description = movement?.descricao || movement?.nome || "";
+  const automaticClassification = classifyCategoryFromDescription(description);
+  let categoriaPrincipal = "";
+  let subcategoria = "";
+
+  if (explicitCategoryKey) {
+    if (CATEGORY_AUTOMATION_INDEX.byCategory.has(explicitCategoryKey)) {
+      categoriaPrincipal = CATEGORY_AUTOMATION_INDEX.byCategory.get(explicitCategoryKey) || "";
+    } else if (CATEGORY_AUTOMATION_INDEX.bySubcategory.has(explicitCategoryKey)) {
+      const mappedRule = CATEGORY_AUTOMATION_INDEX.bySubcategory.get(explicitCategoryKey);
+      categoriaPrincipal = mappedRule?.categoria || "";
+      subcategoria = mappedRule?.subcategoria || "";
+    } else {
+      categoriaPrincipal = explicitCategoryRaw.toLowerCase();
+    }
+  }
+
+  if (explicitSubcategoryKey) {
+    if (CATEGORY_AUTOMATION_INDEX.bySubcategory.has(explicitSubcategoryKey)) {
+      const mappedRule = CATEGORY_AUTOMATION_INDEX.bySubcategory.get(explicitSubcategoryKey);
+      categoriaPrincipal = categoriaPrincipal || mappedRule?.categoria || "";
+      subcategoria = mappedRule?.subcategoria || "";
+    } else {
+      subcategoria = explicitSubcategoryRaw.toLowerCase();
+    }
+  }
+
+  if (!categoriaPrincipal && automaticClassification?.categoria) {
+    categoriaPrincipal = automaticClassification.categoria;
+  }
+
+  if (!subcategoria && automaticClassification?.subcategoria) {
+    subcategoria = automaticClassification.subcategoria;
+  }
+
+  if (!categoriaPrincipal) {
+    categoriaPrincipal = "outros";
+  }
+
+  return {
+    categoriaPrincipal,
+    subcategoria: subcategoria || "",
+    descricaoNormalizada: normalizeCategoryDescription(description),
+    classificacaoAutomatica: automaticClassification
+      ? {
+          categoria: automaticClassification.categoria,
+          subcategoria: automaticClassification.subcategoria || "",
+          matchedKeyword: automaticClassification.matchedKeyword || "",
+          confidence: automaticClassification.confidence || "rule_match",
+        }
+      : null,
+  };
+}
+
+function getCategoryAutomationRules() {
+  return CATEGORY_AUTOMATION_RULES.map((rule) => ({
+    categoria: rule.categoria,
+    subcategoria: rule.subcategoria || "",
+    keywords: [...(Array.isArray(rule.keywords) ? rule.keywords : [])],
+  }));
+}
+
+function getInclusiveDaySpanBetweenDates(startDate, endDate) {
+  const start = normalizeDate(startDate);
+  const end = normalizeDate(endDate);
+  const differenceInMs = end.getTime() - start.getTime();
+  const oneDay = 1000 * 60 * 60 * 24;
+  return Math.max(Math.floor(differenceInMs / oneDay) + 1, 1);
+}
+
+function buildAutomaticPeriodSummary(periodSummary, label, fallbackText) {
+  if (!periodSummary?.quantidadeLancamentos) {
+    return {
+      label,
+      tone: "muted",
+      title: fallbackText,
+      body: "Adicione ou importe lancamentos para destravar uma leitura mais util desse periodo.",
+    };
+  }
+
+  const dominantCategoryText =
+    periodSummary.categoriaDominante && periodSummary.categoriaDominante !== "Sem categoria"
+      ? ` Categoria dominante: ${periodSummary.categoriaDominante}.`
+      : "";
+
+  return {
+    label,
+    tone: periodSummary.totalGasto > 0 ? "blue" : "muted",
+    title: `${formatCurrency(periodSummary.totalGasto)} em ${periodSummary.quantidadeLancamentos} lancamento(s)`,
+    body: `${label} ja soma ${formatCurrency(periodSummary.totalGasto)}.${dominantCategoryText}`,
+  };
+}
+
+function buildDailySpendSeries(entries) {
+  return agruparLancamentosPorData(entries).map((group) => ({
+    date: group.date,
+    label: group.label,
+    total: Number(group.saidas || 0),
+    count: Number(group.count || 0),
+    topCategory: group.topCategory || "outros",
+  }));
+}
+
+function getRecentLedgerWindowSummary(entries, referenceDate = new Date(), daysBack = 21) {
+  const endDate = normalizeDate(referenceDate);
+  const startDate = new Date(endDate);
+  startDate.setDate(endDate.getDate() - Math.max(daysBack - 1, 0));
+  startDate.setHours(0, 0, 0, 0);
+  const dailySeries = buildDailySpendSeries(
+    getEntriesWithinRange(Array.isArray(entries) ? entries : [], startDate, endDate)
+  );
+  const daySpan = getInclusiveDaySpanBetweenDates(startDate, endDate);
+  const totalGasto = dailySeries.reduce((sum, item) => sum + Number(item.total || 0), 0);
+  const activeDays = dailySeries.filter((item) => Number(item.total || 0) > 0).length;
+  const averageDailySpend = daySpan > 0 ? totalGasto / daySpan : 0;
+  const averageActiveDaySpend = activeDays > 0 ? totalGasto / activeDays : 0;
+
+  return {
+    startDate,
+    endDate,
+    daySpan,
+    activeDays,
+    totalGasto,
+    averageDailySpend,
+    averageActiveDaySpend,
+    dailySeries,
+  };
+}
+
+function buildWeekdaySpendPattern(entries, referenceDate = new Date(), daysBack = 56) {
+  const recentWindow = getRecentLedgerWindowSummary(entries, referenceDate, daysBack);
+  const weekdayTotals = recentWindow.dailySeries.reduce((accumulator, item) => {
+    const weekdayLabel = new Intl.DateTimeFormat("pt-BR", {
+      weekday: "long",
+    }).format(item.date);
+    const current = accumulator.get(weekdayLabel) || {
+      weekday: weekdayLabel,
+      total: 0,
+      ocorrencias: 0,
+    };
+    current.total += Number(item.total || 0);
+    current.ocorrencias += 1;
+    accumulator.set(weekdayLabel, current);
+    return accumulator;
+  }, new Map());
+  const rankedDays = [...weekdayTotals.values()]
+    .sort((left, right) => right.total - left.total)
+    .map((item) => ({
+      ...item,
+      mediaPorOcorrencia:
+        item.ocorrencias > 0 ? Number(item.total || 0) / item.ocorrencias : 0,
+      percentual:
+        recentWindow.totalGasto > 0 ? (Number(item.total || 0) / recentWindow.totalGasto) * 100 : 0,
+    }));
+
+  return {
+    ...recentWindow,
+    rankedDays,
+    dominantDay: rankedDays[0] || null,
+  };
+}
+
+function buildBehaviorPatternSignals(selectedSummary, recentWindow, referenceDate = new Date()) {
+  const activeSeries = (recentWindow?.dailySeries || []).filter((item) => Number(item.total || 0) > 0);
+  const outlierBaseline = Math.max(
+    Number(recentWindow?.averageDailySpend || 0),
+    Number(recentWindow?.averageActiveDaySpend || 0) * 0.85
+  );
+  const outlierThreshold =
+    outlierBaseline > 0 ? Math.max(outlierBaseline * 1.8, outlierBaseline + 40) : Number.POSITIVE_INFINITY;
+  const outlierDays = activeSeries
+    .filter((item) => Number(item.total || 0) >= outlierThreshold)
+    .sort((left, right) => right.total - left.total)
+    .slice(0, 3)
+    .map((item) => ({
+      ...item,
+      ratioToAverage: outlierBaseline > 0 ? Number(item.total || 0) / outlierBaseline : 0,
+    }));
+  const today = normalizeDate(referenceDate);
+  const hasOutlierToday = outlierDays.some((item) => areSameDay(item.date, today));
+  const periodDaySpan = getInclusiveDaySpanBetweenDates(
+    selectedSummary?.startDate || today,
+    selectedSummary?.endDate || today
+  );
+  const leadingDays = periodDaySpan >= 6 ? Math.max(Math.ceil(periodDaySpan / 3), 2) : 0;
+  const leadingPeriodEnd = new Date(selectedSummary?.startDate || today);
+  if (leadingDays > 0) {
+    leadingPeriodEnd.setDate(leadingPeriodEnd.getDate() + leadingDays - 1);
+    leadingPeriodEnd.setHours(0, 0, 0, 0);
+  }
+  const leadingSpend = leadingDays
+    ? (selectedSummary?.groups || [])
+        .filter((group) => group?.date && group.date.getTime() <= leadingPeriodEnd.getTime())
+        .reduce((sum, group) => sum + Number(group.saidas || 0), 0)
+    : 0;
+  const leadingShare =
+    selectedSummary?.totalGasto > 0 ? leadingSpend / Number(selectedSummary.totalGasto || 0) : 0;
+  const expectedLeadingShare = leadingDays > 0 ? leadingDays / periodDaySpan : 0;
+  const acceleratedAtStartOfPeriod =
+    leadingDays > 0 &&
+    selectedSummary?.totalGasto > 0 &&
+    leadingShare >= Math.max(expectedLeadingShare + 0.2, 0.55);
+
+  return {
+    outlierBaseline,
+    outlierThreshold,
+    outlierDays,
+    hasOutlierDay: outlierDays.length > 0,
+    hasOutlierToday,
+    acceleratedAtStartOfPeriod,
+    leadingDays,
+    leadingSpend,
+    leadingShare,
+    expectedLeadingShare,
+  };
+}
+
+function buildComparisonSnapshot(currentValue, baselineValue) {
+  const current = Number(currentValue || 0);
+  const baseline = Number(baselineValue || 0);
+  const delta = current - baseline;
+  const percentChange =
+    baseline > 0 ? (delta / baseline) * 100 : current > 0 ? 100 : 0;
+
+  return {
+    current,
+    baseline,
+    delta,
+    percentChange,
+    hasBaseline: baseline > 0,
+    status: delta > 0 ? "up" : delta < 0 ? "down" : "flat",
+  };
+}
+
+function getPreviousPeriodDescriptor(descriptor) {
+  const daySpan = getInclusiveDaySpanBetweenDates(descriptor.startDate, descriptor.endDate);
+  const previousEndDate = new Date(descriptor.startDate);
+  previousEndDate.setDate(previousEndDate.getDate() - 1);
+  previousEndDate.setHours(0, 0, 0, 0);
+  const previousStartDate = new Date(previousEndDate);
+  previousStartDate.setDate(previousEndDate.getDate() - daySpan + 1);
+  previousStartDate.setHours(0, 0, 0, 0);
+
+  return buildCustomRangeDescriptor(
+    `${descriptor.period}_previous`,
+    `${descriptor.label} anterior`,
+    previousStartDate,
+    previousEndDate
+  );
+}
+
+function buildSpendAggregateMap(entries, keySelector, daySpan = 1) {
+  const aggregateMap = new Map();
+
+  (Array.isArray(entries) ? entries : []).forEach((entry) => {
+    const aggregateKey = String(keySelector(entry) || "").trim() || "outros";
+    const currentAggregate = aggregateMap.get(aggregateKey) || {
+      key: aggregateKey,
+      label: aggregateKey,
+      total: 0,
+      count: 0,
+      sampleDescription: entry?.descricao || "Lancamento",
+      categoriaPrincipal: entry?.categoriaPrincipal || entry?.categoria || "outros",
+      subcategoria: entry?.subcategoria || "",
+    };
+
+    currentAggregate.total += Number(entry.valor || 0);
+    currentAggregate.count += 1;
+    currentAggregate.sampleDescription = currentAggregate.sampleDescription || entry?.descricao || "";
+    aggregateMap.set(aggregateKey, currentAggregate);
+  });
+
+  return aggregateMap;
+}
+
+function mapAggregateMapToSeries(aggregateMap, daySpan = 1) {
+  return [...(aggregateMap instanceof Map ? aggregateMap.values() : [])]
+    .map((item) => ({
+      ...item,
+      ticketMedio: item.count > 0 ? Number(item.total || 0) / item.count : 0,
+      frequenciaLancamentos: item.count,
+      frequenciaPorDia: daySpan > 0 ? item.count / daySpan : item.count,
+    }))
+    .sort((left, right) => right.total - left.total);
+}
+
+function selectMeaningfulSubcategory(items) {
+  const candidates = (Array.isArray(items) ? items : []).filter(
+    (item) => item?.label && item.label !== "sem_subcategoria"
+  );
+  return candidates[0] || null;
+}
+
+function buildCategoryAnalytics(entries, selectedSummary, referenceDate = new Date()) {
+  const currentDescriptor = buildCustomRangeDescriptor(
+    selectedSummary?.period || "period",
+    selectedSummary?.label || "Periodo atual",
+    selectedSummary?.startDate || referenceDate,
+    selectedSummary?.endDate || referenceDate
+  );
+  const previousDescriptor = getPreviousPeriodDescriptor(currentDescriptor);
+  const recentWindow = getRecentLedgerWindowSummary(entries, referenceDate, 28);
+  const currentDaySpan = getInclusiveDaySpanBetweenDates(
+    currentDescriptor.startDate,
+    currentDescriptor.endDate
+  );
+  const currentEntries = getEntriesWithinRange(entries, currentDescriptor.startDate, currentDescriptor.endDate);
+  const previousEntries = getEntriesWithinRange(
+    entries,
+    previousDescriptor.startDate,
+    previousDescriptor.endDate
+  );
+  const recentEntries = getEntriesWithinRange(entries, recentWindow.startDate, recentWindow.endDate);
+  const currentCategoryMap = buildSpendAggregateMap(
+    currentEntries,
+    (entry) => entry.categoriaPrincipal || entry.categoria || "outros",
+    currentDaySpan
+  );
+  const previousCategoryMap = buildSpendAggregateMap(
+    previousEntries,
+    (entry) => entry.categoriaPrincipal || entry.categoria || "outros",
+    currentDaySpan
+  );
+  const recentCategoryMap = buildSpendAggregateMap(
+    recentEntries,
+    (entry) => entry.categoriaPrincipal || entry.categoria || "outros",
+    recentWindow.daySpan
+  );
+  const categoryItems = mapAggregateMapToSeries(currentCategoryMap, currentDaySpan).map((categoryItem) => {
+    const previousCategory = previousCategoryMap.get(categoryItem.key);
+    const recentCategory = recentCategoryMap.get(categoryItem.key);
+    const previousComparison = buildComparisonSnapshot(
+      categoryItem.total,
+      Number(previousCategory?.total || 0)
+    );
+    const recentEquivalent =
+      recentWindow.daySpan > 0
+        ? (Number(recentCategory?.total || 0) / recentWindow.daySpan) * currentDaySpan
+        : 0;
+    const recentComparison = buildComparisonSnapshot(categoryItem.total, recentEquivalent);
+    const currentSubcategoryMap = buildSpendAggregateMap(
+      currentEntries.filter(
+        (entry) => (entry.categoriaPrincipal || entry.categoria || "outros") === categoryItem.key
+      ),
+      (entry) => entry.subcategoria || "sem_subcategoria",
+      currentDaySpan
+    );
+    const previousSubcategoryMap = buildSpendAggregateMap(
+      previousEntries.filter(
+        (entry) => (entry.categoriaPrincipal || entry.categoria || "outros") === categoryItem.key
+      ),
+      (entry) => entry.subcategoria || "sem_subcategoria",
+      currentDaySpan
+    );
+    const subcategories = mapAggregateMapToSeries(currentSubcategoryMap, currentDaySpan).map(
+      (subcategoryItem) => ({
+        ...subcategoryItem,
+        variacaoPeriodoAnterior: buildComparisonSnapshot(
+          subcategoryItem.total,
+          Number(previousSubcategoryMap.get(subcategoryItem.key)?.total || 0)
+        ),
+      })
+    );
+    const topSubcategory = selectMeaningfulSubcategory(subcategories) || subcategories[0] || null;
+    const topGrowingSubcategory = [...subcategories]
+      .filter((item) => Number(item.variacaoPeriodoAnterior.delta || 0) > 0)
+      .sort(
+        (left, right) =>
+          Number(right.variacaoPeriodoAnterior.delta || 0) -
+          Number(left.variacaoPeriodoAnterior.delta || 0)
+      )[0] || null;
+
+    return {
+      ...categoryItem,
+      variacaoPeriodoAnterior: previousComparison,
+      variacaoMediaRecente: recentComparison,
+      subcategorias: subcategories,
+      topSubcategory,
+      topGrowingSubcategory,
+    };
+  });
+  const topGrowingCategory = [...categoryItems]
+    .filter(
+      (item) =>
+        item.variacaoPeriodoAnterior.hasBaseline &&
+        Number(item.variacaoPeriodoAnterior.delta || 0) > 0
+    )
+    .sort(
+      (left, right) =>
+        Number(right.variacaoPeriodoAnterior.delta || 0) -
+        Number(left.variacaoPeriodoAnterior.delta || 0)
+    )[0] || null;
+  const categoryAboveRecentAverage = [...categoryItems]
+    .filter((item) => Number(item.variacaoMediaRecente.delta || 0) > 0)
+    .sort(
+      (left, right) =>
+        Number(right.variacaoMediaRecente.percentChange || 0) -
+        Number(left.variacaoMediaRecente.percentChange || 0)
+    )[0] || null;
+  const topSubcategoryDriver = categoryItems
+    .map((item) =>
+      item.topGrowingSubcategory
+        && item.topGrowingSubcategory.variacaoPeriodoAnterior.hasBaseline
+        ? {
+            categoria: item.label,
+            subcategoria: item.topGrowingSubcategory.label,
+            total: item.topGrowingSubcategory.total,
+            delta: Number(item.topGrowingSubcategory.variacaoPeriodoAnterior.delta || 0),
+            percentChange: Number(
+              item.topGrowingSubcategory.variacaoPeriodoAnterior.percentChange || 0
+            ),
+          }
+        : null
+    )
+    .filter(Boolean)
+    .sort((left, right) => Number(right.delta || 0) - Number(left.delta || 0))[0] || null;
+
+  return {
+    currentDescriptor,
+    previousDescriptor,
+    categories: categoryItems,
+    dominantCategory: categoryItems[0] || null,
+    topGrowingCategory,
+    categoryAboveRecentAverage,
+    topSubcategoryDriver,
+  };
+}
+
+function buildRecurringDescriptionAnalytics(entries, selectedSummary) {
+  const currentDescriptor = buildCustomRangeDescriptor(
+    selectedSummary?.period || "period",
+    selectedSummary?.label || "Periodo atual",
+    selectedSummary?.startDate || new Date(),
+    selectedSummary?.endDate || new Date()
+  );
+  const previousDescriptor = getPreviousPeriodDescriptor(currentDescriptor);
+  const currentDaySpan = getInclusiveDaySpanBetweenDates(
+    currentDescriptor.startDate,
+    currentDescriptor.endDate
+  );
+  const currentEntries = getEntriesWithinRange(entries, currentDescriptor.startDate, currentDescriptor.endDate);
+  const previousEntries = getEntriesWithinRange(
+    entries,
+    previousDescriptor.startDate,
+    previousDescriptor.endDate
+  );
+  const currentDescriptionMap = buildSpendAggregateMap(
+    currentEntries,
+    (entry) => entry.descricaoNormalizada || entry.descricao || "",
+    currentDaySpan
+  );
+  const previousDescriptionMap = buildSpendAggregateMap(
+    previousEntries,
+    (entry) => entry.descricaoNormalizada || entry.descricao || "",
+    currentDaySpan
+  );
+  const recurringDescriptions = mapAggregateMapToSeries(currentDescriptionMap, currentDaySpan)
+    .map((descriptionItem) => {
+      const previousDescription = previousDescriptionMap.get(descriptionItem.key);
+      const averageTicketComparison = buildComparisonSnapshot(
+        descriptionItem.ticketMedio,
+        Number(previousDescription?.count || 0) > 0
+          ? Number(previousDescription.total || 0) / Number(previousDescription.count || 1)
+          : 0
+      );
+      const totalComparison = buildComparisonSnapshot(
+        descriptionItem.total,
+        Number(previousDescription?.total || 0)
+      );
+
+      return {
+        ...descriptionItem,
+        descricao: descriptionItem.sampleDescription || descriptionItem.label,
+        variacaoTicketMedio: averageTicketComparison,
+        variacaoTotal: totalComparison,
+      };
+    })
+    .filter(
+      (item) =>
+        item.frequenciaLancamentos >= 2 ||
+        Number(previousDescriptionMap.get(item.key)?.count || 0) >= 2 ||
+        Number(previousDescriptionMap.get(item.key)?.total || 0) > 0
+    );
+  const topAverageTicketIncrease = [...recurringDescriptions]
+    .filter(
+      (item) =>
+        item.variacaoTicketMedio.hasBaseline &&
+        Number(item.variacaoTicketMedio.delta || 0) > 0
+    )
+    .sort(
+      (left, right) =>
+        Number(right.variacaoTicketMedio.delta || 0) -
+        Number(left.variacaoTicketMedio.delta || 0)
+    )[0] || null;
+  const topTotalIncrease = [...recurringDescriptions]
+    .filter((item) => Number(item.variacaoTotal.delta || 0) > 0)
+    .sort(
+      (left, right) =>
+        Number(right.variacaoTotal.delta || 0) -
+        Number(left.variacaoTotal.delta || 0)
+    )[0] || null;
+
+  return {
+    currentDescriptor,
+    previousDescriptor,
+    groups: recurringDescriptions,
+    topAverageTicketIncrease,
+    topTotalIncrease,
+  };
+}
+
+function buildFinancialInsightMessages(intelligence) {
+  const summary = intelligence?.summary || {};
+  const selectedSummary = intelligence?.selectedSummary || {};
+  const forecast = intelligence?.forecast || {};
+  const dominantCategory = intelligence?.dominantCategory || null;
+  const categoryAnalytics = intelligence?.categoryAnalytics || {};
+  const comparison = intelligence?.comparison || {};
+  const alerts = intelligence?.alerts || {};
+  const weeklyTrend = intelligence?.weeklyTrend || null;
+  const behavior = intelligence?.behavior || {};
+  const recurringDescriptions = intelligence?.recurringDescriptions || {};
+  const automaticSummaries = intelligence?.automaticSummaries || {};
+  const categoryAutomation = intelligence?.categoryAutomation || {};
+
+  const forecastInsight =
+    forecast.averageDailySpend <= 0
+      ? {
+          label: "Previsao ate o pagamento",
+          tone: "muted",
+          title: "Ainda nao existe ritmo suficiente para prever o fim do ciclo",
+          body: "O ledger ainda nao tem gasto recente suficiente para estimar quanto o saldo dura.",
+        }
+      : forecast.reachesNextPayment
+        ? {
+            label: "Previsao ate o pagamento",
+            tone: forecast.marginDays <= 2 ? "yellow" : "green",
+            title:
+              forecast.projectedBalanceAtPayment >= 0
+                ? "No ritmo atual o saldo chega ao proximo pagamento"
+                : "Voce chega ao pagamento, mas com margem curta",
+            body: `Media recente de ${formatCurrency(forecast.averageDailySpend)} por dia. O saldo deve durar ${forecast.estimatedDaysWithBalanceLabel} e ${forecast.projectedBalanceAtPayment >= 0 ? `sobrar ${formatCurrency(forecast.projectedBalanceAtPayment)}` : `ficar apertado em ${formatCurrency(Math.abs(forecast.projectedBalanceAtPayment))}`} ate o pagamento.`,
+          }
+        : {
+            label: "Previsao ate o pagamento",
+            tone: "red",
+            title: "No ritmo atual o saldo nao chega ao proximo pagamento",
+            body: `Mantido o ritmo recente de ${formatCurrency(forecast.averageDailySpend)} por dia, o saldo acaba ${forecast.daysBeforeBalanceRunsOutLabel} antes do pagamento e pode faltar ${formatCurrency(forecast.estimatedDeficit)}.`,
+          };
+
+  const categoryInsight = dominantCategory
+    ? {
+        label: "Categoria dominante",
+        tone: dominantCategory.percentual >= 45 ? "yellow" : "blue",
+        title: `${dominantCategory.categoria} lidera os gastos do periodo`,
+        body: `${formatCurrency(dominantCategory.total)} representam ${formatPercentLabel(dominantCategory.percentual)} do total em ${selectedSummary.label?.toLowerCase?.() || "o periodo atual"}.`,
+      }
+    : {
+        label: "Categoria dominante",
+        tone: "muted",
+        title: "Ainda nao existe categoria dominante",
+        body: "Quando houver gastos suficientes no periodo, a categoria mais pesada aparece aqui.",
+      };
+
+  const categoryVariationInsight = categoryAnalytics.topGrowingCategory
+    ? {
+        label: "Variacao por categoria",
+        tone:
+          Number(categoryAnalytics.topGrowingCategory.variacaoPeriodoAnterior.percentChange || 0) >= 25
+            ? "red"
+            : "yellow",
+        title: `Seus gastos com ${categoryAnalytics.topGrowingCategory.label} subiram`,
+        body: `${formatCurrency(categoryAnalytics.topGrowingCategory.total)} no periodo atual, com alta de ${formatPercentLabel(categoryAnalytics.topGrowingCategory.variacaoPeriodoAnterior.percentChange)} frente ao periodo anterior.`,
+      }
+    : categoryAnalytics.categoryAboveRecentAverage
+      ? {
+          label: "Variacao por categoria",
+          tone: "yellow",
+          title: `${categoryAnalytics.categoryAboveRecentAverage.label} esta acima da media recente`,
+          body: `${formatCurrency(categoryAnalytics.categoryAboveRecentAverage.total)} no periodo atual, cerca de ${formatPercentLabel(categoryAnalytics.categoryAboveRecentAverage.variacaoMediaRecente.percentChange)} acima da faixa recente equivalente.`,
+        }
+      : {
+          label: "Variacao por categoria",
+          tone: "muted",
+          title: "Ainda nao apareceu variacao forte por categoria",
+          body: "Com mais historico no ledger, o app destaca automaticamente as categorias que mais aceleram.",
+        };
+
+  const subcategoryInsight = categoryAnalytics.topSubcategoryDriver
+    ? {
+        label: "Subcategoria em destaque",
+        tone: "yellow",
+        title: `${categoryAnalytics.topSubcategoryDriver.subcategoria} puxa a alta de ${categoryAnalytics.topSubcategoryDriver.categoria}`,
+        body: `${formatCurrency(categoryAnalytics.topSubcategoryDriver.total)} nessa subcategoria, com aumento de ${formatCurrency(categoryAnalytics.topSubcategoryDriver.delta)} frente ao periodo anterior.`,
+      }
+    : categoryAnalytics.dominantCategory?.topSubcategory
+      ? {
+          label: "Subcategoria em destaque",
+          tone: "blue",
+          title: `${categoryAnalytics.dominantCategory.topSubcategory.label} e a principal subcategoria de ${categoryAnalytics.dominantCategory.label}`,
+          body: `${formatCurrency(categoryAnalytics.dominantCategory.topSubcategory.total)} concentrados nessa faixa no periodo atual.`,
+        }
+      : {
+          label: "Subcategoria em destaque",
+          tone: "muted",
+          title: "As subcategorias ainda estao ganhando historico",
+          body: "Quando as descricoes se repetirem mais, o app mostra qual subgrupo esta puxando a variacao.",
+        };
+
+  const recurringDescriptionInsight = recurringDescriptions.topAverageTicketIncrease
+    ? {
+        label: "Descricao recorrente",
+        tone:
+          Number(recurringDescriptions.topAverageTicketIncrease.variacaoTicketMedio.percentChange || 0) >= 25
+            ? "red"
+            : "yellow",
+        title: `Seu ticket medio em ${recurringDescriptions.topAverageTicketIncrease.descricao} aumentou`,
+        body: `${formatCurrency(recurringDescriptions.topAverageTicketIncrease.ticketMedio)} por lancamento agora, contra ${formatCurrency(recurringDescriptions.topAverageTicketIncrease.variacaoTicketMedio.baseline)} antes.`,
+      }
+    : recurringDescriptions.topTotalIncrease
+      ? {
+          label: "Descricao recorrente",
+          tone: "yellow",
+          title: `${recurringDescriptions.topTotalIncrease.descricao} ganhou peso no periodo`,
+          body: `${formatCurrency(recurringDescriptions.topTotalIncrease.total)} no periodo atual, com alta de ${formatCurrency(recurringDescriptions.topTotalIncrease.variacaoTotal.delta)} frente ao anterior.`,
+        }
+      : {
+          label: "Descricao recorrente",
+          tone: "muted",
+          title: "Ainda nao existe padrao forte por descricao recorrente",
+          body: "Com mais repeticao no ledger, o app passa a medir aumento de ticket medio por descricao.",
+        };
+
+  const comparisonInsight =
+    comparison.recentAverageDailySpend <= 0
+      ? {
+          label: "Comparacao com media",
+          tone: comparison.todayTotal > 0 ? "yellow" : "muted",
+          title:
+            comparison.todayTotal > 0
+              ? "Hoje abriu o historico recente"
+              : "Sem base recente para comparar o gasto de hoje",
+          body:
+            comparison.todayTotal > 0
+              ? `Hoje soma ${formatCurrency(comparison.todayTotal)} e o ledger ainda nao formou uma media diaria confiavel.`
+              : "Registre mais movimentacoes para destravar essa comparacao.",
+        }
+      : comparison.status === "above"
+        ? {
+            label: "Comparacao com media",
+            tone: comparison.intensity === "forte" ? "red" : "yellow",
+            title: "Hoje esta acima da media diaria recente",
+            body: `${formatCurrency(comparison.todayTotal)} hoje contra media de ${formatCurrency(comparison.recentAverageDailySpend)}. Excesso atual de ${formatCurrency(comparison.difference)}.`,
+          }
+        : comparison.status === "below"
+          ? {
+              label: "Comparacao com media",
+              tone: "green",
+              title: "Hoje esta abaixo da media diaria recente",
+              body: `${formatCurrency(comparison.todayTotal)} hoje contra media de ${formatCurrency(comparison.recentAverageDailySpend)}. Folga atual de ${formatCurrency(Math.abs(comparison.difference))}.`,
+            }
+          : {
+              label: "Comparacao com media",
+              tone: "blue",
+              title: "Hoje esta dentro do padrao recente",
+              body: `${formatCurrency(comparison.todayTotal)} hoje, bem perto da media recente de ${formatCurrency(comparison.recentAverageDailySpend)}.`,
+            };
+
+  const preventiveInsight = !summary.paymentInfo?.configured || summary.diasRestantes <= 0
+    ? {
+        label: "Alertas preventivos",
+        tone: "muted",
+        title: "Configure o proximo pagamento para ativar os alertas preventivos",
+        body: "Sem a data do proximo recebimento, o app ainda nao mede o risco real do ciclo.",
+      }
+    : alerts.riskBeforePayment
+      ? {
+          label: "Alertas preventivos",
+          tone: "red",
+          title: "Existe risco de faltar dinheiro antes do pagamento",
+          body: `O ledger mostra desgaste acima do ideal. A projecao indica falta de ${formatCurrency(forecast.estimatedDeficit)} se o ritmo atual continuar.`,
+        }
+      : alerts.dailyLimitAndAboveAverage
+        ? {
+            label: "Alertas preventivos",
+            tone: "red",
+            title: "Hoje passou do limite diario e da media recente",
+            body: "O dia saiu do padrao em duas frentes ao mesmo tempo. Vale reduzir o restante do consumo agora.",
+          }
+        : alerts.categoryPressure
+          ? {
+              label: "Alertas preventivos",
+              tone: "yellow",
+              title: "Uma categoria esta pesando demais no periodo",
+              body: `${dominantCategory?.categoria || "A categoria dominante"} ja responde por ${formatPercentLabel(dominantCategory?.percentual || 0)} dos gastos do periodo atual.`,
+            }
+          : alerts.nearDailyLimit || alerts.aboveWeeklyAverage || alerts.outOfPattern
+            ? {
+                label: "Alertas preventivos",
+                tone: alerts.aboveDailyLimit ? "red" : "yellow",
+                title: "O momento pede mais atencao",
+                body: [
+                  alerts.nearDailyLimit ? "o gasto de hoje esta perto do limite diario" : "",
+                  alerts.aboveWeeklyAverage ? "hoje passou da media recente" : "",
+                  alerts.outOfPattern ? "o comportamento saiu do padrao" : "",
+                ]
+                  .filter(Boolean)
+                  .join(" e ")
+                  .replace(/^/, "Sinal preventivo: ")
+                  .concat("."),
+              }
+            : {
+                label: "Alertas preventivos",
+                tone: "green",
+                title: "Sem alerta preventivo forte neste momento",
+                body: "O gasto de hoje, o limite diario e o ritmo recente seguem em uma faixa mais controlada.",
+              };
+
+  const weeklyTrendInsight = weeklyTrend
+    ? {
+        label: "Padrao semanal",
+        tone: weeklyTrend.percentual >= 35 ? "yellow" : "blue",
+        title: `${weeklyTrend.weekday} costuma concentrar mais gasto`,
+        body: `${formatCurrency(weeklyTrend.total)} sairam nesse dia da semana no historico recente, ou ${formatPercentLabel(weeklyTrend.percentual)} do total observado.`,
+      }
+    : {
+        label: "Padrao semanal",
+        tone: "muted",
+        title: "Ainda nao existe um padrao semanal claro",
+        body: "Com mais historico no ledger, o app passa a mostrar qual dia da semana pesa mais.",
+      };
+
+  const behaviorInsight = behavior.hasOutlierToday
+    ? {
+        label: "Fora do padrao",
+        tone: "red",
+        title: "Hoje ficou muito acima do comportamento normal",
+        body: `${formatCurrency(comparison.todayTotal || 0)} hoje contra uma base recente de ${formatCurrency(behavior.outlierBaseline || 0)} por dia ativo.`,
+      }
+    : behavior.hasOutlierDay
+      ? {
+          label: "Fora do padrao",
+          tone: "yellow",
+          title: "Ja houve dia muito acima do normal no historico recente",
+          body: `${formatDate(behavior.outlierDays[0]?.date)} puxou ${formatCurrency(behavior.outlierDays[0]?.total || 0)}, cerca de ${formatPercentLabel((behavior.outlierDays[0]?.ratioToAverage || 0) * 100)} da base esperada.`,
+        }
+      : behavior.acceleratedAtStartOfPeriod
+        ? {
+            label: "Fora do padrao",
+            tone: "yellow",
+            title: "Os gastos aceleraram logo no comeco do periodo",
+            body: `Os primeiros ${behavior.leadingDays} dia(s) ja concentraram ${formatPercentLabel(behavior.leadingShare * 100)} do gasto do periodo, acima do esperado para esse ponto do ciclo.`,
+          }
+        : {
+            label: "Fora do padrao",
+            tone: "green",
+            title: "O comportamento segue mais estavel no ledger",
+            body: "Nao apareceu pico forte nem aceleracao anormal no periodo em foco.",
+          };
+
+  return [
+    forecastInsight,
+    categoryInsight,
+    categoryVariationInsight,
+    subcategoryInsight,
+    recurringDescriptionInsight,
+    comparisonInsight,
+    preventiveInsight,
+    weeklyTrendInsight,
+    behaviorInsight,
+    {
+      label: automaticSummaries.day?.label || "Resumo do dia",
+      tone: automaticSummaries.day?.tone || "muted",
+      title: automaticSummaries.day?.title || "Sem resumo do dia",
+      body: automaticSummaries.day?.body || "Adicione gastos para gerar um resumo automatico do dia.",
+    },
+    {
+      label: automaticSummaries.week?.label || "Resumo da semana",
+      tone: automaticSummaries.week?.tone || "muted",
+      title: automaticSummaries.week?.title || "Sem resumo da semana",
+      body: automaticSummaries.week?.body || "Adicione gastos para gerar um resumo automatico da semana.",
+    },
+    {
+      label: automaticSummaries.month?.label || "Resumo do mes",
+      tone: automaticSummaries.month?.tone || "muted",
+      title: automaticSummaries.month?.title || "Sem resumo do mes",
+      body: `${automaticSummaries.month?.body || "Adicione gastos para gerar um resumo automatico do mes."}${
+        categoryAutomation?.rules?.length
+          ? ` ${categoryAutomation.matchedEntries || 0} descricao(oes) ja combinam com ${categoryAutomation.rules.length} regra(s) de classificacao automatica.`
+          : ""
+      }`,
+    },
+  ];
+}
+
+function calculateFinancialIntelligence(data, period = "week", referenceDate = new Date()) {
+  const summary = calcularResumoFinanceiro(data, referenceDate);
+  const ledgerEntries = getLedgerExpenseEntries(data);
+  const ledgerIncomes = getLedgerIncomeEntries(data);
+  const ledgerSource = Array.isArray(data?.ledgerMovimentacoes) && data.ledgerMovimentacoes.length
+    ? "ledger"
+    : "contasDiaADia";
+  const expenseOverview = getExpenseOverviewSummary(data, referenceDate);
+  const selectedSummary = getExpensePeriodSummary(data, period, referenceDate);
+  const recentWindow = getRecentLedgerWindowSummary(ledgerEntries, referenceDate, 21);
+  const averageDailySpend = Number(recentWindow.averageDailySpend || 0);
+  const estimatedDaysWithBalance =
+    averageDailySpend > 0 ? summary.saldoDisponivel / averageDailySpend : Number.POSITIVE_INFINITY;
+  const reachesNextPayment =
+    summary.saldoDisponivel >= 0 &&
+    (averageDailySpend <= 0 || estimatedDaysWithBalance >= summary.diasRestantes);
+  const projectedBalanceAtPayment =
+    averageDailySpend > 0
+      ? summary.saldoDisponivel - averageDailySpend * Math.max(summary.diasRestantes, 0)
+      : summary.saldoDisponivel;
+  const estimatedDeficit = projectedBalanceAtPayment < 0 ? Math.abs(projectedBalanceAtPayment) : 0;
+  const daysBeforeBalanceRunsOut =
+    averageDailySpend > 0
+      ? Math.max(summary.diasRestantes - estimatedDaysWithBalance, 0)
+      : 0;
+  const marginDays =
+    averageDailySpend > 0 ? Math.max(estimatedDaysWithBalance - summary.diasRestantes, 0) : 0;
+  const dominantCategory = selectedSummary.categorySeries[0] || null;
+  const dominantCategoryPercent =
+    dominantCategory && selectedSummary.totalGasto > 0
+      ? (dominantCategory.total / selectedSummary.totalGasto) * 100
+      : 0;
+  const recentAverageDailySpend = Number(recentWindow.averageDailySpend || 0);
+  const todayDifference = expenseOverview.today.totalGasto - recentAverageDailySpend;
+  const comparisonThreshold =
+    recentAverageDailySpend > 0 ? Math.max(recentAverageDailySpend * 0.1, 5) : 0;
+  const comparisonStatus =
+    recentAverageDailySpend <= 0
+      ? "insufficient"
+      : todayDifference > comparisonThreshold
+        ? "above"
+        : todayDifference < -comparisonThreshold
+          ? "below"
+          : "within";
+  const comparisonIntensity =
+    recentAverageDailySpend > 0 && todayDifference > recentAverageDailySpend * 0.35
+      ? "forte"
+      : "normal";
+  const dailyLimitRatio =
+    summary.limiteDiario > 0 ? expenseOverview.today.totalGasto / summary.limiteDiario : 0;
+  const weeklyPattern = buildWeekdaySpendPattern(ledgerEntries, referenceDate, 56);
+  const behavior = buildBehaviorPatternSignals(selectedSummary, recentWindow, referenceDate);
+  const categoryAnalytics = buildCategoryAnalytics(ledgerEntries, selectedSummary, referenceDate);
+  const recurringDescriptions = buildRecurringDescriptionAnalytics(ledgerEntries, selectedSummary);
+  const classificationMatches = ledgerEntries.reduce(
+    (accumulator, entry) => {
+      const match = entry?.classificacaoAutomatica || classifyCategoryFromDescription(entry?.descricao);
+
+      if (match) {
+        accumulator.totalMatches += 1;
+        accumulator.byCategory.set(
+          match.categoria,
+          (accumulator.byCategory.get(match.categoria) || 0) + 1
+        );
+        if (match.subcategoria) {
+          const subcategoryKey = `${match.categoria}::${match.subcategoria}`;
+          accumulator.bySubcategory.set(
+            subcategoryKey,
+            (accumulator.bySubcategory.get(subcategoryKey) || 0) + 1
+          );
+        }
+      }
+
+      return accumulator;
+    },
+    {
+      totalMatches: 0,
+      byCategory: new Map(),
+      bySubcategory: new Map(),
+    }
+  );
+  const alerts = {
+    nearDailyLimit: dailyLimitRatio >= 0.7 && dailyLimitRatio <= 1,
+    aboveDailyLimit: dailyLimitRatio > 1,
+    aboveWeeklyAverage:
+      recentAverageDailySpend > 0 &&
+      expenseOverview.today.totalGasto > recentAverageDailySpend,
+    riskBeforePayment:
+      summary.paymentInfo.configured &&
+      summary.diasRestantes > 0 &&
+      averageDailySpend > 0 &&
+      !reachesNextPayment,
+    categoryPressure:
+      dominantCategoryPercent >= 45 ||
+      Number(categoryAnalytics?.categoryAboveRecentAverage?.variacaoMediaRecente?.percentChange || 0) >= 20,
+    dailyLimitAndAboveAverage:
+      dailyLimitRatio > 1 &&
+      recentAverageDailySpend > 0 &&
+      expenseOverview.today.totalGasto > recentAverageDailySpend,
+    outOfPattern: behavior.hasOutlierDay || behavior.acceleratedAtStartOfPeriod,
+    acceleratedStartOfPeriod: behavior.acceleratedAtStartOfPeriod,
+  };
+
+  const intelligence = {
+    summary,
+    expenseOverview,
+    selectedSummary,
+    ledger: {
+      source: ledgerSource,
+      totalMovements: ledgerEntries.length + ledgerIncomes.length,
+      totalExpenses: ledgerEntries.length,
+      totalIncomes: ledgerIncomes.length,
+      recentWindow,
+    },
+    forecast: {
+      averageDailySpend,
+      estimatedDaysWithBalance,
+      estimatedDaysWithBalanceLabel:
+        estimatedDaysWithBalance === Number.POSITIVE_INFINITY
+          ? "por tempo indeterminado"
+          : `${Math.max(Math.round(estimatedDaysWithBalance), 1)} dia(s)`,
+      reachesNextPayment,
+      projectedBalanceAtPayment,
+      estimatedDeficit,
+      daysBeforeBalanceRunsOut,
+      daysBeforeBalanceRunsOutLabel: `${Math.max(Math.ceil(daysBeforeBalanceRunsOut), 1)} dia(s)`,
+      marginDays,
+    },
+    dominantCategory: dominantCategory
+      ? {
+          categoria: dominantCategory.categoria,
+          total: dominantCategory.total,
+          percentual: dominantCategoryPercent,
+        }
+      : null,
+    comparison: {
+      todayTotal: expenseOverview.today.totalGasto,
+      recentAverageDailySpend,
+      difference: todayDifference,
+      status: comparisonStatus,
+      intensity: comparisonIntensity,
+      isAboveAverage: comparisonStatus === "above",
+      isBelowAverage: comparisonStatus === "below",
+      isWithinPattern: comparisonStatus === "within",
+    },
+    alerts,
+    categoryAnalytics,
+    recurringDescriptions,
+    weeklyTrend: weeklyPattern.dominantDay
+      ? {
+          weekday: weeklyPattern.dominantDay.weekday,
+          total: weeklyPattern.dominantDay.total,
+          percentual: weeklyPattern.dominantDay.percentual,
+          ocorrencias: weeklyPattern.dominantDay.ocorrencias,
+          mediaPorOcorrencia: weeklyPattern.dominantDay.mediaPorOcorrencia,
+        }
+      : null,
+    behavior,
+    automaticSummaries: {
+      day: buildAutomaticPeriodSummary(expenseOverview.today, "Resumo do dia", "Sem resumo do dia"),
+      week: buildAutomaticPeriodSummary(expenseOverview.week, "Resumo da semana", "Sem resumo da semana"),
+      month: buildAutomaticPeriodSummary(expenseOverview.month, "Resumo do mes", "Sem resumo do mes"),
+    },
+    categoryAutomation: {
+      rules: getCategoryAutomationRules(),
+      matchedEntries: classificationMatches.totalMatches,
+      byCategory: [...classificationMatches.byCategory.entries()]
+        .sort((left, right) => right[1] - left[1])
+        .map(([categoria, total]) => ({
+          categoria,
+          total,
+        })),
+      bySubcategory: [...classificationMatches.bySubcategory.entries()]
+        .sort((left, right) => right[1] - left[1])
+        .map(([subcategoriaKey, total]) => {
+          const [categoria, subcategoria] = subcategoriaKey.split("::");
+          return {
+            categoria,
+            subcategoria,
+            total,
+          };
+        }),
+    },
+  };
+
+  return {
+    ...intelligence,
+    insightMessages: buildFinancialInsightMessages(intelligence),
+  };
+}
+
 function agruparLancamentosPorData(lancamentos) {
   const grouped = new Map();
 
@@ -1105,9 +2490,7 @@ function agruparLancamentosPorData(lancamentos) {
     };
     const normalizedValue = normalizeNumericValue(item.valor);
     const rawValue = Math.abs(normalizedValue);
-    const tipo =
-      item.tipo ||
-      (normalizedValue < 0 ? "saida" : "entrada");
+    const tipo = normalizeMovementType(item.tipo, normalizedValue);
 
     if (tipo === "entrada") {
       currentGroup.entradas += rawValue;
@@ -1115,7 +2498,7 @@ function agruparLancamentosPorData(lancamentos) {
     } else {
       currentGroup.saidas += rawValue;
       currentGroup.total -= rawValue;
-      const category = item.categoria || "outros";
+      const category = item.categoriaPrincipal || item.categoria || "outros";
       currentGroup.categories.set(
         category,
         (currentGroup.categories.get(category) || 0) + rawValue
@@ -1160,15 +2543,10 @@ function agruparLancamentosPorDia(lancamentos) {
 }
 
 function montarSerieGraficoContasVariaveis(data) {
-  const lancamentos =
-    Array.isArray(data?.contasDiaADia) ? data.contasDiaADia : [];
+  const lancamentos = getLedgerMovements(data);
+  return agruparLancamentosPorData(lancamentos);
   console.log("Lançamentos:", lancamentos);
   const agrupado = agruparLancamentosPorData(lancamentos);
-  console.log("Agrupado:", agrupado);
-  console.log("Serie:", {
-    labels: agrupado.map((item) => item.label),
-    data: agrupado.map((item) => item.saidas || item.entradas || Math.abs(item.total)),
-  });
   return agrupado;
 }
 
@@ -1204,14 +2582,13 @@ function calculatePrimaryFinancialMetrics(data, referenceDate = new Date()) {
   const paymentInfo = calcularProximoPagamento(data, referenceDate);
   const nextPaymentDate = safeNormalizeDate(paymentInfo?.nextDate);
   const benefits = getBenefitsSummary(data, referenceDate);
-  const expenses = Array.isArray(data?.contasDiaADia) ? data.contasDiaADia : [];
+  const expenses = getLedgerExpenseEntries(data);
 
   const totalDespesas = expenses.reduce((total, expense) => {
     const numericValue = Math.abs(normalizeNumericValue(expense?.valor));
-    const tipo = expense?.tipo || "saida";
     const hasValidDate = Boolean(safeNormalizeDate(expense?.data || expense?.dataNormalizada));
 
-    if (tipo === "entrada" || numericValue <= 0 || !hasValidDate) {
+    if (numericValue <= 0 || !hasValidDate) {
       return total;
     }
 
@@ -1392,6 +2769,7 @@ function buildBalanceProjection(data, referenceDate = new Date()) {
 }
 
 function montarProjecaoSaldoPorDia(data, referenceDate = new Date()) {
+  return buildBalanceProjection(data, referenceDate);
   const lancamentos = Array.isArray(data?.contasDiaADia) ? data.contasDiaADia : [];
   console.log("Lançamentos do dia a dia:", lancamentos);
   const agrupado = agruparLancamentosPorDia(lancamentos);
@@ -1414,6 +2792,11 @@ window.FinanceCalculations = {
   agruparLancamentosPorDia,
   agruparLancamentosPorData,
   buildBalanceProjection,
+  getDashboardExpenseItems,
+  getDespesasDoDia,
+  getDespesasDaSemana,
+  getDespesasDoMes,
+  getDespesasPorPeriodo,
   montarProjecaoSaldoPorDia,
   calcularPrioridadesDoCiclo,
   calcularProximoPagamento,
@@ -1422,13 +2805,24 @@ window.FinanceCalculations = {
   calcularResumoDoDia,
   calcularValorPrevistoDoCiclo,
   calculateDashboardSummary: calcularResumoFinanceiro,
+  calculateFinancialIntelligence,
   calculatePrimaryFinancialMetrics,
+  buildCategoryAnalytics,
+  buildFinancialInsightMessages,
+  buildRecurringDescriptionAnalytics,
+  classifyCategoryFromDescription,
   getExpenseOverviewSummary,
   getExpensePeriodSummary,
+  getCategoryAutomationRules,
   getFinancialEntries,
+  getLedgerExpenseEntries,
+  getLedgerIncomeEntries,
+  getLedgerMovements,
+  getLedgerMovementItems,
   formatCurrency,
   formatDate,
   formatDateLong,
+  formatTimeLabel,
   getAccountsInCycle,
   getBenefitsSummary,
   getCardsSummary,
@@ -1440,9 +2834,17 @@ window.FinanceCalculations = {
     getNextBenefitInfo(data, "vrVa", referenceDate),
   getNetSalary,
   getTotalDiscounts,
+  normalizeDashboardExpenseItem,
+  normalizeDashboardExpenses,
+  resolveMovementClassification,
   filtrarContasDoCicloAtual,
   montarSerieGrafico,
   montarSerieGraficoContasVariaveis,
   normalizeDate,
+  prepareCategoryChartData,
+  prepareDashboardChartData,
+  prepareEvolutionChartData,
+  prepareSummaryData,
+  normalizeCategoryDescription,
   ordenarPendenciasPorPrioridade,
 };

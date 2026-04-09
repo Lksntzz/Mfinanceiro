@@ -1,0 +1,148 @@
+{
+  "loginOk": true,
+  "parseErrorFree": true,
+  "exceptions": [],
+  "consoleErrors": [
+    {
+      "type": "warning",
+      "source": "other",
+      "text": "Tracking Prevention blocked access to storage for https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.",
+      "url": "http://127.0.0.1:5174/login.html",
+      "lineNumber": null
+    },
+    {
+      "type": "warning",
+      "source": "other",
+      "text": "Tracking Prevention blocked access to storage for https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.",
+      "url": "http://127.0.0.1:5174/login.html",
+      "lineNumber": null
+    },
+    {
+      "type": "warning",
+      "source": "other",
+      "text": "Tracking Prevention blocked access to storage for https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.",
+      "url": "http://127.0.0.1:5174/login.html",
+      "lineNumber": null
+    },
+    {
+      "type": "warning",
+      "source": "other",
+      "text": "Tracking Prevention blocked access to storage for https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.",
+      "url": "http://127.0.0.1:5174/login.html",
+      "lineNumber": null
+    },
+    {
+      "type": "error",
+      "source": "network",
+      "text": "Failed to load resource: the server responded with a status of 404 (Not Found)",
+      "url": "http://127.0.0.1:5174/favicon.ico",
+      "lineNumber": null
+    },
+    {
+      "type": "warning",
+      "source": "other",
+      "text": "Tracking Prevention blocked access to storage for https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.",
+      "url": "http://127.0.0.1:5174/dashboard.html",
+      "lineNumber": null
+    },
+    {
+      "type": "warning",
+      "source": "other",
+      "text": "Tracking Prevention blocked access to storage for https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.",
+      "url": "http://127.0.0.1:5174/dashboard.html",
+      "lineNumber": null
+    },
+    {
+      "type": "warning",
+      "source": "other",
+      "text": "Tracking Prevention blocked access to storage for https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.",
+      "url": "http://127.0.0.1:5174/dashboard.html",
+      "lineNumber": null
+    },
+    {
+      "type": "warning",
+      "source": "other",
+      "text": "Tracking Prevention blocked access to storage for https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.",
+      "url": "http://127.0.0.1:5174/dashboard.html",
+      "lineNumber": null
+    },
+    {
+      "type": "error",
+      "source": "network",
+      "text": "Failed to load resource: the server responded with a status of 404 (Not Found)",
+      "url": "http://127.0.0.1:5174/favicon.ico",
+      "lineNumber": null
+    }
+  ],
+  "seedResult": {
+    "seed": 1775694435435,
+    "ledgerCount": 3
+  },
+  "afterSeed": {
+    "label": "after-seed",
+    "path": "/dashboard.html",
+    "atualizarDashboardType": "function",
+    "saldo": "-R$ 240,00",
+    "limiteDiario": "R$ 0,00",
+    "gastoDia": "R$ 120,00",
+    "diasRestantes": "0 dia(s)",
+    "expenseBars": 3,
+    "projectionBars": 1,
+    "insightItems": 12,
+    "insightPreview": [
+      "No ritmo atual o saldo nao chega ao proximo pagamento",
+      "alimentacao lidera os gastos do periodo",
+      "transporte esta acima da media recente"
+    ],
+    "feedback": "Risco: seu saldo disponivel nao cobre o restante do ciclo.",
+    "rawLedgerCount": 3,
+    "rawDailyCount": 9
+  },
+  "afterAdd": {
+    "label": "after-add",
+    "path": "/dashboard.html",
+    "atualizarDashboardType": "function",
+    "saldo": "-R$ 290,00",
+    "limiteDiario": "R$ 0,00",
+    "gastoDia": "R$ 170,00",
+    "diasRestantes": "0 dia(s)",
+    "expenseBars": 3,
+    "projectionBars": 1,
+    "insightItems": 12,
+    "insightPreview": [
+      "No ritmo atual o saldo nao chega ao proximo pagamento",
+      "alimentacao lidera os gastos do periodo",
+      "transporte esta acima da media recente"
+    ],
+    "feedback": "Risco: seu saldo disponivel nao cobre o restante do ciclo.",
+    "rawLedgerCount": 4,
+    "rawDailyCount": 12
+  },
+  "afterReload": {
+    "label": "after-reload",
+    "path": "/dashboard.html",
+    "atualizarDashboardType": "function",
+    "saldo": "-R$ 290,00",
+    "limiteDiario": "R$ 0,00",
+    "gastoDia": "R$ 170,00",
+    "diasRestantes": "0 dia(s)",
+    "expenseBars": 3,
+    "projectionBars": 1,
+    "insightItems": 12,
+    "insightPreview": [
+      "No ritmo atual o saldo nao chega ao proximo pagamento",
+      "alimentacao lidera os gastos do periodo",
+      "transporte esta acima da media recente"
+    ],
+    "feedback": "Risco: seu saldo disponivel nao cobre o restante do ciclo.",
+    "rawLedgerCount": 4,
+    "rawDailyCount": 12
+  },
+  "restored": {
+    "ledgerCount": 0,
+    "saldoAtual": 0,
+    "diasPagamento": [
+      5
+    ]
+  }
+}
