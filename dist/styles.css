@@ -7678,6 +7678,350 @@ p {
   }
 }
 
+/* ===== Final polish after visual QA ===== */
+@media (min-width: 1180px) {
+  .dashboard-body .dashboard-top-tabs {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    flex-wrap: nowrap;
+  }
+
+  .dashboard-body .dashboard-tab-button,
+  .dashboard-body .dashboard-setup-link {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    flex: 0 0 auto;
+  }
+
+  .dashboard-body .dashboard-nav-divider {
+    margin-inline: 4px;
+  }
+
+  .dashboard-body .dashboard-setup-link + .dashboard-setup-link {
+    margin-left: 2px;
+  }
+
+  .dashboard-body .dashboard-main-row.chart-row {
+    grid-template-columns: minmax(0, 1.55fr) minmax(360px, 0.95fr);
+  }
+
+  .dashboard-body .dashboard-balance-surface.chart-card {
+    padding-bottom: 12px;
+  }
+
+  .dashboard-body .chart-shell.dashboard-primary-chart-shell.chart-area {
+    margin-top: 10px;
+  }
+
+  .dashboard-body .projection-chart {
+    min-height: 220px;
+    padding: 54px 18px 48px 66px;
+    border-radius: 14px;
+  }
+
+  .dashboard-body .projection-chart-axis-y {
+    top: 18px;
+    bottom: 54px;
+    left: 14px;
+    width: 44px;
+  }
+
+  .dashboard-body .projection-chart-axis-y span {
+    font-size: 0.64rem;
+  }
+
+  .dashboard-body .projection-chart-axis-x {
+    left: 66px;
+    right: 18px;
+    bottom: 10px;
+  }
+
+  .dashboard-body .projection-chart-callout {
+    top: 26px;
+    right: 16px;
+    bottom: auto;
+    min-width: 118px;
+    max-width: 124px;
+  }
+
+  .dashboard-body .dashboard-balance-mini-stats {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 8px;
+    margin-top: 10px;
+  }
+
+  .dashboard-body .dashboard-balance-mini-stats .mini-stat {
+    min-height: 52px;
+    padding: 10px 12px;
+    border-radius: 12px;
+    background: rgba(255, 255, 255, 0.03);
+    border: 1px solid rgba(120, 133, 173, 0.08);
+  }
+
+  .dashboard-body .dashboard-period-surface.summary-card {
+    padding-bottom: 14px;
+  }
+
+  .dashboard-body .dashboard-period-grid {
+    margin-top: 2px;
+  }
+
+  .dashboard-body .dashboard-budget-row {
+    margin-top: -2px;
+  }
+
+  .dashboard-body .dashboard-premium-footer.bottom-bar {
+    min-height: 52px;
+    padding-block: 8px;
+  }
+}
+
+/* ===== Layout Studio forms parity ===== */
+body[data-page="banking"],
+body[data-page="contas"],
+body[data-page="cartoes"],
+body[data-page="recebimentos"] {
+  --setup-card-bg: linear-gradient(180deg, rgba(17, 22, 36, 0.98) 0%, rgba(11, 15, 24, 0.99) 100%);
+  --setup-muted-bg: rgba(24, 31, 49, 0.82);
+  --setup-border: rgba(73, 91, 137, 0.24);
+  --setup-soft-border: rgba(96, 115, 166, 0.12);
+  --setup-title: #f2f6ff;
+  --setup-copy: #90a0c2;
+}
+
+body[data-page="banking"] .dashboard-secondary-surface,
+body[data-page="contas"] .dashboard-secondary-surface,
+body[data-page="cartoes"] .dashboard-secondary-surface,
+body[data-page="recebimentos"] .dashboard-secondary-surface {
+  background: var(--setup-card-bg);
+  border-color: var(--setup-border);
+}
+
+body[data-page="banking"] .dashboard-secondary-surface .section-title,
+body[data-page="contas"] .dashboard-secondary-surface .section-title,
+body[data-page="cartoes"] .dashboard-secondary-surface .section-title,
+body[data-page="recebimentos"] .dashboard-secondary-surface .section-title,
+body[data-page="banking"] .dashboard-secondary-surface h3,
+body[data-page="contas"] .dashboard-secondary-surface h3,
+body[data-page="cartoes"] .dashboard-secondary-surface h3,
+body[data-page="recebimentos"] .dashboard-secondary-surface h3,
+body[data-page="banking"] .dashboard-secondary-surface h4,
+body[data-page="contas"] .dashboard-secondary-surface h4,
+body[data-page="cartoes"] .dashboard-secondary-surface h4,
+body[data-page="recebimentos"] .dashboard-secondary-surface h4 {
+  color: var(--setup-title);
+}
+
+body[data-page="banking"] .dashboard-secondary-surface .section-subtitle,
+body[data-page="contas"] .dashboard-secondary-surface .section-subtitle,
+body[data-page="cartoes"] .dashboard-secondary-surface .section-subtitle,
+body[data-page="recebimentos"] .dashboard-secondary-surface .section-subtitle,
+body[data-page="banking"] .dashboard-secondary-surface .table-caption,
+body[data-page="contas"] .dashboard-secondary-surface .table-caption,
+body[data-page="cartoes"] .dashboard-secondary-surface .table-caption,
+body[data-page="recebimentos"] .dashboard-secondary-surface .table-caption,
+body[data-page="banking"] .section-note,
+body[data-page="contas"] .section-note,
+body[data-page="cartoes"] .section-note,
+body[data-page="recebimentos"] .section-note,
+body[data-page="banking"] .field-hint,
+body[data-page="contas"] .field-hint,
+body[data-page="cartoes"] .field-hint,
+body[data-page="recebimentos"] .field-hint {
+  color: var(--setup-copy);
+}
+
+body[data-page="banking"] .dashboard-card,
+body[data-page="contas"] .dashboard-card,
+body[data-page="cartoes"] .dashboard-card,
+body[data-page="recebimentos"] .dashboard-card,
+body[data-page="banking"] .form-section,
+body[data-page="contas"] .form-section,
+body[data-page="cartoes"] .form-section,
+body[data-page="recebimentos"] .form-section,
+body[data-page="banking"] .subtle-panel,
+body[data-page="contas"] .subtle-panel,
+body[data-page="cartoes"] .subtle-panel,
+body[data-page="recebimentos"] .subtle-panel {
+  background: var(--setup-muted-bg);
+  border: 1px solid var(--setup-soft-border);
+  box-shadow: none;
+}
+
+body[data-page="banking"] .status-chip,
+body[data-page="contas"] .status-chip,
+body[data-page="cartoes"] .status-chip,
+body[data-page="recebimentos"] .status-chip {
+  border-color: rgba(101, 120, 173, 0.2);
+  background: rgba(33, 42, 67, 0.78);
+  color: #dce5ff;
+}
+
+body[data-page="banking"] .secondary-button,
+body[data-page="contas"] .secondary-button,
+body[data-page="cartoes"] .secondary-button,
+body[data-page="recebimentos"] .secondary-button,
+body[data-page="banking"] .ghost-button,
+body[data-page="contas"] .ghost-button,
+body[data-page="cartoes"] .ghost-button,
+body[data-page="recebimentos"] .ghost-button {
+  border-radius: 10px;
+}
+
+body[data-page="banking"] .primary-button,
+body[data-page="contas"] .primary-button,
+body[data-page="cartoes"] .primary-button,
+body[data-page="recebimentos"] .primary-button {
+  border-radius: 10px;
+  min-height: 42px;
+}
+
+body[data-page="banking"] .form-section-heading,
+body[data-page="contas"] .form-section-heading,
+body[data-page="cartoes"] .form-section-heading,
+body[data-page="recebimentos"] .form-section-heading {
+  gap: 4px;
+}
+
+body[data-page="contas"] .accounts-anchor-nav,
+body[data-page="cartoes"] .section-anchor-nav,
+body[data-page="recebimentos"] .section-anchor-nav {
+  margin-bottom: 2px;
+}
+
+body[data-page="contas"] .anchor-pill,
+body[data-page="cartoes"] .anchor-pill,
+body[data-page="recebimentos"] .anchor-pill {
+  text-decoration: none;
+}
+
+body[data-page="banking"] .receipt-inline-section .dashboard-card,
+body[data-page="recebimentos"] .receipt-grid .dashboard-card {
+  min-height: 0;
+}
+
+body[data-page="banking"] .receipt-inline-section .receipt-form-grid,
+body[data-page="recebimentos"] .receipt-form-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+}
+
+body[data-page="banking"] .receipt-support-card .detail-list,
+body[data-page="recebimentos"] .dashboard-card .detail-list {
+  margin-bottom: 0;
+}
+
+body[data-page="contas"] .accounts-page-card .dual-grid,
+body[data-page="cartoes"] .cards-page-card .dual-grid,
+body[data-page="recebimentos"] .receipts-page-card .dual-grid,
+body[data-page="banking"] .banking-page-card .dual-grid {
+  align-items: start;
+}
+
+body[data-page="contas"] .accounts-page-card .dashboard-card,
+body[data-page="cartoes"] .cards-page-card .dashboard-card,
+body[data-page="recebimentos"] .receipts-page-card .dashboard-card {
+  display: grid;
+  align-content: start;
+  gap: 10px;
+}
+
+body[data-page="contas"] .import-section,
+body[data-page="banking"] .statement-upload-row,
+body[data-page="banking"] #statement-preview-list,
+body[data-page="contas"] #import-preview-list {
+  margin-top: 10px;
+}
+
+body[data-page="banking"] .list-stack,
+body[data-page="contas"] .list-stack,
+body[data-page="cartoes"] .list-stack,
+body[data-page="recebimentos"] .list-stack,
+body[data-page="banking"] .detail-list,
+body[data-page="contas"] .detail-list,
+body[data-page="cartoes"] .detail-list,
+body[data-page="recebimentos"] .detail-list,
+body[data-page="contas"] .day-accordion-list {
+  display: grid;
+  gap: 10px;
+}
+
+body[data-page="banking"] .detail-row,
+body[data-page="contas"] .detail-row,
+body[data-page="cartoes"] .detail-row,
+body[data-page="recebimentos"] .detail-row {
+  min-height: 48px;
+}
+
+body[data-page="banking"] .finance-table tbody tr:hover,
+body[data-page="contas"] .finance-table tbody tr:hover,
+body[data-page="cartoes"] .finance-table tbody tr:hover,
+body[data-page="recebimentos"] .finance-table tbody tr:hover {
+  background: rgba(255, 255, 255, 0.02);
+}
+
+@media (min-width: 1180px) {
+  body[data-page="banking"] .dashboard-secondary-grid.banking-page-grid,
+  body[data-page="cartoes"] .dashboard-secondary-grid.cards-page-grid,
+  body[data-page="recebimentos"] .dashboard-secondary-grid.receipts-page-grid {
+    grid-template-columns: minmax(0, 1120px);
+    justify-content: center;
+  }
+
+  body[data-page="contas"] .dashboard-secondary-grid.accounts-page-grid {
+    grid-template-columns: minmax(0, 1180px);
+    justify-content: center;
+  }
+
+  body[data-page="banking"] .banking-page-card,
+  body[data-page="contas"] .accounts-page-card,
+  body[data-page="cartoes"] .cards-page-card,
+  body[data-page="recebimentos"] .receipts-page-card {
+    overflow: auto;
+    padding: 18px 20px;
+  }
+
+  body[data-page="banking"] .base-finance-form {
+    grid-template-columns: 1fr;
+  }
+
+  body[data-page="banking"] .base-finance-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  body[data-page="banking"] .summary-preview-section {
+    margin-top: 4px;
+  }
+
+  body[data-page="contas"] .accounts-page-card,
+  body[data-page="cartoes"] .cards-page-card,
+  body[data-page="recebimentos"] .receipts-page-card {
+    grid-auto-rows: min-content;
+  }
+
+  body[data-page="contas"] .accounts-page-card .dual-grid,
+  body[data-page="cartoes"] .cards-page-card .dual-grid,
+  body[data-page="recebimentos"] .receipts-page-card .dual-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  body[data-page="recebimentos"] .receipt-grid {
+    display: grid;
+    min-height: 0;
+  }
+}
+
+@media (max-width: 1179px) {
+  body[data-page="banking"] .receipt-inline-section .receipt-form-grid,
+  body[data-page="recebimentos"] .receipt-form-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
 /* ===== Dashboard visual bug fixes ===== */
 @media (min-width: 1180px) {
   [data-page="dashboard"] .dashboard-overview-shell.dashboard-grid {
