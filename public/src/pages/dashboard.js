@@ -1481,26 +1481,28 @@ function hydrateDashboardData() {
     },
   };
 
-  console.groupCollapsed("[Dashboard] hydrateDashboardData");
-  console.log("loaders", {
-    banking: bankingData ? Object.keys(bankingData).length : 0,
-    contasDiaADia: Array.isArray(variableAccounts) ? variableAccounts.length : 0,
-    ledgerMovimentacoes: Array.isArray(ledgerMovements) ? ledgerMovements.length : 0,
-    recebimentoPagamento: paymentReceipt ? Object.keys(paymentReceipt).length : 0,
-    recebimentoVrVa: vrvaReceipt ? Object.keys(vrvaReceipt).length : 0,
-  });
-  console.log("hydratedData", {
-    keys: Object.keys(data || {}),
-    hasBanking: Boolean(data?.banking),
-    hasRecebimentos: Boolean(data?.recebimentos),
-    ledgerMovimentacoes: Array.isArray(data?.ledgerMovimentacoes)
-      ? data.ledgerMovimentacoes.length
-      : 0,
-    contasDiaADia: Array.isArray(data?.contasDiaADia) ? data.contasDiaADia.length : 0,
-    banking: data?.banking || null,
-    recebimentos: data?.recebimentos || null,
-  });
-  console.groupEnd();
+  if (window.__MFINANCEIRO_DEBUG_INTEGRATION__ === true) {
+    console.groupCollapsed("[Dashboard] hydrateDashboardData");
+    console.log("loaders", {
+      banking: bankingData ? Object.keys(bankingData).length : 0,
+      contasDiaADia: Array.isArray(variableAccounts) ? variableAccounts.length : 0,
+      ledgerMovimentacoes: Array.isArray(ledgerMovements) ? ledgerMovements.length : 0,
+      recebimentoPagamento: paymentReceipt ? Object.keys(paymentReceipt).length : 0,
+      recebimentoVrVa: vrvaReceipt ? Object.keys(vrvaReceipt).length : 0,
+    });
+    console.log("hydratedData", {
+      keys: Object.keys(data || {}),
+      hasBanking: Boolean(data?.banking),
+      hasRecebimentos: Boolean(data?.recebimentos),
+      ledgerMovimentacoes: Array.isArray(data?.ledgerMovimentacoes)
+        ? data.ledgerMovimentacoes.length
+        : 0,
+      contasDiaADia: Array.isArray(data?.contasDiaADia) ? data.contasDiaADia.length : 0,
+      banking: data?.banking || null,
+      recebimentos: data?.recebimentos || null,
+    });
+    console.groupEnd();
+  }
 
   return data;
 }
@@ -1583,14 +1585,53 @@ function assignDashboardModules() {
 
 function validateDashboardDependencies() {
   const dependencies = [
-    ["FinanceStore", window.FinanceStore],
-    ["FinanceCalculations", window.FinanceCalculations],
-    ["AppShell", window.AppShell],
-    ["DashboardOverview", window.DashboardOverview],
+    ["FinanceStore", window.FinanceStore, [
+      "loadAppData",
+      "carregarCadastroBancario",
+      "carregarContasVariaveis",
+      "carregarLedgerMovimentacoes",
+      "carregarRegistroPagamento",
+      "carregarVRVA",
+    ]],
+    ["FinanceCalculations", window.FinanceCalculations, [
+      "calculateDashboardSummary",
+      "buildSpendingRhythmDataset",
+      "calculateFinancialIntelligence",
+      "getExpenseOverviewSummary",
+      "getExpensePeriodSummary",
+      "formatCurrency",
+      "formatDateLong",
+      "montarProjecaoSaldoPorDia",
+      "montarSerieGraficoContasVariaveis",
+      "normalizeDate",
+    ]],
+    ["AppShell", window.AppShell, ["initAppShell"]],
+    ["DashboardOverview", window.DashboardOverview, [
+      "renderMetrics",
+      "renderExpenseOverview",
+      "renderOverviewSpotlights",
+      "renderRecentTransactions",
+      "renderExpensePeriodFilters",
+      "renderSpendingRhythm",
+      "bindExpensePeriodFilters",
+      "bindSpendingRhythmPeriodFilters",
+    ]],
   ];
-  const missingDependencies = dependencies
-    .filter(([, value]) => !value)
-    .map(([name]) => name);
+
+  const missingDependencies = [];
+
+  dependencies.forEach(([name, value, requiredMethods]) => {
+    if (!value) {
+      missingDependencies.push(name);
+      return;
+    }
+
+    requiredMethods.forEach((methodName) => {
+      if (typeof value[methodName] !== "function") {
+        missingDependencies.push(`${name}.${methodName}`);
+      }
+    });
+  });
 
   if (!missingDependencies.length) {
     return true;
