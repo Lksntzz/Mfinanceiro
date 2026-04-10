@@ -7,6 +7,7 @@ const {
   loadAppData: loadDashboardData,
 } = window.FinanceStore;
 const {
+  buildSpendingRhythmDataset,
   calcularPrioridadesDoCiclo: calculateCyclePriorities,
   calculateFinancialIntelligence: computeDashboardFinancialIntelligence,
   calculateDashboardSummary,
@@ -23,6 +24,7 @@ const {
 
 const dashboardState = {
   selectedExpensePeriod: "week",
+  selectedSpendingRhythmPeriod: "day",
 };
 
 const elements = {
@@ -98,6 +100,14 @@ const elements = {
   expenseEvolutionCaption: document.getElementById("expense-evolution-caption"),
   expenseCategoryList: document.getElementById("expense-category-list"),
   expenseCategoryChip: document.getElementById("expense-category-chip"),
+  spendingRhythmSubtitle: document.getElementById("spending-rhythm-subtitle"),
+  spendingRhythmChip: document.getElementById("spending-rhythm-chip"),
+  spendingRhythmChart: document.getElementById("spending-rhythm-chart"),
+  spendingRhythmTotal: document.getElementById("spending-rhythm-total"),
+  spendingRhythmAverage: document.getElementById("spending-rhythm-average"),
+  spendingRhythmPeriodButtons: Array.from(
+    document.querySelectorAll("[data-spending-rhythm-period]")
+  ),
   insightsChip: document.getElementById("insights-chip"),
   insightsList: document.getElementById("insights-list"),
   expensePeriodButtons: Array.from(document.querySelectorAll("[data-expense-period]")),
@@ -401,17 +411,17 @@ function buildFinancialHealthStatus(summary) {
       alerts: [
         summary.saldoDisponivel <= 0
           ? {
-              type: "danger",
-              title: "Saldo disponivel negativo",
-              description:
-                "O valor comprometido ja consumiu todo o saldo inicial do ciclo. Revise gastos e prioridades imediatamente.",
-            }
+            type: "danger",
+            title: "Saldo disponivel negativo",
+            description:
+              "O valor comprometido ja consumiu todo o saldo inicial do ciclo. Revise gastos e prioridades imediatamente.",
+          }
           : {
-              type: "danger",
-              title: "Dias restantes criticos",
-              description:
-                `Restam ${summary.diasRestantes} dia(s) para o proximo pagamento. O ciclo precisa de acompanhamento diario.`,
-            },
+            type: "danger",
+            title: "Dias restantes criticos",
+            description:
+              `Restam ${summary.diasRestantes} dia(s) para o proximo pagamento. O ciclo precisa de acompanhamento diario.`,
+          },
       ],
     };
   }
@@ -430,17 +440,17 @@ function buildFinancialHealthStatus(summary) {
       alerts: [
         summary.limiteDiario <= 25
           ? {
-              type: "warning",
-              title: "Limite diario baixo",
-              description:
-                `O valor livre por dia caiu para ${formatDashboardCurrency(summary.limiteDiario)}. Vale reduzir gastos ate o proximo pagamento.`,
-            }
+            type: "warning",
+            title: "Limite diario baixo",
+            description:
+              `O valor livre por dia caiu para ${formatDashboardCurrency(summary.limiteDiario)}. Vale reduzir gastos ate o proximo pagamento.`,
+          }
           : {
-              type: "warning",
-              title: "Janela curta ate o pagamento",
-              description:
-                `Restam ${summary.diasRestantes} dia(s) para atravessar o ciclo com ${formatDashboardCurrency(summary.saldoDisponivel)} de saldo disponivel.`,
-            },
+            type: "warning",
+            title: "Janela curta ate o pagamento",
+            description:
+              `Restam ${summary.diasRestantes} dia(s) para atravessar o ciclo com ${formatDashboardCurrency(summary.saldoDisponivel)} de saldo disponivel.`,
+          },
       ],
     };
   }
@@ -667,12 +677,12 @@ function renderProjection(summary, projection) {
     <div class="projection-chart">
       <div class="projection-chart-axis projection-chart-axis-y">
         ${yTicks
-          .map(
-            (tick) => `
+      .map(
+        (tick) => `
               <span style="top:${tick.yPercent.toFixed(2)}%">${formatDashboardCurrency(tick.value)}</span>
             `
-          )
-          .join("")}
+      )
+      .join("")}
       </div>
       <svg class="projection-chart-svg" viewBox="0 0 ${chartWidth} ${chartHeight}" preserveAspectRatio="none" aria-label="Grafico de evolucao do saldo no periodo">
         <defs>
@@ -687,31 +697,31 @@ function renderProjection(summary, projection) {
           </linearGradient>
         </defs>
         ${yTicks
-          .map(
-            (tick) => `
+      .map(
+        (tick) => `
               <line class="projection-grid-line" x1="${padding.left}" y1="${tick.y.toFixed(2)}" x2="${chartWidth - padding.right}" y2="${tick.y.toFixed(2)}"></line>
             `
-          )
-          .join("")}
+      )
+      .join("")}
         <line class="projection-zero-line" x1="${padding.left}" y1="${zeroY.toFixed(2)}" x2="${chartWidth - padding.right}" y2="${zeroY.toFixed(2)}"></line>
         <path class="projection-area-path" d="${areaData}"></path>
         <path class="projection-line-path" d="${pathData}"></path>
         ${points
-          .map(
-            (point) => `
+      .map(
+        (point) => `
               <circle class="projection-point projection-point-${point.tone}" cx="${point.x.toFixed(2)}" cy="${point.y.toFixed(2)}" r="4.4"></circle>
             `
-          )
-          .join("")}
+      )
+      .join("")}
       </svg>
       <div class="projection-chart-axis projection-chart-axis-x">
         ${points
-          .map(
-            (point) => `
+      .map(
+        (point) => `
               <span style="left:${((point.x - padding.left) / Math.max(innerWidth, 1)) * 100}%">${point.label}</span>
             `
-          )
-          .join("")}
+      )
+      .join("")}
       </div>
       <div class="projection-chart-callout projection-chart-callout-${lastPoint.tone}">
         <span>${lastPoint.label}</span>
@@ -951,21 +961,35 @@ function renderRecentTransactions(selectedSummary) {
         const entryDate = entry.dataNormalizada || entry.dataHora;
         const isToday = entryDate && entryDate.getTime() === today.getTime();
         const timeLabel = extractDashboardTimeLabel(entry.data || entry.dataHora);
-        const dateLabel = isToday
-          ? (timeLabel || "Hoje")
-          : formatDashboardDateLong(entryDate);
-        const sideDateLabel = isToday && timeLabel ? timeLabel : formatDashboardDateLong(entryDate);
+        const sideDateLabel = isToday && timeLabel ? "Hoje" : formatDashboardDateLong(entryDate);
+
+        // Simple mockup icon matching 
+        let iconHtml = `<svg width="15" height="15" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="9" stroke="currentColor" stroke-width="2"/><path d="M12 7v5l3 3" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>`;
+        let bgTint = "rgba(96,165,250,0.12)";
+        let color = "#69acffff"; // blue
+
+        if (entry.categoria?.toLowerCase() === "compras") {
+          bgTint = "rgba(167,139,250,0.12)"; // purplish
+          color = "#a78bfa";
+          iconHtml = `<svg width="14" height="14" viewBox="0 0 24 24" fill="none"><circle cx="9" cy="21" r="1" stroke="currentColor" stroke-width="2"/><circle cx="20" cy="21" r="1" stroke="currentColor" stroke-width="2"/><path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>`;
+        } else if (entry.categoria?.toLowerCase() === "outros") {
+          // use standard
+        } else if (entry.categoria?.toLowerCase() === "transporte") {
+          iconHtml = `<svg width="14" height="14" viewBox="0 0 24 24" fill="none"><path d="M14 16H9m10 0h3v-3.15a1 1 0 0 0-.84-.99L16 11l-2.7-3.6a2 2 0 0 0-1.6-.8H9.3a2 2 0 0 0-1.6.8L5 11l-5.16.86a1 1 0 0 0-.84.99V16h3m10 0a2.5 2.5 0 1 1-5 0m5 0a2.5 2.5 0 1 0-5 0m-8 0a2.5 2.5 0 1 1-5 0m5 0a2.5 2.5 0 1 0-5 0" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>`;
+        }
 
         return `
-        <article class="recent-transaction-item">
-          <div class="recent-transaction-icon recent-transaction-icon-${getCategoryGlyph(entry.categoria)}"></div>
-          <div class="recent-transaction-main">
-            <strong>${entry.descricao || "Lancamento"}</strong>
-            <span>${entry.categoria || "Sem categoria"} | ${dateLabel}</span>
+        <article class="recent-transaction-item" style="display:grid;grid-template-columns:auto 1fr auto;gap:12px;padding:12px 0;align-items:center;">
+          <div style="width:34px;height:34px;border-radius:10px;background:${bgTint};color:${color};display:flex;align-items:center;justify-content:center;">
+            ${iconHtml}
           </div>
-          <div class="recent-transaction-side">
-            <strong class="recent-transaction-value">${formatDashboardCurrency(entry.valor)}</strong>
-            <span>${sideDateLabel}</span>
+          <div style="display:flex;flex-direction:column;gap:3px;min-width:0;">
+            <strong style="color:var(--db2-text-primary);font-size:12px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${entry.descricao || "Lançamento"}</strong>
+            <span style="color:var(--db2-text-sec);font-size:11px;">${entry.categoria || "Sem categoria"}</span>
+          </div>
+          <div style="display:flex;flex-direction:column;gap:3px;align-items:flex-end;">
+            <strong style="color:var(--db2-text-primary);font-size:12.5px;font-weight:700;">${formatDashboardCurrency(entry.valor)}</strong>
+            <span style="color:var(--db2-text-sec);font-size:11px;">${sideDateLabel}</span>
           </div>
         </article>
       `;
@@ -980,6 +1004,79 @@ function renderExpensePeriodFilters() {
     button.classList.toggle("active", isActive);
     button.setAttribute("aria-pressed", String(isActive));
   });
+}
+
+function renderSpendingRhythmPeriodButtons() {
+  elements.spendingRhythmPeriodButtons.forEach((button) => {
+    const isActive =
+      button.dataset.spendingRhythmPeriod === dashboardState.selectedSpendingRhythmPeriod;
+    button.classList.toggle("active", isActive);
+    button.setAttribute("aria-pressed", String(isActive));
+  });
+}
+
+function formatRhythmValueLabel(value) {
+  if (value >= 1000) {
+    return formatDashboardCurrency(value)
+      .replace("R$", "")
+      .trim();
+  }
+
+  return formatDashboardCurrency(value);
+}
+
+function renderSpendingRhythm(dataset) {
+  if (!elements.spendingRhythmChart) {
+    return;
+  }
+
+  renderSpendingRhythmPeriodButtons();
+
+  if (elements.spendingRhythmSubtitle) {
+    elements.spendingRhythmSubtitle.textContent = dataset.subtitle;
+  }
+
+  if (elements.spendingRhythmChip) {
+    elements.spendingRhythmChip.textContent = dataset.windowLabel;
+  }
+
+  if (elements.spendingRhythmTotal) {
+    elements.spendingRhythmTotal.textContent = formatDashboardCurrency(dataset.total);
+  }
+
+  if (elements.spendingRhythmAverage) {
+    elements.spendingRhythmAverage.textContent = formatDashboardCurrency(dataset.average);
+  }
+
+  if (!dataset.points.length || dataset.maxTotal <= 0) {
+    elements.spendingRhythmChart.innerHTML = `
+      <div class="db2-rhythm-empty">
+        <strong>Sem gastos nesse recorte</strong>
+        <span>Os dados aparecem automaticamente a partir das saidas reais do ledger.</span>
+      </div>
+    `;
+    return;
+  }
+
+  elements.spendingRhythmChart.innerHTML = `
+    <div class="db2-rhythm-bars" role="img" aria-label="Grafico do ritmo de gastos">
+      ${dataset.points
+        .map((point) => {
+          const height = Math.max((Number(point.total || 0) / dataset.maxTotal) * 100, 6);
+
+          return `
+            <div class="db2-rhythm-bar-group">
+              <span class="db2-rhythm-bar-value">${formatRhythmValueLabel(point.total)}</span>
+              <div class="db2-rhythm-bar-track">
+                <div class="db2-rhythm-bar-fill" style="height:${height}%"></div>
+              </div>
+              <span class="db2-rhythm-bar-label">${point.label}</span>
+            </div>
+          `;
+        })
+        .join("")}
+    </div>
+  `;
 }
 
 function renderExpenseEvolution(summary) {
@@ -1034,24 +1131,40 @@ function renderExpenseCategories(summary) {
   elements.expenseCategoryChip.textContent = summary.categoriaDominante;
   elements.expenseCategoryList.innerHTML = summary.categorySeries
     .slice(0, 3)
-    .map((item) => {
+    .map((item, index) => {
       const width = Math.max((item.total / referenceTotal) * 100, 10);
-      const glyph = getCategoryGlyph(item.categoria);
+      const colorMap = ["#f43f5e", "#60a5fa", "#94a3b8"]; // Pink, Blue, Grey
+      const bgMap = ["rgba(244,63,94,0.12)", "rgba(96,165,250,0.12)", "rgba(148,163,184,0.12)"];
+      const c = colorMap[index] || colorMap[2];
+      const bg = bgMap[index] || bgMap[2];
+
+      let iconHtml = `<svg width="14" height="14" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="9" stroke="currentColor" stroke-width="2"/><path d="M12 7v5l3 3" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>`;
+      if (item.categoria.toLowerCase() === "compras") {
+        iconHtml = `<svg width="14" height="14" viewBox="0 0 24 24" fill="none"><circle cx="9" cy="21" r="1" stroke="currentColor" stroke-width="2"/><circle cx="20" cy="21" r="1" stroke="currentColor" stroke-width="2"/><path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>`;
+      } else if (item.categoria.toLowerCase() === "transporte") {
+        iconHtml = `<svg width="14" height="14" viewBox="0 0 24 24" fill="none"><path d="M14 16H9m10 0h3v-3.15a1 1 0 0 0-.84-.99L16 11l-2.7-3.6a2 2 0 0 0-1.6-.8H9.3a2 2 0 0 0-1.6.8L5 11l-5.16.86a1 1 0 0 0-.84.99V16h3m10 0a2.5 2.5 0 1 1-5 0m5 0a2.5 2.5 0 1 0-5 0m-8 0a2.5 2.5 0 1 1-5 0m5 0a2.5 2.5 0 1 0-5 0" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>`;
+      } else if (item.categoria.toLowerCase() === "outros") {
+        iconHtml = `<svg width="14" height="14" viewBox="0 0 24 24" fill="none"><circle cx="5" cy="12" r="1" stroke="currentColor" stroke-width="2"/><circle cx="12" cy="12" r="1" stroke="currentColor" stroke-width="2"/><circle cx="19" cy="12" r="1" stroke="currentColor" stroke-width="2"/></svg>`;
+      }
 
       return `
-        <div class="category-bar-row">
-          <div class="category-bar-leading">
-            <div class="category-bar-icon category-bar-icon-${glyph}"></div>
-            <div class="category-bar-meta">
-              <strong>${item.categoria}</strong>
-              <span>${formatDashboardCurrency(item.total)}</span>
+        <div style="display:flex;align-items:flex-start;gap:12px;margin-bottom:14px;">
+          <div style="width:34px;height:34px;border-radius:10px;background:${bg};color:${c};display:flex;align-items:center;justify-content:center;flex-shrink:0;">
+            ${iconHtml}
+          </div>
+          <div style="flex:1;min-width:0;display:flex;flex-direction:column;gap:8px;padding-top:2px;">
+            <div style="display:flex;align-items:center;justify-content:space-between;">
+              <div style="display:flex;flex-direction:column;gap:2px;">
+                <strong style="color:var(--db2-text-primary);font-size:12.5px;font-weight:600;">${item.categoria}</strong>
+              </div>
+              <div style="display:flex;flex-direction:column;gap:2px;align-items:flex-end;">
+                <strong style="color:var(--db2-text-primary);font-size:12px;font-weight:600;">${formatDashboardCurrency(item.total)}</strong>
+                <span style="color:${c};font-size:11px;font-weight:600;">${formatPercent(item.percentual)}%</span>
+              </div>
             </div>
-          </div>
-          <div class="category-bar-side">
-            <strong>${formatPercent(item.percentual)}%</strong>
-          </div>
-          <div class="category-bar-track">
-            <div class="category-bar-fill" style="width: ${width}%"></div>
+            <div style="height:4px;background:rgba(255,255,255,0.06);border-radius:4px;width:100%;overflow:hidden;">
+              <div style="height:100%;border-radius:4px;background:${c};width:${width}%;"></div>
+            </div>
           </div>
         </div>
       `;
@@ -1113,42 +1226,42 @@ function renderInsights(summary, selectedSummary, expenseOverview, intelligence)
   const forecastInsight =
     forecast.averageDailySpend <= 0
       ? {
-          label: "Previsao ate o pagamento",
-          tone: "muted",
-          title: "Ainda nao existe ritmo suficiente para prever o fim do ciclo",
-          body: "Sem gastos no periodo em foco, o saldo ainda nao mostra desgaste suficiente para uma previsao util.",
-        }
+        label: "Previsao ate o pagamento",
+        tone: "muted",
+        title: "Ainda nao existe ritmo suficiente para prever o fim do ciclo",
+        body: "Sem gastos no periodo em foco, o saldo ainda nao mostra desgaste suficiente para uma previsao util.",
+      }
       : forecast.reachesNextPayment
         ? {
-            label: "Previsao ate o pagamento",
-            tone:
-              forecast.estimatedDaysWithBalance <= summary.diasRestantes + 2 ? "yellow" : "green",
-            title:
-              forecast.projectedBalanceAtPayment >= 0
-                ? "No ritmo atual o saldo chega ao proximo pagamento"
-                : "Voce ainda chega ao pagamento, mas com margem curta",
-            body: `O ritmo medio esta em ${formatDashboardCurrency(forecast.averageDailySpend)} por dia. O saldo atual dura cerca de ${formatDayEstimate(forecast.estimatedDaysWithBalance)} e deve ${forecast.projectedBalanceAtPayment >= 0 ? `sobrar ${formatDashboardCurrency(forecast.projectedBalanceAtPayment)}` : `ficar apertado em ${formatDashboardCurrency(Math.abs(forecast.projectedBalanceAtPayment))}`} ate o proximo pagamento.`,
-          }
+          label: "Previsao ate o pagamento",
+          tone:
+            forecast.estimatedDaysWithBalance <= summary.diasRestantes + 2 ? "yellow" : "green",
+          title:
+            forecast.projectedBalanceAtPayment >= 0
+              ? "No ritmo atual o saldo chega ao proximo pagamento"
+              : "Voce ainda chega ao pagamento, mas com margem curta",
+          body: `O ritmo medio esta em ${formatDashboardCurrency(forecast.averageDailySpend)} por dia. O saldo atual dura cerca de ${formatDayEstimate(forecast.estimatedDaysWithBalance)} e deve ${forecast.projectedBalanceAtPayment >= 0 ? `sobrar ${formatDashboardCurrency(forecast.projectedBalanceAtPayment)}` : `ficar apertado em ${formatDashboardCurrency(Math.abs(forecast.projectedBalanceAtPayment))}`} ate o proximo pagamento.`,
+        }
         : {
-            label: "Previsao ate o pagamento",
-            tone: "red",
-            title: "No ritmo atual o saldo nao chega ao proximo pagamento",
-            body: `Mantido o ritmo medio de ${formatDashboardCurrency(forecast.averageDailySpend)} por dia, o saldo acaba cerca de ${formatDayEstimate(forecast.daysBeforeBalanceRunsOut)} antes do pagamento e pode faltar ${formatDashboardCurrency(forecast.estimatedDeficit)}.`,
-          };
+          label: "Previsao ate o pagamento",
+          tone: "red",
+          title: "No ritmo atual o saldo nao chega ao proximo pagamento",
+          body: `Mantido o ritmo medio de ${formatDashboardCurrency(forecast.averageDailySpend)} por dia, o saldo acaba cerca de ${formatDayEstimate(forecast.daysBeforeBalanceRunsOut)} antes do pagamento e pode faltar ${formatDashboardCurrency(forecast.estimatedDeficit)}.`,
+        };
 
   const categoryInsight = dominantCategory
     ? {
-        label: "Categoria dominante",
-        tone: dominantCategory.percentual >= 45 ? "yellow" : "blue",
-        title: `${dominantCategory.categoria} lidera os gastos do periodo`,
-        body: `${formatDashboardCurrency(dominantCategory.total)} representam ${formatPercent(dominantCategory.percentual)}% do total em ${selectedSummary.label.toLowerCase()}.`,
-      }
+      label: "Categoria dominante",
+      tone: dominantCategory.percentual >= 45 ? "yellow" : "blue",
+      title: `${dominantCategory.categoria} lidera os gastos do periodo`,
+      body: `${formatDashboardCurrency(dominantCategory.total)} representam ${formatPercent(dominantCategory.percentual)}% do total em ${selectedSummary.label.toLowerCase()}.`,
+    }
     : {
-        label: "Categoria dominante",
-        tone: "muted",
-        title: "Ainda nao existe categoria dominante",
-        body: "Quando houver gastos no periodo selecionado, a categoria mais pesada aparecera aqui.",
-      };
+      label: "Categoria dominante",
+      tone: "muted",
+      title: "Ainda nao existe categoria dominante",
+      body: "Quando houver gastos no periodo selecionado, a categoria mais pesada aparecera aqui.",
+    };
 
   let comparisonInsight;
   if (comparison.recentAverageDailySpend <= 0) {
@@ -1189,17 +1302,17 @@ function renderInsights(summary, selectedSummary, expenseOverview, intelligence)
 
   const weeklyTrendInsight = weeklyTrend
     ? {
-        label: "Tendencia semanal",
-        tone: weeklyTrend.percentual >= 45 ? "yellow" : "blue",
-        title: `${weeklyTrend.weekday} concentra a maior parte do gasto semanal`,
-        body: `${formatDashboardCurrency(weeklyTrend.total)} sairam nesse dia, o que representa ${formatPercent(weeklyTrend.percentual)}% da semana atual.`,
-      }
+      label: "Tendencia semanal",
+      tone: weeklyTrend.percentual >= 45 ? "yellow" : "blue",
+      title: `${weeklyTrend.weekday} concentra a maior parte do gasto semanal`,
+      body: `${formatDashboardCurrency(weeklyTrend.total)} sairam nesse dia, o que representa ${formatPercent(weeklyTrend.percentual)}% da semana atual.`,
+    }
     : {
-        label: "Tendencia semanal",
-        tone: "muted",
-        title: "Ainda nao existe padrao semanal claro",
-        body: "Com mais gastos distribuidos na semana, o dashboard vai apontar o dia de maior concentracao.",
-      };
+      label: "Tendencia semanal",
+      tone: "muted",
+      title: "Ainda nao existe padrao semanal claro",
+      body: "Com mais gastos distribuidos na semana, o dashboard vai apontar o dia de maior concentracao.",
+    };
 
   let preventiveAlertInsight;
   if (!summary.paymentInfo.configured || summary.diasRestantes <= 0) {
@@ -1266,11 +1379,10 @@ function renderInsights(summary, selectedSummary, expenseOverview, intelligence)
       label: automaticSummaries.month?.label || "Resumo do mes",
       tone: automaticSummaries.month?.tone || "muted",
       title: automaticSummaries.month?.title || "Sem resumo do mes",
-      body: `${automaticSummaries.month?.body || "Adicione gastos para gerar um resumo automatico do mes."}${
-        categoryAutomation?.rules?.length
+      body: `${automaticSummaries.month?.body || "Adicione gastos para gerar um resumo automatico do mes."}${categoryAutomation?.rules?.length
           ? ` ${categoryAutomation.matchedEntries || 0} descricao(oes) ja combinam com ${categoryAutomation.rules.length} regra(s) de classificacao automatica.`
           : ""
-      }`,
+        }`,
     },
   ];
   const insightTone =
@@ -1340,22 +1452,21 @@ function renderDailySummary(periodSummary) {
           </summary>
           <div class="day-accordion-content">
             ${(group.items || [])
-              .map(
-                (entry) => `
+          .map(
+            (entry) => `
                   <div class="day-entry-row">
                     <div class="day-entry-main">
                       <strong>${entry.descricao || "Lancamento"}</strong>
-                      <span class="text-soft">${entry.categoria || "Sem categoria"} | ${
-                        extractDashboardTimeLabel(entry.data) || "--:--"
-                      } | ${entry.origem || "manual"}</span>
+                      <span class="text-soft">${entry.categoria || "Sem categoria"} | ${extractDashboardTimeLabel(entry.data) || "--:--"
+              } | ${entry.origem || "manual"}</span>
                     </div>
                     <div class="day-entry-side">
                       <strong>${formatDashboardCurrency(entry.valor)}</strong>
                     </div>
                   </div>
                 `
-              )
-              .join("")}
+          )
+          .join("")}
           </div>
         </details>
       `
@@ -1381,14 +1492,19 @@ function renderAlerts(summary, alerts) {
   setChipTone(elements.alertChip, healthStatus.color);
   elements.alertList.innerHTML = combinedAlerts
     .map((alert, index) => {
-      const tone = getToneByType(alert.type);
+      const colorMap = ["#facc15", "#f43f5e", "#60a5fa"];
+      // Pink for 1, Yellow for 2, etc, prioritizing based on alert tone.
+      let numColor = alert.type === "danger" ? "#f43f5e" : (alert.type === "warning" ? "#facc15" : "#34d399");
+      let numBg = alert.type === "danger" ? "rgba(244,63,94,0.15)" : (alert.type === "warning" ? "rgba(250,204,21,0.15)" : "rgba(52,211,153,0.15)");
 
       return `
-        <li>
-          <div class="trend-dot ${tone}">${String(index + 1).padStart(2, "0")}</div>
-          <div class="list-text">
-            <strong>${alert.title}</strong>
-            <small>${alert.description}</small>
+        <li style="display:flex;align-items:flex-start;gap:12px;padding:12px 0;border-bottom:1px solid var(--db2-border);">
+          <div style="width:28px;height:28px;border-radius:8px;background:${numBg};color:${numColor};font-size:11px;font-weight:700;display:flex;align-items:center;justify-content:center;flex-shrink:0;">
+            ${String(index + 1).padStart(2, "0")}
+          </div>
+          <div style="display:flex;flex-direction:column;gap:4px;flex:1;">
+            <strong style="color:var(--db2-text-primary);font-size:12px;line-height:1.3;font-weight:600;">${alert.title}</strong>
+            <small style="color:var(--db2-text-sec);font-size:11px;line-height:1.4;">${alert.description}</small>
           </div>
         </li>
       `;
@@ -1506,9 +1622,9 @@ function renderSummaryTable(data, summary, alerts, expenseOverview, intelligence
       statusClass: expenseOverview.month.categorySeries.length ? "status-positive" : "status-warning",
       note: expenseOverview.month.categorySeries.length
         ? expenseOverview.month.categorySeries
-            .slice(0, 3)
-            .map((item) => `${item.categoria}: ${formatDashboardCurrency(item.total)}`)
-            .join(" | ")
+          .slice(0, 3)
+          .map((item) => `${item.categoria}: ${formatDashboardCurrency(item.total)}`)
+          .join(" | ")
         : "As categorias aparecem aqui conforme os gastos do mes forem sendo registrados.",
     },
     {
@@ -1651,6 +1767,21 @@ function bindExpensePeriodFilters() {
   });
 }
 
+function bindSpendingRhythmPeriodFilters() {
+  elements.spendingRhythmPeriodButtons.forEach((button) => {
+    button.addEventListener("click", () => {
+      const nextPeriod = button.dataset.spendingRhythmPeriod;
+
+      if (!nextPeriod || nextPeriod === dashboardState.selectedSpendingRhythmPeriod) {
+        return;
+      }
+
+      dashboardState.selectedSpendingRhythmPeriod = nextPeriod;
+      atualizarDashboard();
+    });
+  });
+}
+
 function bindDashboardTabs() {
   elements.dashboardTabButtons.forEach((button) => {
     button.addEventListener("click", () => {
@@ -1742,6 +1873,10 @@ function atualizarDashboard() {
     data,
     dashboardState.selectedExpensePeriod
   );
+  const spendingRhythm = buildSpendingRhythmDataset(
+    data,
+    dashboardState.selectedSpendingRhythmPeriod
+  );
   const dailySeries = buildDashboardDailySeries(data);
   const projection = buildDashboardBalanceSeries(data);
   const alerts = buildDashboardAlerts(data);
@@ -1752,6 +1887,7 @@ function atualizarDashboard() {
   renderExpensePeriodFilters();
   renderExpenseOverview(summary, expenseOverview, selectedSummary, intelligence);
   renderOverviewSpotlights(summary, selectedSummary, expenseOverview, intelligence);
+  renderSpendingRhythm(spendingRhythm);
   renderInsights(summary, selectedSummary, expenseOverview, intelligence);
   renderExpenseEvolution(selectedSummary);
   renderExpenseCategories(selectedSummary);
@@ -1779,6 +1915,7 @@ document.addEventListener("visibilitychange", () => {
 });
 
 bindExpensePeriodFilters();
+bindSpendingRhythmPeriodFilters();
 bindDashboardTabs();
 switchDashboardTab("overview");
 showDashboardFeedback(window.AppShell.consumeDashboardNotice());

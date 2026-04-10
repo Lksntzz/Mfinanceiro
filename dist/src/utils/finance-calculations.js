@@ -1380,6 +1380,148 @@ function getExpenseOverviewSummary(data, referenceDate = new Date()) {
   };
 }
 
+function getStartOfSundayWeek(referenceDate) {
+  const date = normalizeDate(referenceDate);
+  date.setDate(date.getDate() - date.getDay());
+  return date;
+}
+
+function getEndOfSaturdayWeek(startDate) {
+  const date = normalizeDate(startDate);
+  date.setDate(date.getDate() + 6);
+  return date;
+}
+
+function getStartOfMonthRange(referenceDate) {
+  const date = normalizeDate(referenceDate);
+  date.setDate(1);
+  return date;
+}
+
+function getEndOfMonthRange(referenceDate) {
+  const date = normalizeDate(referenceDate);
+  date.setMonth(date.getMonth() + 1, 0);
+  return date;
+}
+
+function addDays(referenceDate, amount) {
+  const date = normalizeDate(referenceDate);
+  date.setDate(date.getDate() + amount);
+  return date;
+}
+
+function addMonths(referenceDate, amount) {
+  const date = normalizeDate(referenceDate);
+  date.setMonth(date.getMonth() + amount, 1);
+  return date;
+}
+
+function buildSpendingRhythmPoint(entries, label, startDate, endDate) {
+  const total = getEntriesWithinRange(entries, startDate, endDate).reduce(
+    (sum, entry) => sum + Number(entry.valor || 0),
+    0
+  );
+
+  return {
+    label,
+    startDate,
+    endDate,
+    total,
+  };
+}
+
+function groupExpensesByDay(entries, referenceDate = new Date(), days = 7) {
+  const today = normalizeDate(referenceDate);
+
+  return Array.from({ length: days }, (_, index) => {
+    const currentDate = addDays(today, index - (days - 1));
+    return buildSpendingRhythmPoint(
+      entries,
+      formatDate(currentDate),
+      currentDate,
+      currentDate
+    );
+  });
+}
+
+function formatWeekRangeLabel(startDate, endDate) {
+  return `${formatDate(startDate)} a ${formatDate(endDate)}`;
+}
+
+function groupExpensesByWeek(entries, referenceDate = new Date(), weeks = 6) {
+  const currentWeekStart = getStartOfSundayWeek(referenceDate);
+
+  return Array.from({ length: weeks }, (_, index) => {
+    const weekStart = addDays(currentWeekStart, (index - (weeks - 1)) * 7);
+    const weekEnd = getEndOfSaturdayWeek(weekStart);
+
+    return buildSpendingRhythmPoint(
+      entries,
+      formatWeekRangeLabel(weekStart, weekEnd),
+      weekStart,
+      weekEnd
+    );
+  });
+}
+
+function formatMonthShort(referenceDate) {
+  return new Intl.DateTimeFormat("pt-BR", {
+    month: "short",
+  })
+    .format(normalizeDate(referenceDate))
+    .replace(".", "");
+}
+
+function groupExpensesByMonth(entries, referenceDate = new Date(), months = 6) {
+  const currentMonthStart = getStartOfMonthRange(referenceDate);
+
+  return Array.from({ length: months }, (_, index) => {
+    const monthStart = addMonths(currentMonthStart, index - (months - 1));
+    const monthEnd = getEndOfMonthRange(monthStart);
+
+    return buildSpendingRhythmPoint(
+      entries,
+      formatMonthShort(monthStart),
+      monthStart,
+      monthEnd
+    );
+  });
+}
+
+function buildSpendingRhythmDataset(data, period = "day", referenceDate = new Date()) {
+  const entries = getLedgerExpenseEntries(data);
+  const normalizedPeriod = String(period || "day").toLowerCase();
+  const points =
+    normalizedPeriod === "week"
+      ? groupExpensesByWeek(entries, referenceDate)
+      : normalizedPeriod === "month"
+        ? groupExpensesByMonth(entries, referenceDate)
+        : groupExpensesByDay(entries, referenceDate);
+  const total = points.reduce((sum, point) => sum + Number(point.total || 0), 0);
+  const maxTotal = Math.max(...points.map((point) => Number(point.total || 0)), 0);
+  const average = points.length ? total / points.length : 0;
+
+  return {
+    period: normalizedPeriod,
+    points,
+    total,
+    average,
+    maxTotal,
+    subtitle:
+      normalizedPeriod === "week"
+        ? "Semanas de domingo a sabado, incluindo a semana atual mesmo incompleta."
+        : normalizedPeriod === "month"
+          ? "Meses calendario, incluindo o mes atual mesmo incompleto."
+          : "Ultimos 7 dias corridos, incluindo hoje.",
+    windowLabel:
+      normalizedPeriod === "week"
+        ? `${points.length} semana(s)`
+        : normalizedPeriod === "month"
+          ? `${points.length} mes(es)`
+          : `${points.length} dia(s)`,
+  };
+}
+
 const CATEGORY_AUTOMATION_RULES = [
   { categoria: "alimentacao", subcategoria: "mercado", keywords: ["mercado", "supermercado", "atacadao", "carrefour", "assai", "extra", "hortifruti"] },
   { categoria: "alimentacao", subcategoria: "padaria", keywords: ["padaria", "pao", "confeitaria"] },
@@ -2780,6 +2922,7 @@ window.FinanceCalculations = {
   agruparLancamentosPorDia,
   agruparLancamentosPorData,
   buildBalanceProjection,
+  buildSpendingRhythmDataset,
   getDashboardExpenseItems,
   getDespesasDoDia,
   getDespesasDaSemana,
@@ -2835,4 +2978,7 @@ window.FinanceCalculations = {
   prepareSummaryData,
   normalizeCategoryDescription,
   ordenarPendenciasPorPrioridade,
+  groupExpensesByDay,
+  groupExpensesByMonth,
+  groupExpensesByWeek,
 };

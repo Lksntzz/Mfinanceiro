@@ -291,9 +291,37 @@
                   <button type="button" class="db2-period-pill period-filter-button" data-expense-period="month">Mês</button>
                 </div>
               </article>
+              <article class="db2-rhythm-card dashboard-surface" id="ritmo-gastos">
+                <div class="db2-rhythm-header card-header">
+                  <div>
+                    <div class="db2-section-label card-label">Ritmo de Gastos</div>
+                    <p class="db2-section-sub" id="spending-rhythm-subtitle">Ultimos 7 dias corridos, incluindo hoje.</p>
+                  </div>
+                  <span class="db2-chip db2-chip--muted" id="spending-rhythm-chip">7 dias</span>
+                </div>
+
+                <div class="db2-rhythm-periods" role="tablist" aria-label="Filtro do ritmo de gastos">
+                  <button type="button" class="db2-period-pill db2-rhythm-period-pill active" data-spending-rhythm-period="day">Dia</button>
+                  <button type="button" class="db2-period-pill db2-rhythm-period-pill" data-spending-rhythm-period="week">Semana</button>
+                  <button type="button" class="db2-period-pill db2-rhythm-period-pill" data-spending-rhythm-period="month">M?s</button>
+                </div>
+
+                <div class="db2-rhythm-chart-shell" id="spending-rhythm-chart"></div>
+
+                <div class="db2-rhythm-footer">
+                  <div class="db2-rhythm-stat">
+                    <span>Total</span>
+                    <strong id="spending-rhythm-total">R$ 0,00</strong>
+                  </div>
+                  <div class="db2-rhythm-stat">
+                    <span>M?dia</span>
+                    <strong id="spending-rhythm-average">R$ 0,00</strong>
+                  </div>
+                </div>
+              </article>
             </div>
 
-            <!-- ── ROW 4: Bottom 3 cols ── -->
+            <!-- ?????? ROW 4: Bottom 3 cols ?????? -->
             <div class="db2-bottom-row">
 
               <!-- Categorias -->

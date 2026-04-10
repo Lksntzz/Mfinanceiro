@@ -7,6 +7,7 @@ const {
   loadAppData: loadDashboardData,
 } = window.FinanceStore;
 const {
+  buildSpendingRhythmDataset,
   calcularPrioridadesDoCiclo: calculateCyclePriorities,
   calculateFinancialIntelligence: computeDashboardFinancialIntelligence,
   calculateDashboardSummary,
@@ -23,6 +24,7 @@ const {
 
 const dashboardState = {
   selectedExpensePeriod: "week",
+  selectedSpendingRhythmPeriod: "day",
 };
 
 const elements = {
@@ -98,6 +100,14 @@ const elements = {
   expenseEvolutionCaption: document.getElementById("expense-evolution-caption"),
   expenseCategoryList: document.getElementById("expense-category-list"),
   expenseCategoryChip: document.getElementById("expense-category-chip"),
+  spendingRhythmSubtitle: document.getElementById("spending-rhythm-subtitle"),
+  spendingRhythmChip: document.getElementById("spending-rhythm-chip"),
+  spendingRhythmChart: document.getElementById("spending-rhythm-chart"),
+  spendingRhythmTotal: document.getElementById("spending-rhythm-total"),
+  spendingRhythmAverage: document.getElementById("spending-rhythm-average"),
+  spendingRhythmPeriodButtons: Array.from(
+    document.querySelectorAll("[data-spending-rhythm-period]")
+  ),
   insightsChip: document.getElementById("insights-chip"),
   insightsList: document.getElementById("insights-list"),
   expensePeriodButtons: Array.from(document.querySelectorAll("[data-expense-period]")),
@@ -996,6 +1006,79 @@ function renderExpensePeriodFilters() {
   });
 }
 
+function renderSpendingRhythmPeriodButtons() {
+  elements.spendingRhythmPeriodButtons.forEach((button) => {
+    const isActive =
+      button.dataset.spendingRhythmPeriod === dashboardState.selectedSpendingRhythmPeriod;
+    button.classList.toggle("active", isActive);
+    button.setAttribute("aria-pressed", String(isActive));
+  });
+}
+
+function formatRhythmValueLabel(value) {
+  if (value >= 1000) {
+    return formatDashboardCurrency(value)
+      .replace("R$", "")
+      .trim();
+  }
+
+  return formatDashboardCurrency(value);
+}
+
+function renderSpendingRhythm(dataset) {
+  if (!elements.spendingRhythmChart) {
+    return;
+  }
+
+  renderSpendingRhythmPeriodButtons();
+
+  if (elements.spendingRhythmSubtitle) {
+    elements.spendingRhythmSubtitle.textContent = dataset.subtitle;
+  }
+
+  if (elements.spendingRhythmChip) {
+    elements.spendingRhythmChip.textContent = dataset.windowLabel;
+  }
+
+  if (elements.spendingRhythmTotal) {
+    elements.spendingRhythmTotal.textContent = formatDashboardCurrency(dataset.total);
+  }
+
+  if (elements.spendingRhythmAverage) {
+    elements.spendingRhythmAverage.textContent = formatDashboardCurrency(dataset.average);
+  }
+
+  if (!dataset.points.length || dataset.maxTotal <= 0) {
+    elements.spendingRhythmChart.innerHTML = `
+      <div class="db2-rhythm-empty">
+        <strong>Sem gastos nesse recorte</strong>
+        <span>Os dados aparecem automaticamente a partir das saidas reais do ledger.</span>
+      </div>
+    `;
+    return;
+  }
+
+  elements.spendingRhythmChart.innerHTML = `
+    <div class="db2-rhythm-bars" role="img" aria-label="Grafico do ritmo de gastos">
+      ${dataset.points
+        .map((point) => {
+          const height = Math.max((Number(point.total || 0) / dataset.maxTotal) * 100, 6);
+
+          return `
+            <div class="db2-rhythm-bar-group">
+              <span class="db2-rhythm-bar-value">${formatRhythmValueLabel(point.total)}</span>
+              <div class="db2-rhythm-bar-track">
+                <div class="db2-rhythm-bar-fill" style="height:${height}%"></div>
+              </div>
+              <span class="db2-rhythm-bar-label">${point.label}</span>
+            </div>
+          `;
+        })
+        .join("")}
+    </div>
+  `;
+}
+
 function renderExpenseEvolution(summary) {
   if (!summary.evolutionSeries.length) {
     elements.expenseEvolutionChip.textContent = "Sem dados";
@@ -1684,6 +1767,21 @@ function bindExpensePeriodFilters() {
   });
 }
 
+function bindSpendingRhythmPeriodFilters() {
+  elements.spendingRhythmPeriodButtons.forEach((button) => {
+    button.addEventListener("click", () => {
+      const nextPeriod = button.dataset.spendingRhythmPeriod;
+
+      if (!nextPeriod || nextPeriod === dashboardState.selectedSpendingRhythmPeriod) {
+        return;
+      }
+
+      dashboardState.selectedSpendingRhythmPeriod = nextPeriod;
+      atualizarDashboard();
+    });
+  });
+}
+
 function bindDashboardTabs() {
   elements.dashboardTabButtons.forEach((button) => {
     button.addEventListener("click", () => {
@@ -1775,6 +1873,10 @@ function atualizarDashboard() {
     data,
     dashboardState.selectedExpensePeriod
   );
+  const spendingRhythm = buildSpendingRhythmDataset(
+    data,
+    dashboardState.selectedSpendingRhythmPeriod
+  );
   const dailySeries = buildDashboardDailySeries(data);
   const projection = buildDashboardBalanceSeries(data);
   const alerts = buildDashboardAlerts(data);
@@ -1785,6 +1887,7 @@ function atualizarDashboard() {
   renderExpensePeriodFilters();
   renderExpenseOverview(summary, expenseOverview, selectedSummary, intelligence);
   renderOverviewSpotlights(summary, selectedSummary, expenseOverview, intelligence);
+  renderSpendingRhythm(spendingRhythm);
   renderInsights(summary, selectedSummary, expenseOverview, intelligence);
   renderExpenseEvolution(selectedSummary);
   renderExpenseCategories(selectedSummary);
@@ -1812,6 +1915,7 @@ document.addEventListener("visibilitychange", () => {
 });
 
 bindExpensePeriodFilters();
+bindSpendingRhythmPeriodFilters();
 bindDashboardTabs();
 switchDashboardTab("overview");
 showDashboardFeedback(window.AppShell.consumeDashboardNotice());
