@@ -7,7 +7,6 @@ const pages = [
   ["cartoes.html", path.join("src", "pages", "cartoes.js")],
   ["contas.html", path.join("src", "pages", "contas.js")],
   ["dashboard.html", path.join("src", "pages", "dashboard.js")],
-  ["extrato.html", path.join("src", "pages", "extrato.js")],
   ["investimentos.html", path.join("src", "pages", "investimentos.js")],
   ["profile.html", path.join("src", "pages", "profile.js")],
   ["recebimentos.html", path.join("src", "pages", "recebimentos.js")],

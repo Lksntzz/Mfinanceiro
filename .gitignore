@@ -1,5 +1,16 @@
 node_modules/
 .env
 npm-debug.log*
-tmp-server.log
-tmp-server.err
+dist/
+
+# Temporary / test files
+tmp-*/
+tmp_*/
+tmp-*.pid
+tmp-*.err
+tmp-*.log
+tmp-*.out
+tmp-*.json
+tmp_*.js
+verify-dashboard.html
+.codex/

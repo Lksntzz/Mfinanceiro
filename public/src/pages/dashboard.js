@@ -1661,7 +1661,7 @@ function bindDashboardTabs() {
 }
 
 function logDashboardIntegrationDebug(data, summary, expenseOverview, selectedSummary, intelligence) {
-  if (window.__MFINANCEIRO_DEBUG_INTEGRATION__ === false) {
+  if (window.__MFINANCEIRO_DEBUG_INTEGRATION__ !== true) {
     return;
   }
 
@@ -1768,9 +1768,6 @@ function atualizarDashboard() {
 }
 
 window.atualizarDashboard = atualizarDashboard;
-window.FinanceStore.subscribe(() => {
-  atualizarDashboard();
-});
 window.addEventListener("finance-data-updated", atualizarDashboard);
 window.addEventListener("storage", atualizarDashboard);
 window.addEventListener("pageshow", atualizarDashboard);

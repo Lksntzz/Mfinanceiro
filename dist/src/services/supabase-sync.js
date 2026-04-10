@@ -1259,6 +1259,12 @@
     return message.includes("does not exist") || message.includes("relation");
   }
 
+  function isAuthSessionMissingError(error) {
+    const message = String(error?.message || "").toLowerCase();
+    const name = String(error?.name || "");
+    return name === "AuthSessionMissingError" || message.includes("auth session missing");
+  }
+
   async function fetchOptionalUserRows(tableName, userId, options = {}) {
     const supabase = await getSupabaseClient();
     let query = supabase.from(tableName).select(options.select || "*").eq("user_id", userId);
@@ -1381,6 +1387,10 @@
   }
 
   function logLedgerSyncDebug(action, ledgerRows, extra = {}) {
+    if (window.__MFINANCEIRO_DEBUG_SYNC__ !== true) {
+      return;
+    }
+
     const rows = Array.isArray(ledgerRows) ? ledgerRows : [];
     console.log(`[MFinanceiro Sync] ${action}`, {
       ledgerRegistros: rows.length,
@@ -3120,6 +3130,14 @@
         if (isMissingTableError(error)) {
           console.warn(
             "[MFinanceiro Sync] Persistencia remota aguardando criacao das tabelas no Supabase.",
+            error
+          );
+          return null;
+        }
+
+        if (isAuthSessionMissingError(error)) {
+          console.warn(
+            "[MFinanceiro Sync] Sessao do Supabase ausente; mantendo dados locais ate uma autenticacao remota valida.",
             error
           );
           return null;

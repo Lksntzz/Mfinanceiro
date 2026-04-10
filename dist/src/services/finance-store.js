@@ -1078,8 +1078,6 @@ function updateAppData(updater, source = "local-storage") {
 }
 
 function salvarCadastroBancario(payload) {
-  console.log("Salvando cadastro bancário:", payload);
-
   return updateAppData((draft) => {
     const salarySummary = calcularSalarioLiquido({
       ...draft.banking,
@@ -1132,7 +1130,6 @@ function carregarCadastroBancario() {
     banking: bankingSnapshot || loadAppData().banking,
   }).banking;
 
-  console.log("Carregando cadastro bancário:", bankingData);
   return bankingData;
 }
 
@@ -1278,13 +1275,6 @@ function carregarVRVA() {
 }
 
 function salvarRecebimento(tipo, payload) {
-  console.log(
-    tipo === "pagamento"
-      ? "Salvando registro de pagamento"
-      : "Salvando VR/VA",
-    payload
-  );
-
   return updateAppData((draft) => {
     const now = new Date().toISOString();
     const target =
@@ -1343,7 +1333,6 @@ function carregarBeneficios() {
 }
 
 function salvarBeneficios(payload) {
-  console.log("Salvando benefícios", payload);
   return salvarVRVA(payload?.vrVa || payload);
 }
 
@@ -1352,11 +1341,6 @@ function editarBeneficios() {
 }
 
 function salvarContas(tipo, payload) {
-  console.log(
-    tipo === "fixa" ? "Salvando conta fixa" : "Salvando conta do dia a dia",
-    payload
-  );
-
   return updateAppData((draft) => {
     const targetKey = tipo === "fixa" ? "contasFixas" : "contasDiaADia";
     const collection = Array.isArray(draft[targetKey]) ? draft[targetKey] : [];
@@ -1402,8 +1386,6 @@ function salvarContaVariavel(payload) {
 }
 
 function salvarContasVariaveisImportadas(payloads) {
-  console.log("Salvando contas importadas", payloads);
-
   return updateAppData((draft) => {
     const nextLedgerItems = Array.isArray(payloads)
       ? payloads.map((item) =>
@@ -1434,11 +1416,6 @@ function editarContaVariavel(id) {
 }
 
 function salvarCartoes(tipo, payload) {
-  console.log(
-    tipo === "cartao" ? "Salvando cartão" : "Salvando gasto do cartão",
-    payload
-  );
-
   return updateAppData((draft) => {
     const targetKey = tipo === "cartao" ? "cartoes" : "lancamentosCartao";
     const collection = Array.isArray(draft[targetKey]) ? draft[targetKey] : [];
@@ -1479,8 +1456,6 @@ function editarGastoCartao(id) {
 }
 
 function salvarInvestimento(payload) {
-  console.log("Salvando investimento", payload);
-
   return updateAppData((draft) => {
     draft.investimentos = {
       ...draft.investimentos,
@@ -1491,8 +1466,6 @@ function salvarInvestimento(payload) {
 }
 
 function salvarParcelamento(payload) {
-  console.log("Salvando parcelamento", payload);
-
   return updateAppData((draft) => {
     const collection = Array.isArray(draft.parcelamentos) ? draft.parcelamentos : [];
     const existingIndex = collection.findIndex((item) => item.id === payload.id);

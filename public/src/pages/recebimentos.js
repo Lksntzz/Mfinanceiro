@@ -260,11 +260,6 @@
     }
 
     renderReceiptArea();
-
-    if (typeof window.atualizarDashboard === "function") {
-      window.atualizarDashboard();
-    }
-
     showMessage("success", "Recebimento salvo com sucesso.");
     window.AppShell.queueDashboardRedirect(
       "Recebimento salvo. O dashboard foi atualizado."
@@ -327,11 +322,6 @@
     }
 
     renderReceiptArea();
-
-    if (typeof window.atualizarDashboard === "function") {
-      window.atualizarDashboard();
-    }
-
     showMessage(
       "success",
       `Recebimento confirmado em ${formatReceiptsCurrency(actualValue)}.`
@@ -376,11 +366,6 @@
     }
 
     renderReceiptArea();
-
-    if (typeof window.atualizarDashboard === "function") {
-      window.atualizarDashboard();
-    }
-
     showMessage("success", "Beneficio salvo com sucesso.");
     window.AppShell.queueDashboardRedirect(
       "Beneficio salvo. O dashboard foi atualizado."
@@ -508,7 +493,6 @@
   window.addEventListener("finance-data-updated", renderReceiptArea);
   window.addEventListener("mfinanceiro-supabase-hydrated", renderReceiptArea);
   window.addEventListener("mfinanceiro-financial-recalculated", renderReceiptArea);
-  window.FinanceStore.subscribe(renderReceiptArea);
   window.addEventListener("storage", renderReceiptArea);
 
   initializeReceiptsPage().catch((error) => {

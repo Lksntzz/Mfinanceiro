@@ -1,5 +1,0 @@
-2026/04/08-20:31:40.129 49cc Creating DB E:\Mfinanceiro\tmp-edge-profile\user-check-1775691096992\Default\EdgeCoupons/coupons_data.db since it was missing.
-2026/04/08-20:31:41.179 49cc Reusing MANIFEST E:\Mfinanceiro\tmp-edge-profile\user-check-1775691096992\Default\EdgeCoupons/coupons_data.db/MANIFEST-000001
-2026/04/08-20:31:49.144 4f68 Level-0 table #5: started
-2026/04/08-20:31:49.190 4f68 Level-0 table #5: 682116 bytes OK
-2026/04/08-20:31:49.282 4f68 Delete type=0 #3

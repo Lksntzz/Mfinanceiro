@@ -2548,9 +2548,6 @@ function agruparLancamentosPorDia(lancamentos) {
 function montarSerieGraficoContasVariaveis(data) {
   const lancamentos = getLedgerMovements(data);
   return agruparLancamentosPorData(lancamentos);
-  console.log("Lançamentos:", lancamentos);
-  const agrupado = agruparLancamentosPorData(lancamentos);
-  return agrupado;
 }
 
 function montarSerieGrafico(data) {
@@ -2773,18 +2770,6 @@ function buildBalanceProjection(data, referenceDate = new Date()) {
 
 function montarProjecaoSaldoPorDia(data, referenceDate = new Date()) {
   return buildBalanceProjection(data, referenceDate);
-  const lancamentos = Array.isArray(data?.contasDiaADia) ? data.contasDiaADia : [];
-  console.log("Lançamentos do dia a dia:", lancamentos);
-  const agrupado = agruparLancamentosPorDia(lancamentos);
-  console.log("Agrupado por dia:", agrupado);
-  const saldoBase = normalizeNumericValue(data?.banking?.saldoAtual || 0);
-  console.log("Saldo base:", saldoBase);
-  const serieGrafico = buildBalanceProjection(data, referenceDate);
-  console.log("Série final do gráfico:", {
-    labels: serieGrafico.map((item) => item.label),
-    data: serieGrafico.map((item) => item.balance),
-  });
-  return serieGrafico;
 }
 
 function calcularValorPrevistoDoCiclo(data, referenceDate = new Date()) {

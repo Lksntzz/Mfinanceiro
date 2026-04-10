@@ -40,7 +40,6 @@ const outrosDescontosList = document.getElementById("outros-descontos-list");
 const tipoCicloInput = document.getElementById("tipoCiclo");
 const diaPagamento2Wrapper = document.getElementById("diaPagamento2Wrapper");
 const editBankingButton = document.getElementById("edit-banking-button");
-const saveBankingButton = document.getElementById("save-banking-button");
 const statementMessage = document.getElementById("statement-message");
 const statementPreviewList = document.getElementById("statement-preview-list");
 const statementFileInput = document.getElementById("statementFile");
@@ -394,7 +393,6 @@ function parseMercadoPagoCSV(textContent) {
   }
 
   const validation = validateStatementBalance(lancamentos);
-  console.log("Validacao saldo CSV Mercado Pago", validation);
 
   return {
     saldoSugerido: lancamentos.length
@@ -831,7 +829,6 @@ function toggleAccordion(name) {
 
 function updateAccordionSummaries() {
   const payload = buildBankingPayload();
-  console.log("Percentuais do ciclo", payload.percentuaisPagamento);
   const paymentDays = payload.diasPagamento.filter((day) => day > 0);
   const paymentPercentages =
     payload.tipoCiclo === "ciclo2"
@@ -1149,7 +1146,6 @@ function handleSaveBanking(event) {
   }
 
   const payload = buildBankingPayload();
-  console.log("Salvar base financeira acionado pelo formulário:", payload);
 
   if (payload.salarioBruto > 0 && payload.diasPagamento.length === 0) {
     showMessage(bankingMessage, "error", "Informe pelo menos um dia de pagamento.");
@@ -1175,11 +1171,6 @@ function handleSaveBanking(event) {
 
   salvarCadastroBancario(payload);
   const savedBanking = carregarCadastroBancario();
-  console.log("Base financeira gravada no localStorage:", savedBanking);
-
-  if (typeof window.atualizarDashboard === "function") {
-    window.atualizarDashboard();
-  }
   renderBankingForm();
   renderReceiptArea();
   closeAllBankingAccordions();
@@ -1219,13 +1210,9 @@ function savePaymentReceipt() {
     return;
   }
 
-  console.log("Salvando registro de pagamento", payload);
   salvarRegistroPagamento(payload);
   renderReceiptArea();
   updateCyclePreview();
-  if (typeof window.atualizarDashboard === "function") {
-    window.atualizarDashboard();
-  }
   showMessage(receiptMessage, "success", "Previsao do pagamento salva com sucesso.");
   window.AppShell.queueDashboardRedirect(
     "Previsao do pagamento salva. O dashboard foi atualizado."
@@ -1267,10 +1254,6 @@ function markPaymentAsReceived() {
   renderBankingForm();
   renderReceiptArea();
   updateCyclePreview();
-
-  if (typeof window.atualizarDashboard === "function") {
-    window.atualizarDashboard();
-  }
 
   updateAccordionSummaries();
   showMessage(
@@ -1314,15 +1297,6 @@ async function processStatementFile() {
     }));
     statementBalanceSuggestion = parserResult.saldoSugerido || 0;
 
-    console.log("Lendo extrato importado", {
-      banco: bank,
-      arquivo: file.name,
-      formato: format,
-      parser: parserResult.parserMode,
-      resultado: statementDraftsState,
-      saldo: statementBalanceSuggestion,
-      validacao: parserResult.validation || null,
-    });
     renderStatementPreview();
 
     if (parserResult.validation && !parserResult.validation.consistente) {
@@ -1436,19 +1410,6 @@ function confirmImportedExpenses() {
       tipo: "saida",
     }))
   );
-  console.log("Importacao confirmada", expenseDrafts);
-
-  if (typeof window.atualizarDashboard === "function") {
-    window.atualizarDashboard();
-  }
-
-  if (window.FinanceStore?.loadAppData) {
-    console.log(
-      "Contas do dia a dia atualizadas a partir do extrato",
-      window.FinanceStore.loadAppData().contasDiaADia
-    );
-  }
-
   if (statementBalanceActions) {
     statementBalanceActions.classList.remove("hidden");
   }
@@ -1465,7 +1426,6 @@ function acceptStatementBalance() {
   getElement("origemSaldoBanco").value = getElement("statementBank").value;
   const payload = buildBankingPayload();
   payload.saldoAtual = statementBalanceSuggestion;
-  console.log("Saldo calculado aplicado", statementBalanceSuggestion);
 
   salvarCadastroBancario(payload);
   renderBankingForm();
@@ -1474,10 +1434,6 @@ function acceptStatementBalance() {
   updateCyclePreview();
   updateSummaryPreview();
   updateAccordionSummaries();
-
-  if (typeof window.atualizarDashboard === "function") {
-    window.atualizarDashboard();
-  }
 
   showMessage(
     statementMessage,
@@ -1518,12 +1474,8 @@ function saveVrVaReceipt() {
     return;
   }
 
-  console.log("Salvando VR/VA", payload);
   salvarBeneficios({ vrVa: payload });
   renderReceiptArea();
-  if (typeof window.atualizarDashboard === "function") {
-    window.atualizarDashboard();
-  }
   updateAccordionSummaries();
   showMessage(receiptMessage, "success", "Registro de VR/VA salvo com sucesso.");
   window.AppShell.queueDashboardRedirect(
@@ -1533,16 +1485,21 @@ function saveVrVaReceipt() {
 
 function editPaymentReceipt() {
   const receipt = editarRegistroPagamento();
-  console.log("Editando registro de pagamento", receipt);
   renderPaymentReceipt();
   showMessage(receiptMessage, "success", "Registro de pagamento carregado para edicao.");
 }
 
 function editVrVaReceipt() {
   const receipt = editarVRVA();
-  console.log("Editando VR/VA", receipt);
   renderBenefitReceipt();
   showMessage(receiptMessage, "success", "Registro de VR/VA carregado para edicao.");
+}
+
+function renderBankingPage() {
+  renderBankingForm();
+  renderReceiptArea();
+  renderStatementPreview();
+  updateAccordionSummaries();
 }
 
 function bindLiveUpdates() {
@@ -1600,12 +1557,6 @@ if (bankingForm) {
   bankingForm.addEventListener("submit", handleSaveBanking);
 }
 
-if (saveBankingButton) {
-  saveBankingButton.addEventListener("click", () => {
-    console.log("Botão salvar base financeira clicado.");
-  });
-}
-
 if (editBankingButton) {
   editBankingButton.addEventListener("click", handleEditBanking);
 }
@@ -1636,28 +1587,14 @@ window.addEventListener("app-shell-action", (event) => {
   }
 });
 window.addEventListener("finance-data-updated", () => {
-  renderBankingForm();
-  renderReceiptArea();
-  renderStatementPreview();
-  updateAccordionSummaries();
-});
-window.FinanceStore.subscribe(() => {
-  renderBankingForm();
-  renderReceiptArea();
-  renderStatementPreview();
-  updateAccordionSummaries();
+  renderBankingPage();
 });
 window.addEventListener("storage", () => {
-  renderBankingForm();
-  renderReceiptArea();
-  renderStatementPreview();
-  updateAccordionSummaries();
+  renderBankingPage();
 });
 
 bindAccordionToggles();
 bindLiveUpdates();
 closeAllBankingAccordions();
-renderBankingForm();
-renderReceiptArea();
-renderStatementPreview();
+renderBankingPage();
 })();

@@ -27,8 +27,6 @@ function renderInvestmentPage() {
   const summary = calculateInvestmentSummary(data);
   const suggestion = summary.investimento;
 
-  console.log("Lendo investimentos", investmentData);
-
   document.getElementById("investimentoPercentual").value =
     investmentData.percentualEscolhido ?? suggestion.percentage;
   document.getElementById("investimento-saldo-disponivel").textContent = formatInvestmentCurrency(summary.saldoDisponivel);
@@ -120,13 +118,6 @@ function handleInvestmentSubmit(event) {
 
   const percentage = toInvestmentNumber(document.getElementById("investimentoPercentual").value);
 
-  console.log("Salvando investimento", {
-    percentualSugerido: Math.min(Math.max(percentage, 0), 100),
-    percentualEscolhido: Math.min(Math.max(percentage, 0), 100),
-    ultimaAcao: "pendente",
-    valorReservado: 0,
-  });
-
   saveInvestment({
     percentualSugerido: Math.min(Math.max(percentage, 0), 100),
     percentualEscolhido: Math.min(Math.max(percentage, 0), 100),
@@ -134,7 +125,6 @@ function handleInvestmentSubmit(event) {
     valorReservado: 0,
   });
 
-  renderInvestmentPage();
   showInvestmentMessage("success", "Percentual da sugestao salvo com sucesso.");
   window.AppShell.queueDashboardRedirect(
     "Investimentos atualizados. O dashboard foi recalculado com a nova sugestao."
@@ -152,7 +142,6 @@ function confirmSuggestion() {
     valorReservado: summary.investimento.suggestedValue,
   });
 
-  renderInvestmentPage();
   showInvestmentMessage(
     "success",
     `Sugestao de ${formatInvestmentCurrency(summary.investimento.suggestedValue)} confirmada no app.`
@@ -173,7 +162,6 @@ function ignoreSuggestion() {
     valorReservado: 0,
   });
 
-  renderInvestmentPage();
   showInvestmentMessage("success", "Sugestao ignorada por enquanto.");
   window.AppShell.queueDashboardRedirect(
     "Decisao de investimento registrada. O dashboard foi atualizado."
@@ -188,9 +176,6 @@ document
   .getElementById("ignore-investment-button")
   .addEventListener("click", ignoreSuggestion);
 window.addEventListener("finance-data-updated", renderInvestmentPage);
-window.FinanceStore.subscribe(() => {
-  renderInvestmentPage();
-});
 window.addEventListener("storage", renderInvestmentPage);
 
 renderInvestmentPage();

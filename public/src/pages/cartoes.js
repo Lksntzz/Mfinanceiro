@@ -111,9 +111,6 @@
     });
 
     renderCardOptions(cards);
-    console.log("Lendo cartões", cards);
-    console.log("Lendo gastos do cartão", launches);
-
     document.getElementById("cartoes-status-chip").textContent = cards.length
       ? `${cards.length} cartao(es)`
       : "Sem cartoes";
@@ -224,15 +221,10 @@
       return;
     }
 
-    console.log("Salvando cartão", payload);
     saveCard(payload);
     cardForm.reset();
     resetFormMode(cardForm, "Salvar cartao");
     renderCardsPage();
-
-    if (typeof window.atualizarDashboard === "function") {
-      window.atualizarDashboard();
-    }
 
     showCardsMessage("success", editId ? "Cartao atualizado com sucesso." : "Cartao salvo com sucesso.");
     window.AppShell.queueDashboardRedirect(
@@ -264,15 +256,10 @@
       payload.status = existingLaunch?.status || "pendente";
     }
 
-    console.log("Salvando gasto do cartão", payload);
     saveCardExpense(payload);
     launchForm.reset();
     resetFormMode(launchForm, "Salvar gasto da fatura");
     renderCardsPage();
-
-    if (typeof window.atualizarDashboard === "function") {
-      window.atualizarDashboard();
-    }
 
     showCardsMessage(
       "success",
@@ -384,9 +371,6 @@
   }
 
   window.addEventListener("finance-data-updated", renderCardsPage);
-  window.FinanceStore.subscribe(() => {
-    renderCardsPage();
-  });
   window.addEventListener("storage", renderCardsPage);
 
   renderCardsPage();

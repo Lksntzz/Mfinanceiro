@@ -79,6 +79,12 @@ function getExpenseSyncApi() {
   return window.MFinanceiroSupabaseSync || null;
 }
 
+function isAuthSessionMissingError(error) {
+  const message = String(error?.message || "").toLowerCase();
+  const name = String(error?.name || "");
+  return name === "AuthSessionMissingError" || message.includes("auth session missing");
+}
+
 function setFormLoadingState(form, isLoading, loadingLabel) {
   const submitButton = getSubmitButton(form);
 
@@ -173,6 +179,14 @@ async function ensureExpensesHydrated() {
       await refreshCardExpensesFromSupabase();
       await refreshInstallmentsFromSupabase();
     } catch (error) {
+      if (isAuthSessionMissingError(error)) {
+        console.warn(
+          "[Contas] Sessao do Supabase ausente; mantendo despesas locais ate uma autenticacao remota valida.",
+          error
+        );
+        return;
+      }
+
       console.error("[Contas] Falha ao carregar despesas do Supabase.", error);
     } finally {
       expenseHydrationPromise = null;
@@ -686,7 +700,6 @@ function processImportFiles() {
   }
 
   importedDraftsState = files.map((file) => buildDraftFromFile(file));
-  console.log("Importando gastos a partir de arquivos", importedDraftsState);
   renderImportDrafts();
   showImportMessage(
     "success",
@@ -747,7 +760,6 @@ function confirmImportedExpenses() {
     return;
   }
 
-  console.log("Confirmando gastos importados", importedDraftsState);
   saveImportedDailyExpenses(
     importedDraftsState.map((item) => ({
       ...item,
@@ -761,10 +773,6 @@ function confirmImportedExpenses() {
   }
   renderImportDrafts();
   renderDailyExpenses();
-
-  if (typeof window.atualizarDashboard === "function") {
-    window.atualizarDashboard();
-  }
 
   showImportMessage(
     "success",
@@ -932,7 +940,6 @@ async function handleFixedSubmit(event) {
 
   try {
     setFormLoadingState(contaFixaForm, true, editId ? "Atualizando..." : "Salvando...");
-    console.log("Salvando conta fixa", payload);
 
     if (typeof getExpenseSyncApi()?.addFixedBill === "function") {
       await getExpenseSyncApi().addFixedBill(payload);
@@ -944,9 +951,6 @@ async function handleFixedSubmit(event) {
     resetFormMode(contaFixaForm, "Salvar conta fixa");
     renderFixedAccounts();
     showContaMessage("success", editId ? "Conta fixa atualizada com sucesso." : "Conta fixa salva com sucesso.");
-    if (typeof window.atualizarDashboard === "function") {
-      window.atualizarDashboard();
-    }
     window.AppShell.queueDashboardRedirect(
       "Conta fixa salva. O dashboard foi atualizado com o novo compromisso."
     );
@@ -982,7 +986,6 @@ async function handleDailySubmit(event) {
 
   try {
     setFormLoadingState(diaADiaForm, true, editId ? "Atualizando..." : "Salvando...");
-    console.log("Salvando conta do dia a dia", payload);
 
     if (typeof getExpenseSyncApi()?.addExpense === "function") {
       await getExpenseSyncApi().addExpense(payload);
@@ -994,9 +997,6 @@ async function handleDailySubmit(event) {
     resetFormMode(diaADiaForm, "Salvar gasto");
     renderDailyExpenses();
     showContaMessage("success", editId ? "Gasto atualizado com sucesso." : "Gasto do dia a dia salvo com sucesso.");
-    if (typeof window.atualizarDashboard === "function") {
-      window.atualizarDashboard();
-    }
     window.AppShell.queueDashboardRedirect(
       "Gasto salvo. O dashboard foi atualizado com o novo consumo."
     );
@@ -1049,10 +1049,6 @@ async function handleInstallmentSubmit(event) {
     resetFormMode(installmentForm, "Salvar parcelamento");
     renderInstallments();
 
-    if (typeof window.atualizarDashboard === "function") {
-      window.atualizarDashboard();
-    }
-
     showInstallmentMessage(
       "success",
       editId ? "Parcelamento atualizado com sucesso." : "Parcelamento salvo com sucesso."
@@ -1087,7 +1083,6 @@ async function handleCardSubmit(event) {
     return;
   }
 
-  console.log("Salvando cartão", payload);
   try {
     setFormLoadingState(cartaoForm, true, editId ? "Atualizando..." : "Salvando...");
 
@@ -1136,7 +1131,6 @@ async function handleLaunchSubmit(event) {
     payload.status = existing?.status || "pendente";
   }
 
-  console.log("Salvando gasto do cartão", payload);
   try {
     setFormLoadingState(lancamentoForm, true, editId ? "Atualizando..." : "Salvando...");
 
@@ -1492,6 +1486,14 @@ function triggerCurrentFormEditReset() {
   showCartoesMessage("success", "Formulario de gasto da fatura liberado para nova edicao.");
 }
 
+function renderAccountsPage() {
+  renderFixedAccounts();
+  renderDailyExpenses();
+  renderInstallments();
+  renderCards();
+  renderImportDrafts();
+}
+
 if (contaFixaForm) {
   contaFixaForm.addEventListener("submit", handleFixedSubmit);
 }
@@ -1569,35 +1571,16 @@ window.addEventListener("app-shell-action", (event) => {
   }
 });
 window.addEventListener("finance-data-updated", () => {
-  renderFixedAccounts();
-  renderDailyExpenses();
-  renderInstallments();
-  renderCards();
-  renderImportDrafts();
-});
-window.FinanceStore.subscribe(() => {
-  renderFixedAccounts();
-  renderDailyExpenses();
-  renderInstallments();
-  renderCards();
-  renderImportDrafts();
+  renderAccountsPage();
 });
 window.addEventListener("storage", () => {
-  renderFixedAccounts();
-  renderDailyExpenses();
-  renderInstallments();
-  renderCards();
-  renderImportDrafts();
+  renderAccountsPage();
 });
 window.addEventListener("mfinanceiro-supabase-hydrated", () => {
   ensureExpensesHydrated();
 });
 
 syncAccountsTabFromHash({ replaceHash: true });
-renderFixedAccounts();
-renderDailyExpenses();
-renderInstallments();
-renderCards();
-renderImportDrafts();
+renderAccountsPage();
 ensureExpensesHydrated();
 })();

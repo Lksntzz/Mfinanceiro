@@ -107,9 +107,6 @@ profileForm.addEventListener("submit", handleSaveProfile);
 photoInput.addEventListener("change", handlePhotoChange);
 removePhotoButton.addEventListener("click", removePhoto);
 window.addEventListener("finance-data-updated", fillProfileForm);
-window.FinanceStore.subscribe(() => {
-  fillProfileForm();
-});
 window.addEventListener("storage", fillProfileForm);
 
 fillProfileForm();

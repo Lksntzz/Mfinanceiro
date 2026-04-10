@@ -3,11 +3,15 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Dashboard Financeiro</title>
-    <link rel="stylesheet" href="/styles.css?v=20260408a" />
+    <title>MFinanceiro — Dashboard</title>
+    <meta name="description" content="Painel financeiro inteligente. Controle saldo, limite diário e evolução do ciclo em tempo real." />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet" />
+    <link rel="stylesheet" href="/styles.css" />
+    <link rel="stylesheet" href="/dashboard-v2.css" />
     <script src="/src/lib/auth-session.js"></script>
     <script src="/src/lib/config.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script src="/src/lib/supabase-bootstrap.js"></script>
     <script src="/src/services/finance-store.js"></script>
     <script src="/src/utils/finance-calculations.js"></script>
@@ -17,475 +21,492 @@
       window.AuthSession.requireAuth();
     </script>
   </head>
-  <body data-page="dashboard">
-    <main class="page-shell dashboard-page-shell">
-      <section class="dashboard-layout app-layout dashboard-layout-premium">
-        <aside id="app-sidebar" class="dashboard-sidebar dashboard-sidebar-hidden" aria-hidden="true"></aside>
+  <body data-page="dashboard" class="db2-body">
 
-        <section class="dashboard-main app-main dashboard-main-premium dashboard-grid-shell">
-          <header class="dashboard-premium-header nav-bar">
-            <div class="dashboard-brand nav-left">
-              <div class="dashboard-brand-mark">MF</div>
-              <div class="dashboard-brand-copy">
-                <span class="dashboard-brand-kicker">Assistente financeiro diario</span>
-                <h1>MFinanceiro</h1>
-              </div>
-            </div>
+    <!-- ═══════════════════════════════════════════════════════════
+         MAIN SHELL
+    ═══════════════════════════════════════════════════════════ -->
+    <main class="db2-shell">
 
-            <nav class="dashboard-top-tabs" aria-label="Navegacao do dashboard">
-              <button type="button" class="dashboard-tab-button is-active" data-dashboard-tab-link="overview">
-                Visao Geral
-              </button>
-              <button type="button" class="dashboard-tab-button" data-dashboard-tab-link="details">
-                Detalhes
-              </button>
-              <button type="button" class="dashboard-tab-button" data-dashboard-tab-link="insights">
-                Insights
-              </button>
-              <button type="button" class="dashboard-tab-button" data-dashboard-tab-link="history">
-                Historico
-              </button>
-              <span class="dashboard-nav-divider" aria-hidden="true"></span>
-              <a href="/cadastro-bancario.html" class="dashboard-setup-link">Banco</a>
-              <a href="/contas.html" class="dashboard-setup-link">Contas</a>
-              <a href="/cartoes.html" class="dashboard-setup-link">Cartoes</a>
-              <a href="/recebimentos.html" class="dashboard-setup-link">Recebimentos</a>
-            </nav>
+      <!-- ────────── TOPBAR ────────── -->
+      <header class="db2-topbar" id="db2-topbar">
 
-            <div class="dashboard-header-meta nav-right">
-              <article class="dashboard-payment-spotlight">
-                <span class="dashboard-payment-label">Proximo pagamento</span>
-                <strong id="next-payment-chip">Pagamento pendente</strong>
-                <small id="committed-chip">Sem compromissos</small>
+        <!-- Brand -->
+        <div class="db2-brand">
+          <div class="db2-brand-icon">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <rect x="2" y="7" width="20" height="14" rx="3" fill="url(#brand-grad)"/>
+              <path d="M7 7V5a5 5 0 0 1 10 0v2" stroke="url(#brand-grad)" stroke-width="2" stroke-linecap="round"/>
+              <defs>
+                <linearGradient id="brand-grad" x1="0" y1="0" x2="24" y2="24" gradientUnits="userSpaceOnUse">
+                  <stop stop-color="#818cf8"/>
+                  <stop offset="1" stop-color="#38bdf8"/>
+                </linearGradient>
+              </defs>
+            </svg>
+          </div>
+          <span class="db2-brand-name">MFinanceiro</span>
+        </div>
+
+        <!-- Nav tabs -->
+        <nav class="db2-nav" aria-label="Navegação principal">
+          <button type="button" class="db2-nav-tab is-active" data-dashboard-tab-link="overview" id="tab-overview">
+            <svg class="db2-tab-icon" width="14" height="14" viewBox="0 0 24 24" fill="none"><rect x="3" y="3" width="8" height="8" rx="1.5" fill="currentColor" opacity=".9"/><rect x="13" y="3" width="8" height="8" rx="1.5" fill="currentColor" opacity=".5"/><rect x="3" y="13" width="8" height="8" rx="1.5" fill="currentColor" opacity=".5"/><rect x="13" y="13" width="8" height="8" rx="1.5" fill="currentColor" opacity=".3"/></svg>
+            Visão Geral
+          </button>
+          <button type="button" class="db2-nav-tab" data-dashboard-tab-link="details" id="tab-details">
+            <svg class="db2-tab-icon" width="14" height="14" viewBox="0 0 24 24" fill="none"><path d="M9 5H7a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2h-2M9 5a2 2 0 0 0 2 2h2a2 2 0 0 0 2-2M9 5a2 2 0 0 1 2-2h2a2 2 0 0 1 2 2" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+            Detalhes
+          </button>
+          <button type="button" class="db2-nav-tab" data-dashboard-tab-link="insights" id="tab-insights">
+            <svg class="db2-tab-icon" width="14" height="14" viewBox="0 0 24 24" fill="none"><path d="M12 2a7 7 0 0 1 7 7c0 3.1-2 5.7-4.8 6.6V17a2 2 0 0 1-2 2H11a2 2 0 0 1-2-2v-1.4A7 7 0 0 1 12 2z" stroke="currentColor" stroke-width="2"/><path d="M9 21h6" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+            Insights
+          </button>
+          <button type="button" class="db2-nav-tab" data-dashboard-tab-link="history" id="tab-history">
+            <svg class="db2-tab-icon" width="14" height="14" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="9" stroke="currentColor" stroke-width="2"/><path d="M12 7v5l3 3" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+            Histórico
+          </button>
+
+          <span class="db2-nav-sep" aria-hidden="true"></span>
+
+          <a href="/cadastro-bancario.html" class="db2-nav-link" id="link-banco">Banco</a>
+          <a href="/contas.html" class="db2-nav-link" id="link-contas">Contas</a>
+          <a href="/cartoes.html" class="db2-nav-link" id="link-cartoes">Cartões</a>
+          <a href="/recebimentos.html" class="db2-nav-link" id="link-recebimentos">Recebimentos</a>
+        </nav>
+
+        <!-- Topbar right -->
+        <div class="db2-topbar-right">
+          <div class="db2-payment-pill">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><rect x="2" y="5" width="20" height="16" rx="2.5" stroke="currentColor" stroke-width="2"/><path d="M2 10h20" stroke="currentColor" stroke-width="2"/></svg>
+            <span class="db2-payment-label">Próximo pagamento</span>
+            <strong id="next-payment-chip" class="db2-payment-date">—</strong>
+            <small id="committed-chip" class="db2-payment-sub">—</small>
+          </div>
+
+          <div class="db2-user-pill" id="db2-user-pill">
+            <div class="db2-avatar" data-user-initial>JS</div>
+            <span class="db2-user-name" data-user-name>Usuário</span>
+            <button type="button" class="db2-logout-btn secondary-button dashboard-logout-button" data-logout-button aria-label="Sair">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" stroke="currentColor" stroke-width="2" stroke-linecap="round"/><polyline points="16 17 21 12 16 7" stroke="currentColor" stroke-width="2" stroke-linecap="round"/><line x1="21" y1="12" x2="9" y2="12" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+            </button>
+          </div>
+        </div>
+      </header>
+
+      <!-- ────────── TAB PANELS ────────── -->
+      <div class="db2-panels">
+
+        <!-- ═══════════════════════════════════════════════════
+             PANEL: VISÃO GERAL
+        ═══════════════════════════════════════════════════ -->
+        <section class="db2-panel is-active" data-dashboard-panel="overview" id="visao-geral">
+          <div class="db2-overview-grid">
+
+            <!-- ── ROW 1: KPI Cards ── -->
+            <div class="db2-kpi-row" id="desempenho">
+
+              <!-- KPI 1 — Saldo disponível -->
+              <article class="db2-kpi db2-kpi--balance dashboard-card dashboard-metric-card dashboard-metric-balance" id="card-saldo-atual-panel">
+                <div class="db2-kpi-top">
+                  <div class="db2-kpi-info">
+                    <span class="db2-kpi-label">Saldo disponível</span>
+                    <div class="db2-kpi-value" id="card-saldo-atual">R$&nbsp;0,00</div>
+                  </div>
+                  <div class="db2-kpi-icon db2-kpi-icon--green">
+                    <svg width="22" height="22" viewBox="0 0 24 24" fill="none"><path d="M21 12a9 9 0 1 0-18 0 9 9 0 0 0 18 0z" stroke="currentColor" stroke-width="2"/><path d="M12 8v4l2.5 2.5" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+                  </div>
+                </div>
+                <div class="db2-kpi-footer" id="card-saldo-atual-trend">
+                  <span class="db2-kpi-badge db2-kpi-badge--green">Seguro</span>
+                  <span class="db2-kpi-sub" id="card-saldo-atual-subtitle">Saldo positivo</span>
+                </div>
               </article>
 
-              <div class="topbar-actions">
-                <div class="user-panel">
-                  <div class="user-avatar" data-user-initial>U</div>
-                  <div>
-                    <strong data-user-name>Usuario</strong>
-                    <small data-user-email>email@conta.com</small>
+              <!-- KPI 2 — Limite diário -->
+              <article class="db2-kpi db2-kpi--limit dashboard-card dashboard-card-highlight dashboard-metric-card dashboard-metric-limit" id="card-limite-diario-panel">
+                <div class="db2-kpi-top">
+                  <div class="db2-kpi-info">
+                    <span class="db2-kpi-label">
+                      Limite diário
+                      <span class="info-icon" title="Quanto ainda cabe por dia até o próximo pagamento.">i</span>
+                    </span>
+                    <div class="db2-kpi-value" id="card-limite-diario">R$&nbsp;0,00</div>
+                  </div>
+                  <div class="db2-kpi-icon db2-kpi-icon--blue">
+                    <svg width="22" height="22" viewBox="0 0 24 24" fill="none"><rect x="2" y="4" width="20" height="16" rx="3" stroke="currentColor" stroke-width="2"/><path d="M2 10h20" stroke="currentColor" stroke-width="2"/><path d="M7 15h4" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
                   </div>
                 </div>
-                <button type="button" class="secondary-button dashboard-logout-button" data-logout-button>
-                  Sair
-                </button>
-              </div>
+                <div class="db2-progress-wrap">
+                  <div class="db2-progress-track daily-limit-progress-track">
+                    <div class="db2-progress-fill daily-limit-progress-fill daily-limit-progress-fill-muted" id="daily-limit-progress-fill"></div>
+                  </div>
+                </div>
+                <div class="db2-kpi-footer" id="card-limite-diario-trend">
+                  <span class="db2-kpi-badge db2-kpi-badge--blue">Por dia</span>
+                  <span class="db2-kpi-sub" id="card-limite-diario-subtitle">Até o próximo pagamento</span>
+                </div>
+                <div class="db2-kpi-progress-label" id="daily-limit-progress-label" style="display:none">0%</div>
+              </article>
+
+              <!-- KPI 3 — Dias restantes -->
+              <article class="db2-kpi db2-kpi--days dashboard-card dashboard-metric-card dashboard-metric-days" id="card-dias-panel">
+                <div class="db2-kpi-top">
+                  <div class="db2-kpi-info">
+                    <span class="db2-kpi-label">Dias restantes</span>
+                    <div class="db2-kpi-value" id="card-dias-restantes">0 dia(s)</div>
+                  </div>
+                  <div class="db2-kpi-icon db2-kpi-icon--purple">
+                    <svg width="22" height="22" viewBox="0 0 24 24" fill="none"><rect x="3" y="4" width="18" height="18" rx="3" stroke="currentColor" stroke-width="2"/><path d="M3 9h18" stroke="currentColor" stroke-width="2"/><path d="M8 2v4M16 2v4" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+                  </div>
+                </div>
+                <div class="db2-kpi-footer" id="card-dias-restantes-trend">
+                  <span class="db2-kpi-badge db2-kpi-badge--purple">Até 26/04</span>
+                  <span class="db2-kpi-sub" id="card-dias-restantes-subtitle">Quarta-feira</span>
+                </div>
+              </article>
+
+              <!-- KPI 4 — Gasto de hoje -->
+              <article class="db2-kpi db2-kpi--today dashboard-card dashboard-metric-card dashboard-metric-spending" id="card-gasto-dia-panel">
+                <div class="db2-kpi-top">
+                  <div class="db2-kpi-info">
+                    <span class="db2-kpi-label">
+                      Gasto de hoje
+                      <span class="info-icon" title="Soma das despesas registradas na data atual.">i</span>
+                    </span>
+                    <div class="db2-kpi-value" id="card-gasto-dia">R$&nbsp;0,00</div>
+                  </div>
+                  <div class="db2-kpi-icon db2-kpi-icon--gold">
+                    <svg width="22" height="22" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="9" stroke="currentColor" stroke-width="2"/><path d="M12 7v5" stroke="currentColor" stroke-width="2" stroke-linecap="round"/><circle cx="12" cy="16" r="1" fill="currentColor"/></svg>
+                  </div>
+                </div>
+                <div class="db2-kpi-footer" id="card-gasto-dia-trend">
+                  <span class="db2-kpi-badge db2-kpi-badge--gold">Sem gastos</span>
+                  <span class="db2-kpi-sub" id="card-gasto-dia-subtitle">Você está no controle</span>
+                </div>
+              </article>
             </div>
-          </header>
 
-          <section class="dashboard-tab-panels">
-            <section class="dashboard-tab-panel is-active" data-dashboard-panel="overview" id="visao-geral">
-              <div class="dashboard-overview-shell dashboard-grid">
-                <section class="dashboard-metrics-row metrics-row" id="desempenho">
-                  <article class="dashboard-card dashboard-metric-card dashboard-metric-balance">
-                    <div class="metric-card-top">
-                      <div class="metric-info">
-                        <div class="metric-label">Saldo disponivel</div>
-                        <div class="metric-value" id="card-saldo-atual">R$ 0,00</div>
-                        <div class="metric-subtitle" id="card-saldo-atual-subtitle">
-                          Leitura liquida do ciclo atual.
-                        </div>
-                      </div>
-                      <div class="metric-icon">R$</div>
-                    </div>
-                    <div class="metric-trend trend-up" id="card-saldo-atual-trend">Base do ciclo</div>
-                  </article>
+            <!-- ── ROW 2: Alert + Insight ── -->
+            <div class="db2-alert-row">
 
-                  <article class="dashboard-card dashboard-card-highlight dashboard-metric-card dashboard-metric-limit" id="card-limite-diario-panel">
-                    <div class="metric-card-top">
-                      <div class="metric-info">
-                        <div class="metric-label">
-                          Limite diario
-                          <span class="info-icon" title="Quanto ainda cabe por dia ate o proximo pagamento.">i</span>
-                        </div>
-                        <div class="metric-value" id="card-limite-diario">R$ 0,00</div>
-                        <div class="metric-subtitle" id="card-limite-diario-subtitle">
-                          Valor disponivel por dia ate o pagamento.
-                        </div>
-                      </div>
-                      <div class="metric-icon">/d</div>
-                    </div>
-                    <div class="daily-limit-progress" aria-label="Uso do limite diario">
-                      <div class="daily-limit-progress-top">
-                        <span>Uso do limite</span>
-                        <strong id="daily-limit-progress-label">0%</strong>
-                      </div>
-                      <div class="daily-limit-progress-track">
-                        <div class="daily-limit-progress-fill daily-limit-progress-fill-muted" id="daily-limit-progress-fill"></div>
-                      </div>
-                    </div>
-                    <div class="metric-trend trend-up" id="card-limite-diario-trend">Sem calculo</div>
-                  </article>
+              <!-- Alert card -->
+              <article class="db2-alert-card dashboard-hero-card dashboard-hero-card-alert alert-card" id="overview-cycle-alert-card">
+                <div class="db2-alert-icon-wrap">
+                  <svg class="db2-alert-icon" width="18" height="18" viewBox="0 0 24 24" fill="none"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z" stroke="currentColor" stroke-width="2"/><line x1="12" y1="9" x2="12" y2="13" stroke="currentColor" stroke-width="2" stroke-linecap="round"/><line x1="12" y1="17" x2="12.01" y2="17" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+                </div>
+                <div class="db2-alert-body">
+                  <strong class="db2-alert-title" id="overview-cycle-alert-title">O ciclo aparece aqui com leitura rápida e direta</strong>
+                  <p class="db2-alert-text" id="overview-cycle-alert-body">Saldo, limite e ritmo do ciclo em uma leitura curta para hoje.</p>
+                </div>
+                <span class="db2-chip" id="cycle-status-chip">Ciclo atual</span>
+              </article>
 
-                  <article class="dashboard-card dashboard-metric-card dashboard-metric-days">
-                    <div class="metric-card-top">
-                      <div class="metric-info">
-                        <div class="metric-label">Dias restantes</div>
-                        <div class="metric-value" id="card-dias-restantes">0 dia(s)</div>
-                        <div class="metric-subtitle" id="card-dias-restantes-subtitle">
-                          Janela restante do ciclo atual.
-                        </div>
-                      </div>
-                      <div class="metric-icon">D</div>
-                    </div>
-                    <div class="metric-trend trend-warn" id="card-dias-restantes-trend">Pendente</div>
-                  </article>
-
-                  <article class="dashboard-card dashboard-metric-card dashboard-metric-spending" id="card-gasto-dia-panel">
-                    <div class="metric-card-top">
-                      <div class="metric-info">
-                        <div class="metric-label">
-                          Gasto de hoje
-                          <span class="info-icon" title="Soma das despesas registradas na data atual.">i</span>
-                        </div>
-                        <div class="metric-value" id="card-gasto-dia">R$ 0,00</div>
-                        <div class="metric-subtitle" id="card-gasto-dia-subtitle">
-                          Consumo registrado no dia.
-                        </div>
-                      </div>
-                      <div class="metric-icon">Hoje</div>
-                    </div>
-                    <div class="metric-trend trend-up" id="card-gasto-dia-trend">Sem gastos</div>
-                  </article>
-                </section>
-
-                <section class="dashboard-hero-row alert-row">
-                  <article class="dashboard-hero-card dashboard-hero-card-alert alert-card" id="overview-cycle-alert-card">
-                    <div class="dashboard-card-eyebrow">
-                      <span class="status-chip" id="cycle-status-chip">Ciclo atual</span>
-                    </div>
-                    <strong id="overview-cycle-alert-title">
-                      O ciclo aparece aqui com leitura rapida e direta
-                    </strong>
-                    <p id="overview-cycle-alert-body">
-                      Saldo, limite e ritmo do ciclo em uma leitura curta para hoje.
-                    </p>
-                  </article>
-
-                  <article class="dashboard-hero-card dashboard-hero-card-insight insight-card" id="overview-daily-insight-card">
-                    <div class="dashboard-card-eyebrow">
-                      <span class="card-label">Insight do dia</span>
-                      <span class="status-chip" id="overview-insight-chip">Leitura inicial</span>
-                      <button type="button" class="dashboard-inline-link dashboard-inline-link-button" data-dashboard-tab-link="insights">
-                        Ver todos insights
-                      </button>
-                    </div>
-                    <strong id="overview-daily-insight-title">
-                      O insight mais importante do dia aparece aqui
-                    </strong>
-                    <p id="overview-daily-insight-body">
-                      O sistema destaca a melhor orientacao pratica do momento.
-                    </p>
-                  </article>
-                </section>
-
-                <section class="dashboard-main-row chart-row">
-                  <article class="dashboard-surface dashboard-balance-surface chart-card">
-                    <div class="card-header">
-                      <div>
-                        <div class="card-label">Evolucao do saldo no periodo</div>
-                        <h3 class="section-title">Evolucao do saldo no ciclo</h3>
-                        <p class="chart-caption section-subtitle">
-                          Visao do saldo ate a proxima data de pagamento.
-                        </p>
-                      </div>
-                      <div class="status-chip btn-secondary btn-sm" id="projection-chip">Sem dados</div>
-                    </div>
-
-                    <div class="chart-shell dashboard-primary-chart-shell chart-area">
-                      <div class="chart-bars" id="chart-bars"></div>
-                    </div>
-
-                    <div class="mini-stats dashboard-balance-mini-stats">
-                      <div class="mini-stat">
-                        <strong id="mini-stat-dias">0 dias</strong>
-                        <span class="chart-caption">Ate o pagamento</span>
-                      </div>
-                      <div class="mini-stat">
-                        <strong id="mini-stat-vr">R$ 0,00</strong>
-                        <span class="chart-caption">Beneficios previstos</span>
-                      </div>
-                      <div class="mini-stat">
-                        <strong id="mini-stat-investimento">R$ 0,00</strong>
-                        <span class="chart-caption">Reserva sugerida</span>
-                      </div>
-                    </div>
-                  </article>
-
-                  <article class="dashboard-surface dashboard-period-surface summary-card" id="gastos-inteligentes">
-                    <div class="card-header">
-                      <div>
-                        <div class="card-label">Resumo do periodo</div>
-                        <h3 class="section-title">Resumo do periodo</h3>
-                        <p class="table-caption section-subtitle">
-                          Gastos, media diaria e categoria dominante.
-                        </p>
-                      </div>
-                      <div class="status-chip btn-secondary btn-sm" id="expense-period-chip">Semana</div>
-                    </div>
-
-                    <div class="period-filter-row dashboard-period-tabs" role="tablist" aria-label="Filtro de periodo do dashboard">
-                      <button type="button" class="period-filter-button active" data-expense-period="day">Dia</button>
-                      <button type="button" class="period-filter-button" data-expense-period="week">Semana</button>
-                      <button type="button" class="period-filter-button" data-expense-period="month">Mes</button>
-                    </div>
-
-                    <div class="dashboard-period-grid">
-                      <article class="dashboard-period-stat">
-                        <span>Gastos</span>
-                        <strong id="expense-period-total">R$ 0,00</strong>
-                        <small id="expense-period-count">0 lancamento(s)</small>
-                      </article>
-                      <article class="dashboard-period-stat">
-                        <span>Media diaria</span>
-                        <strong id="overview-average-daily">R$ 0,00</strong>
-                        <small id="overview-average-note">Sem base recente</small>
-                      </article>
-                      <article class="dashboard-period-stat">
-                        <span>Maior categoria</span>
-                        <strong id="expense-period-top-category">Sem categoria</strong>
-                        <small id="overview-top-category-note">Aguardando gastos</small>
-                      </article>
-                    </div>
-                  </article>
-                </section>
-
-                <section class="dashboard-budget-row">
-                  <article class="dashboard-surface dashboard-budget-surface budget-bar-wrap">
-                    <div class="dashboard-budget-progress">
-                      <div class="dashboard-budget-progress-top">
-                        <span>Percentual do orcamento utilizado</span>
-                        <strong id="overview-budget-progress-label">0%</strong>
-                      </div>
-                      <div class="dashboard-budget-progress-track">
-                        <div class="dashboard-budget-progress-fill" id="overview-budget-progress-fill"></div>
-                      </div>
-                    </div>
-                  </article>
-                </section>
-
-                <section class="dashboard-bottom-row bottom-row">
-                  <article class="dashboard-surface dashboard-list-surface bottom-card">
-                    <div class="card-header">
-                      <div>
-                        <h3 class="section-title">Categorias que mais gastam</h3>
-                        <p class="section-subtitle">Neste periodo</p>
-                      </div>
-                      <button type="button" class="dashboard-inline-link btn-secondary btn-sm" data-dashboard-tab-link="details">
-                        Ver todas
-                      </button>
-                    </div>
-
-                    <div class="status-chip dashboard-inline-chip" id="expense-category-chip">Sem categorias</div>
-                    <div class="category-bar-list compact-category-list" id="expense-category-list"></div>
-                  </article>
-
-                  <article class="dashboard-surface dashboard-list-surface bottom-card">
-                    <div class="card-header">
-                      <div>
-                        <h3 class="section-title">Ultimos lancamentos</h3>
-                        <p class="section-subtitle" id="recent-transactions-subtitle">Periodo atual</p>
-                      </div>
-                      <button type="button" class="dashboard-inline-link btn-secondary btn-sm" data-dashboard-tab-link="history">
-                        Ver historico
-                      </button>
-                    </div>
-
-                    <div class="recent-transactions-list" id="recent-transactions-list">
-                      <div class="detail-row">
-                        <span>Nenhum lancamento recente</span>
-                        <strong>Adicione ou importe movimentacoes</strong>
-                      </div>
-                    </div>
-                  </article>
-
-                  <article class="dashboard-surface dashboard-list-surface bottom-card">
-                    <div class="card-header">
-                      <div>
-                        <h3 class="section-title">Prioridades do ciclo</h3>
-                        <p class="section-subtitle">O que merece atencao agora</p>
-                      </div>
-                      <div class="status-chip" id="alert-chip">0 prioridade(s)</div>
-                    </div>
-
-                    <ul class="trend-list compact-trend-list" id="alert-list"></ul>
-                  </article>
-                </section>
-
-                <footer class="dashboard-premium-footer bottom-bar">
-                  <div class="dashboard-footer-tip">
-                    <span class="card-label">Dica rapida</span>
-                    <strong id="overview-quick-tip-title">Sua principal orientacao aparece aqui</strong>
-                    <p id="overview-quick-tip-body">
-                      O dashboard transforma saldo, ritmo e prioridades em uma acao clara para hoje.
-                    </p>
+              <!-- Insight card -->
+              <article class="db2-insight-card dashboard-hero-card dashboard-hero-card-insight insight-card" id="overview-daily-insight-card">
+                <div class="db2-insight-head">
+                  <div class="db2-insight-title-row">
+                    <svg class="db2-insight-icon" width="16" height="16" viewBox="0 0 24 24" fill="none"><path d="M12 2a7 7 0 0 1 7 7c0 3.1-2 5.7-4.8 6.6V17a2 2 0 0 1-2 2H11a2 2 0 0 1-2-2v-1.4A7 7 0 0 1 12 2z" stroke="currentColor" stroke-width="2"/><path d="M9 21h6" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+                    <span class="db2-insight-label card-label">Insight do dia</span>
+                    <span class="db2-chip db2-chip--muted" id="overview-insight-chip">Leitura inicial</span>
                   </div>
+                  <button type="button" class="db2-see-all-btn dashboard-inline-link dashboard-inline-link-button" data-dashboard-tab-link="insights">
+                    Ver todos insights <svg width="12" height="12" viewBox="0 0 24 24" fill="none"><path d="M9 18l6-6-6-6" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+                  </button>
+                </div>
+                <strong class="db2-insight-title" id="overview-daily-insight-title">O insight mais importante do dia aparece aqui</strong>
+                <p class="db2-insight-text" id="overview-daily-insight-body">O sistema destaca a melhor orientação prática do momento.</p>
+              </article>
+            </div>
 
-                  <div class="dashboard-footer-actions">
-                    <a href="/contas.html" class="primary-button">Novo lancamento</a>
-                    <button type="button" class="secondary-button" data-dashboard-tab-link="history">
-                      Abrir historico
-                    </button>
+            <!-- ── ROW 3: Chart + Summary ── -->
+            <div class="db2-chart-row">
+
+              <!-- Balance chart -->
+              <article class="db2-chart-card dashboard-surface dashboard-balance-surface chart-card">
+                <div class="db2-chart-header card-header">
+                  <div>
+                    <div class="db2-section-label card-label">Evolução do saldo no período</div>
+                    <p class="db2-section-sub chart-caption" id="chart-period-caption">Visão geral de 06/04 até 20/04</p>
                   </div>
-                </footer>
+                  <button type="button" class="db2-chip db2-chip--btn" id="projection-chip">Projeção do ciclo</button>
+                </div>
 
+                <div class="db2-chart-area chart-shell dashboard-primary-chart-shell chart-area">
+                  <div class="chart-bars" id="chart-bars"></div>
+                </div>
+
+                <!-- Mini stats (hidden bindings) -->
                 <div class="dashboard-hidden-bindings" hidden aria-hidden="true">
-                  <strong id="expense-total-day">R$ 0,00</strong>
-                  <small id="expense-total-day-note">Sem gastos hoje.</small>
-                  <strong id="expense-total-week">R$ 0,00</strong>
-                  <small id="expense-total-week-note">Sem gastos nesta semana.</small>
-                  <strong id="expense-total-month">R$ 0,00</strong>
-                  <small id="expense-total-month-note">Sem gastos neste mes.</small>
+                  <strong id="mini-stat-dias">0 dias</strong>
+                  <strong id="mini-stat-vr">R$ 0,00</strong>
+                  <strong id="mini-stat-investimento">R$ 0,00</strong>
+                </div>
+              </article>
+
+              <!-- Period summary -->
+              <article class="db2-summary-card dashboard-surface dashboard-period-surface summary-card" id="gastos-inteligentes">
+                <div class="db2-summary-header card-header">
+                  <div>
+                    <div class="db2-section-label card-label">Resumo do período</div>
+                    <p class="db2-section-sub" id="summary-period-range">06/04 até 20/04</p>
+                  </div>
+                  <span class="db2-chip" id="expense-period-chip">Semana</span>
+                </div>
+
+                <!-- 3-stat grid -->
+                <div class="db2-period-stats dashboard-period-grid">
+                  <div class="db2-period-stat dashboard-period-stat">
+                    <span class="db2-stat-label">Gastos</span>
+                    <strong class="db2-stat-value" id="expense-period-total">R$ 0,00</strong>
+                    <small class="db2-stat-note" id="expense-period-count">0 lançamento(s)</small>
+                  </div>
+                  <div class="db2-period-stat dashboard-period-stat">
+                    <span class="db2-stat-label">Média diária</span>
+                    <strong class="db2-stat-value" id="overview-average-daily">R$ 0,00</strong>
+                    <small class="db2-stat-note" id="overview-average-note">Neste período</small>
+                  </div>
+                  <div class="db2-period-stat dashboard-period-stat">
+                    <span class="db2-stat-label">Maior categoria</span>
+                    <strong class="db2-stat-value db2-stat-value--category" id="expense-period-top-category">—</strong>
+                    <small class="db2-stat-note" id="overview-top-category-note">—</small>
+                  </div>
+                </div>
+
+                <!-- Budget progress -->
+                <div class="db2-budget-wrap">
+                  <div class="db2-budget-header dashboard-budget-progress-top">
+                    <span class="db2-budget-label">% do orçamento utilizado</span>
+                    <strong class="db2-budget-pct" id="overview-budget-progress-label">0%</strong>
+                  </div>
+                  <div class="db2-budget-track dashboard-budget-progress-track">
+                    <div class="db2-budget-fill dashboard-budget-progress-fill" id="overview-budget-progress-fill"></div>
+                  </div>
+                </div>
+
+                <!-- Period filter pills -->
+                <div class="db2-period-pills dashboard-period-tabs" role="tablist" aria-label="Filtro de período">
+                  <button type="button" class="db2-period-pill period-filter-button" data-expense-period="day">Dia</button>
+                  <button type="button" class="db2-period-pill period-filter-button active" data-expense-period="week">Semana</button>
+                  <button type="button" class="db2-period-pill period-filter-button" data-expense-period="month">Mês</button>
+                </div>
+              </article>
+            </div>
+
+            <!-- ── ROW 4: Bottom 3 cols ── -->
+            <div class="db2-bottom-row">
+
+              <!-- Categorias -->
+              <article class="db2-bottom-card dashboard-surface dashboard-list-surface bottom-card">
+                <div class="db2-bottom-header card-header">
+                  <div>
+                    <h3 class="db2-bottom-title section-title">Categorias que mais gastam</h3>
+                    <p class="db2-bottom-sub section-subtitle">Neste período</p>
+                  </div>
+                  <button type="button" class="db2-see-more-btn dashboard-inline-link btn-secondary btn-sm" data-dashboard-tab-link="details">Ver todas</button>
+                </div>
+                <span class="db2-chip db2-chip--muted" id="expense-category-chip" style="display:none">Sem categorias</span>
+                <div class="db2-category-list category-bar-list compact-category-list" id="expense-category-list"></div>
+              </article>
+
+              <!-- Últimos lançamentos -->
+              <article class="db2-bottom-card dashboard-surface dashboard-list-surface bottom-card">
+                <div class="db2-bottom-header card-header">
+                  <div>
+                    <h3 class="db2-bottom-title section-title">Últimos lançamentos</h3>
+                    <p class="db2-bottom-sub section-subtitle" id="recent-transactions-subtitle">Hoje</p>
+                  </div>
+                  <button type="button" class="db2-see-more-btn dashboard-inline-link btn-secondary btn-sm" data-dashboard-tab-link="history">Ver histórico</button>
+                </div>
+                <div class="db2-tx-list recent-transactions-list" id="recent-transactions-list">
+                  <div class="detail-row">
+                    <span>Nenhum lançamento recente</span>
+                    <strong>Adicione ou importe movimentações</strong>
+                  </div>
+                </div>
+              </article>
+
+              <!-- Prioridades -->
+              <article class="db2-bottom-card dashboard-surface dashboard-list-surface bottom-card">
+                <div class="db2-bottom-header card-header">
+                  <div>
+                    <h3 class="db2-bottom-title section-title">Prioridades do ciclo</h3>
+                    <p class="db2-bottom-sub section-subtitle">O que merece atenção</p>
+                  </div>
+                  <span class="db2-chip db2-chip--orange" id="alert-chip">0 alerta(s)</span>
+                </div>
+                <ul class="db2-priority-list trend-list compact-trend-list" id="alert-list"></ul>
+              </article>
+            </div>
+
+          </div><!-- /db2-overview-grid -->
+        </section>
+
+        <!-- ═══════════════════════════════════════════════════
+             PANEL: DETALHES
+        ═══════════════════════════════════════════════════ -->
+        <section class="db2-panel" data-dashboard-panel="details" id="detalhes">
+          <div class="dashboard-secondary-grid">
+            <article class="dashboard-surface dashboard-secondary-surface">
+              <div class="card-header">
+                <div>
+                  <div class="card-label">Leitura complementar</div>
+                  <h3>Comparação rápida de hoje, ontem, semana e mês</h3>
+                </div>
+                <div class="status-chip">Detalhes</div>
+              </div>
+              <div class="analytics-summary-grid">
+                <article class="summary-card analytics-card">
+                  <span>Gasto de hoje</span>
+                  <strong id="details-expense-total-day">R$ 0,00</strong>
+                  <small id="details-expense-total-day-note">Sem gastos hoje.</small>
+                </article>
+                <article class="summary-card analytics-card">
+                  <span>Resumo de ontem</span>
+                  <strong id="expense-total-yesterday">R$ 0,00</strong>
+                  <small id="expense-total-yesterday-note">Sem gastos ontem.</small>
+                </article>
+                <article class="summary-card analytics-card">
+                  <span>Semana até agora</span>
+                  <strong id="details-expense-total-week">R$ 0,00</strong>
+                  <small id="details-expense-total-week-note">Sem gastos nesta semana.</small>
+                </article>
+                <article class="summary-card analytics-card">
+                  <span>Mês até agora</span>
+                  <strong id="details-expense-total-month">R$ 0,00</strong>
+                  <small id="details-expense-total-month-note">Sem gastos neste mês.</small>
+                </article>
+              </div>
+            </article>
+
+            <article class="dashboard-surface dashboard-secondary-surface">
+              <div class="card-header">
+                <div>
+                  <div class="card-label">Evolução dos gastos</div>
+                  <h3>Como o período atual está se formando</h3>
+                  <p class="chart-caption" id="expense-evolution-caption">Os valores aparecem conforme os lançamentos vão sendo registrados.</p>
+                </div>
+                <div class="status-chip" id="expense-evolution-chip">Sem dados</div>
+              </div>
+              <div class="chart-shell chart-shell-secondary">
+                <div class="chart-bars" id="expense-evolution-bars"></div>
+              </div>
+            </article>
+
+            <article class="dashboard-surface dashboard-secondary-surface cycle-breakdown-card" id="resumo-ciclo">
+              <div class="card-header">
+                <div>
+                  <div class="card-label">Resumo do ciclo atual</div>
+                  <h3>Leitura detalhada da composição financeira</h3>
+                  <p class="table-caption">Informações complementares do cálculo.</p>
+                </div>
+                <div class="status-chip" id="summary-chip">Leitura do sistema</div>
+              </div>
+              <table class="finance-table">
+                <thead>
+                  <tr><th>Bloco</th><th>Valor</th><th>Leitura</th></tr>
+                </thead>
+                <tbody id="summary-table-body"></tbody>
+              </table>
+              <div id="dashboard-empty-state" class="empty-state hidden"></div>
+            </article>
+          </div>
+        </section>
+
+        <!-- ═══════════════════════════════════════════════════
+             PANEL: INSIGHTS
+        ═══════════════════════════════════════════════════ -->
+        <section class="db2-panel" data-dashboard-panel="insights" id="insights">
+          <div class="dashboard-secondary-grid dashboard-insights-panel-grid">
+            <article class="dashboard-surface dashboard-secondary-surface dashboard-feedback-surface">
+              <div class="card-header">
+                <div>
+                  <div class="card-label">Leitura do momento</div>
+                  <h3>Sinal mais importante do ciclo</h3>
+                </div>
+                <button type="button" class="dashboard-inline-link" data-dashboard-tab-link="overview">Voltar para a visão geral</button>
+              </div>
+              <div id="dashboard-feedback" class="message-box hidden" aria-live="polite"></div>
+            </article>
+
+            <article class="dashboard-surface dashboard-secondary-surface insights-card" id="dashboard-insights">
+              <div class="card-header">
+                <div>
+                  <div class="card-label">Insights inteligentes</div>
+                  <h3>Leitura expandida do seu comportamento financeiro</h3>
+                  <p class="table-caption">Interpretações curtas, contextuais e baseadas no ledger.</p>
+                </div>
+                <div class="status-chip" id="insights-chip">Sem dados</div>
+              </div>
+              <div class="insights-grid insights-grid-expanded" id="insights-list">
+                <article class="insight-item insight-item-muted">
+                  <span class="insight-label">Aguardando dados</span>
+                  <strong>Os insights aparecem conforme os gastos são registrados</strong>
+                  <p>Adicione despesas para transformar os números do dashboard em orientações práticas.</p>
+                </article>
+              </div>
+            </article>
+          </div>
+        </section>
+
+        <!-- ═══════════════════════════════════════════════════
+             PANEL: HISTÓRICO
+        ═══════════════════════════════════════════════════ -->
+        <section class="db2-panel" data-dashboard-panel="history" id="historico">
+          <div class="dashboard-history-grid">
+            <article class="dashboard-surface dashboard-secondary-surface drawer-card" id="resumo">
+              <div class="card-header">
+                <div>
+                  <div class="card-label">Despesas por dia</div>
+                  <h3>Histórico agrupado por data</h3>
+                  <p class="table-caption">Os lançamentos são agrupados automaticamente por dia dentro do período selecionado.</p>
+                </div>
+                <div class="status-chip" id="daily-summary-chip">Sem lançamentos</div>
+              </div>
+              <div class="detail-list dashboard-history-list" id="daily-summary-list">
+                <div class="detail-row">
+                  <span>Resumo diário indisponível</span>
+                  <strong>Adicione ou importe lançamentos</strong>
                 </div>
               </div>
-            </section>
-
-            <section class="dashboard-tab-panel" data-dashboard-panel="details" id="detalhes">
-              <div class="dashboard-secondary-grid">
-                <article class="dashboard-surface dashboard-secondary-surface">
-                  <div class="card-header">
-                    <div>
-                      <div class="card-label">Leitura complementar</div>
-                      <h3>Comparacao rapida de hoje, ontem, semana e mes</h3>
-                    </div>
-                    <div class="status-chip">Detalhes</div>
-                  </div>
-
-                  <div class="analytics-summary-grid">
-                    <article class="summary-card analytics-card">
-                      <span>Gasto de hoje</span>
-                      <strong id="details-expense-total-day">R$ 0,00</strong>
-                      <small id="details-expense-total-day-note">Sem gastos hoje.</small>
-                    </article>
-                    <article class="summary-card analytics-card">
-                      <span>Resumo de ontem</span>
-                      <strong id="expense-total-yesterday">R$ 0,00</strong>
-                      <small id="expense-total-yesterday-note">Sem gastos ontem.</small>
-                    </article>
-                    <article class="summary-card analytics-card">
-                      <span>Semana ate agora</span>
-                      <strong id="details-expense-total-week">R$ 0,00</strong>
-                      <small id="details-expense-total-week-note">Sem gastos nesta semana.</small>
-                    </article>
-                    <article class="summary-card analytics-card">
-                      <span>Mes ate agora</span>
-                      <strong id="details-expense-total-month">R$ 0,00</strong>
-                      <small id="details-expense-total-month-note">Sem gastos neste mes.</small>
-                    </article>
-                  </div>
-                </article>
-
-                <article class="dashboard-surface dashboard-secondary-surface">
-                  <div class="card-header">
-                    <div>
-                      <div class="card-label">Evolucao dos gastos</div>
-                      <h3>Como o periodo atual esta se formando</h3>
-                      <p class="chart-caption" id="expense-evolution-caption">
-                        Os valores aparecem conforme os lancamentos vao sendo registrados no periodo selecionado.
-                      </p>
-                    </div>
-                    <div class="status-chip" id="expense-evolution-chip">Sem dados</div>
-                  </div>
-
-                  <div class="chart-shell chart-shell-secondary">
-                    <div class="chart-bars" id="expense-evolution-bars"></div>
-                  </div>
-                </article>
-
-                <article class="dashboard-surface dashboard-secondary-surface cycle-breakdown-card" id="resumo-ciclo">
-                  <div class="card-header">
-                    <div>
-                      <div class="card-label">Resumo do ciclo atual</div>
-                      <h3>Leitura detalhada da composicao financeira</h3>
-                      <p class="table-caption">
-                        Informacoes complementares do calculo foram movidas para esta aba para preservar a tela principal compacta.
-                      </p>
-                    </div>
-                    <div class="status-chip" id="summary-chip">Leitura do sistema</div>
-                  </div>
-
-                  <table class="finance-table">
-                    <thead>
-                      <tr>
-                        <th>Bloco</th>
-                        <th>Valor</th>
-                        <th>Leitura</th>
-                      </tr>
-                    </thead>
-                    <tbody id="summary-table-body"></tbody>
-                  </table>
-                  <div id="dashboard-empty-state" class="empty-state hidden"></div>
-                </article>
-              </div>
-            </section>
-
-            <section class="dashboard-tab-panel" data-dashboard-panel="insights" id="insights">
-              <div class="dashboard-secondary-grid dashboard-insights-panel-grid">
-                <article class="dashboard-surface dashboard-secondary-surface dashboard-feedback-surface">
-                  <div class="card-header">
-                    <div>
-                      <div class="card-label">Leitura do momento</div>
-                      <h3>Sinal mais importante do ciclo</h3>
-                    </div>
-                    <button type="button" class="dashboard-inline-link" data-dashboard-tab-link="overview">
-                      Voltar para a visao geral
-                    </button>
-                  </div>
-
-                  <div id="dashboard-feedback" class="message-box hidden" aria-live="polite"></div>
-                </article>
-
-                <article class="dashboard-surface dashboard-secondary-surface insights-card" id="dashboard-insights">
-                  <div class="card-header">
-                    <div>
-                      <div class="card-label">Insights inteligentes</div>
-                      <h3>Leitura expandida do seu comportamento financeiro</h3>
-                      <p class="table-caption">
-                        Interpretacoes curtas, contextuais e baseadas no ledger para orientar o proximo passo.
-                      </p>
-                    </div>
-                    <div class="status-chip" id="insights-chip">Sem dados</div>
-                  </div>
-
-                  <div class="insights-grid insights-grid-expanded" id="insights-list">
-                    <article class="insight-item insight-item-muted">
-                      <span class="insight-label">Aguardando dados</span>
-                      <strong>Os insights aparecem conforme os gastos sao registrados</strong>
-                      <p>Adicione despesas para transformar os numeros do dashboard em orientacoes praticas.</p>
-                    </article>
-                  </div>
-                </article>
-              </div>
-            </section>
-
-            <section class="dashboard-tab-panel" data-dashboard-panel="history" id="historico">
-              <div class="dashboard-history-grid">
-                <article class="dashboard-surface dashboard-secondary-surface drawer-card" id="resumo">
-                  <div class="card-header">
-                    <div>
-                      <div class="card-label">Despesas por dia</div>
-                      <h3>Historico agrupado por data</h3>
-                      <p class="table-caption">
-                        Os lancamentos sao agrupados automaticamente por dia dentro do periodo selecionado.
-                      </p>
-                    </div>
-                    <div class="status-chip" id="daily-summary-chip">Sem lancamentos</div>
-                  </div>
-
-                  <div class="detail-list dashboard-history-list" id="daily-summary-list">
-                    <div class="detail-row">
-                      <span>Resumo diario indisponivel</span>
-                      <strong>Adicione ou importe lancamentos</strong>
-                    </div>
-                  </div>
-                </article>
-              </div>
-            </section>
-          </section>
+            </article>
+          </div>
         </section>
-      </section>
-    </main>
+
+      </div><!-- /db2-panels -->
+
+      <!-- ────────── FOOTER BAR ────────── -->
+      <footer class="db2-footer dashboard-premium-footer bottom-bar">
+        <div class="db2-footer-tip dashboard-footer-tip">
+          <svg class="db2-footer-icon" width="14" height="14" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="9" stroke="currentColor" stroke-width="2"/><path d="M12 8v4" stroke="currentColor" stroke-width="2" stroke-linecap="round"/><circle cx="12" cy="16" r="1" fill="currentColor"/></svg>
+          <span class="db2-footer-text">
+            <span class="db2-footer-prefix card-label">Dica rápida:</span>
+            <span id="overview-quick-tip-title">Gastos registrados rae horas. Isso melhora seus limites diários e os insights.</span>
+          </span>
+          <span id="overview-quick-tip-body" style="display:none"></span>
+        </div>
+        <div class="db2-footer-actions dashboard-footer-actions">
+          <a href="/contas.html" class="db2-cta primary-button" id="btn-novo-lancamento">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none"><path d="M12 5v14M5 12h14" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"/></svg>
+            Novo lançamento
+          </a>
+        </div>
+      </footer>
+
+    </main><!-- /db2-shell -->
+
+    <!-- Hidden bindings for JS compatibility -->
+    <div class="dashboard-hidden-bindings" hidden aria-hidden="true">
+      <strong id="expense-total-day">R$ 0,00</strong>
+      <small id="expense-total-day-note">Sem gastos hoje.</small>
+      <strong id="expense-total-week">R$ 0,00</strong>
+      <small id="expense-total-week-note">Sem gastos nesta semana.</small>
+      <strong id="expense-total-month">R$ 0,00</strong>
+      <small id="expense-total-month-note">Sem gastos neste mês.</small>
+    </div>
+
+    <!-- Hidden sidebar (kept for app-shell compatibility) -->
+    <aside id="app-sidebar" class="dashboard-sidebar dashboard-sidebar-hidden" aria-hidden="true"></aside>
 
     <script src="/src/pages/dashboard.js"></script>
   </body>
