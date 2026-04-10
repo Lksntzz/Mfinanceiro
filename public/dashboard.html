@@ -275,12 +275,12 @@
 
                 <!-- Budget progress -->
                 <div class="db2-budget-wrap">
-                  <div class="db2-budget-header dashboard-budget-progress-top">
-                    <span class="db2-budget-label">% do orçamento utilizado</span>
-                    <strong class="db2-budget-pct" id="overview-budget-progress-label">0%</strong>
+                  <div class="db2-budget-track dashboard-budget-progress-track" style="height: 8px; background: rgba(255,255,255,0.06); border-radius: 10px; margin-bottom: 8px; overflow: visible;">
+                    <div class="db2-budget-fill dashboard-budget-progress-fill" id="overview-budget-progress-fill" style="height: 100%; border-radius: 10px; background: linear-gradient(90deg, #a78bfa, #c084fc); box-shadow: 0 0 10px rgba(167,139,250,0.5);"></div>
                   </div>
-                  <div class="db2-budget-track dashboard-budget-progress-track">
-                    <div class="db2-budget-fill dashboard-budget-progress-fill" id="overview-budget-progress-fill"></div>
+                  <div class="db2-budget-header dashboard-budget-progress-top" style="justify-content: flex-start; gap: 4px; margin-bottom: 5px;">
+                    <strong class="db2-budget-pct" id="overview-budget-progress-label" style="color: #c084fc;">0%</strong>
+                    <span class="db2-budget-label" style="font-size: 11px;">do orçamento utilizado</span>
                   </div>
                 </div>
 

@@ -2587,7 +2587,10 @@ p {
   }
 }
 
-/* Dashboard mockup fidelity overrides */
+/* === DEPRECATED OVERRIDES (COMENTADO PARA REMOVER CONFLITOS) ===
+   O bloco abaixo (4.400 linhas) foi silenciado. 
+   ---------------------------------------------------------------
+   Dashboard mockup fidelity overrides *X/
 .dashboard-main-premium {
   padding: 14px 14px 12px;
   background:
@@ -3039,7 +3042,7 @@ p {
   }
 }
 
-/* Pixel fit refinements */
+/* Pixel fit refinements *X/
 .status-chip-blue {
   background: rgba(52, 95, 214, 0.24);
   color: #b9d4ff;
@@ -3311,7 +3314,7 @@ p {
   border-radius: 10px;
 }
 
-/* Surgical fidelity pass */
+/* Surgical fidelity pass *X/
 .dashboard-main-premium {
   padding: 12px 14px 10px;
 }
@@ -3767,7 +3770,7 @@ p {
   padding: 0 16px;
 }
 
-/* Compact fit from screenshot review */
+/* Compact fit from screenshot review *X/
 .dashboard-main-premium {
   padding: 10px 12px 8px;
 }
@@ -4153,7 +4156,7 @@ p {
   font-size: 0.78rem;
 }
 
-/* Final visual pass */
+/* Final visual pass *X/
 .dashboard-main-premium {
   background:
     radial-gradient(circle at 18% 0%, rgba(78, 64, 201, 0.12), transparent 26%),
@@ -4298,7 +4301,7 @@ p {
   box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.03);
 }
 
-/* Surgical fit pass */
+/* Surgical fit pass *X/
 .dashboard-main-premium {
   padding: 18px 20px 16px;
 }
@@ -4310,7 +4313,7 @@ p {
 
 
 
-/* Web fit fix */
+/* Web fit fix *X/
 [data-page="dashboard"] {
   overflow-x: hidden;
   overflow-y: auto;
@@ -4398,7 +4401,7 @@ p {
   }
 }
 
-/* Desktop fixed overview layout */
+/* Desktop fixed overview layout *X/
 @media (min-width: 1180px) {
   [data-page="dashboard"] {
     overflow: hidden;
@@ -4895,7 +4898,7 @@ p {
   }
 }
 
-/* Reference-driven desktop pass */
+/* Reference-driven desktop pass *X/
 @media (min-width: 1180px) {
   :root {
     --dashboard-web-gap: 10px;
@@ -5171,7 +5174,7 @@ p {
   }
 }
 
-/* Extracted src dashboard translation */
+/* Extracted src dashboard translation *X/
 @media (min-width: 1180px) {
   [data-page="dashboard"] {
     background: #0d0f14;
@@ -5732,7 +5735,7 @@ p {
   }
 }
 
-/* Full screen desktop dashboard */
+/* Full screen desktop dashboard *X/
 @media (min-width: 1180px) {
   html,
   body,
@@ -6335,7 +6338,7 @@ p {
   }
 }
 
-/* Downloaded dashboard fidelity refinement */
+/* Downloaded dashboard fidelity refinement *X/
 @media (min-width: 1180px) {
   [data-page="dashboard"] .section-title {
     font-size: 0.8rem;
@@ -6403,7 +6406,7 @@ p {
   }
 }
 
-/* Downloaded dashboard layout adaptation */
+/* Downloaded dashboard layout adaptation *X/
 @media (min-width: 1180px) {
   [data-page="dashboard"] {
     background: #0b1120;
@@ -6762,7 +6765,7 @@ p {
   }
 }
 
-/* Final component fidelity pass */
+/* Final component fidelity pass *X/
 @media (min-width: 1180px) {
   .dashboard-overview-shell .dashboard-metric-card .metric-card-top {
     display: flex;
@@ -7023,6 +7026,7 @@ p {
   }
 }
 
+*/
 /* ===== Premium setup pages: Banco, Contas, Cartoes, Recebimentos ===== */
 @media (min-width: 1180px) {
   body[data-page="banking"],

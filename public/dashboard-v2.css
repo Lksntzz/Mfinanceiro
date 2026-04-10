@@ -314,7 +314,6 @@
 
 /* KPI Card base */
 .db2-kpi {
-  background: var(--db2-surface);
   backdrop-filter: var(--db2-blur);
   -webkit-backdrop-filter: var(--db2-blur);
   border: 1px solid var(--db2-border);
@@ -332,9 +331,15 @@
   content: '';
   position: absolute;
   inset: 0;
-  background: linear-gradient(135deg, transparent 40%, rgba(255,255,255,0.02));
+  background: linear-gradient(135deg, transparent 40%, rgba(255,255,255,0.015));
   pointer-events: none;
 }
+
+/* Custom Background Tints for the 4 Cards */
+.db2-kpi--balance { background: linear-gradient(180deg, #091f1a 0%, #071210 100%); border-color: rgba(52,211,153,0.12); }
+.db2-kpi--limit { background: linear-gradient(180deg, #101836 0%, #080c1f 100%); border-color: rgba(96,165,250,0.12); }
+.db2-kpi--days { background: linear-gradient(180deg, #1e1136 0%, #100821 100%); border-color: rgba(167,139,250,0.12); }
+.db2-kpi--today { background: linear-gradient(180deg, #261f0d 0%, #171206 100%); border-color: rgba(251,191,36,0.12); }
 
 .db2-kpi:hover {
   border-color: var(--db2-border-hov);
@@ -464,8 +469,8 @@
   align-items: flex-start;
   gap: 12px;
   padding: 11px 14px;
-  background: rgba(251,146,60,0.05);
-  border: 1px solid rgba(251,146,60,0.18);
+  background: linear-gradient(180deg, #2a0f18 0%, #170910 100%);
+  border: 1px solid rgba(248,113,113,0.18);
   border-radius: var(--db2-radius);
   backdrop-filter: var(--db2-blur);
   -webkit-backdrop-filter: var(--db2-blur);
@@ -476,16 +481,16 @@
   width: 32px;
   height: 32px;
   border-radius: 9px;
-  background: rgba(251,146,60,0.14);
-  border: 1px solid rgba(251,146,60,0.3);
+  background: rgba(248,113,113,0.12);
+  border: 1px solid rgba(248,113,113,0.25);
   display: flex;
   align-items: center;
   justify-content: center;
   flex-shrink: 0;
-  color: var(--db2-orange);
+  color: var(--db2-red);
 }
 
-.db2-alert-icon { color: var(--db2-orange); }
+.db2-alert-icon { color: var(--db2-red); }
 
 .db2-alert-body { flex: 1; min-width: 0; }
 
@@ -493,7 +498,7 @@
   display: block;
   font-size: 12.5px;
   font-weight: 600;
-  color: var(--db2-orange);
+  color: #fda4af;
   line-height: 1.3;
   margin-bottom: 2px;
 }
@@ -517,8 +522,8 @@
   flex-direction: column;
   gap: 6px;
   padding: 11px 14px;
-  background: var(--db2-surface);
-  border: 1px solid var(--db2-border);
+  background: linear-gradient(180deg, #101530 0%, #090c21 100%);
+  border: 1px solid rgba(129,140,248,0.15);
   border-radius: var(--db2-radius);
   backdrop-filter: var(--db2-blur);
   -webkit-backdrop-filter: var(--db2-blur);
