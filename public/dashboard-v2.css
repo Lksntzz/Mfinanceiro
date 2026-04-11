@@ -56,6 +56,11 @@
   width: 100vw;
 }
 
+html:has(body.db2-body) {
+  height: 100%;
+  overflow: hidden;
+}
+
 /* Subtle animated gradient orbs background */
 .db2-body::before {
   content: '';
