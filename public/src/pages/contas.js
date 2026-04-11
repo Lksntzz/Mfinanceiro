@@ -36,6 +36,7 @@ const diaADiaEmptyState = document.getElementById("dia-a-dia-empty-state");
 const importMessage = document.getElementById("import-message");
 const importFileInput = document.getElementById("gastosImportFile");
 const importPreviewList = document.getElementById("import-preview-list");
+const importActions = document.querySelector(".import-actions");
 const processImportButton = document.getElementById("process-import-button");
 const confirmImportButton = document.getElementById("confirm-import-button");
 const installmentForm = document.getElementById("parcelamento-form");
@@ -450,6 +451,27 @@ function renderImportDrafts() {
     .join("");
 }
 
+function syncImportWorkflowState() {
+  const hasFile = Boolean(importFileInput?.files?.length);
+  const hasDrafts = importedDraftsState.length > 0;
+
+  if (importActions) {
+    importActions.classList.toggle("hidden", !hasFile && !hasDrafts);
+  }
+
+  if (processImportButton) {
+    processImportButton.classList.toggle("hidden", !hasFile || hasDrafts);
+  }
+
+  if (confirmImportButton) {
+    confirmImportButton.classList.toggle("hidden", !hasDrafts);
+  }
+
+  if (importPreviewList) {
+    importPreviewList.classList.toggle("hidden", !hasDrafts);
+  }
+}
+
 function getContaStatus(conta, paymentInfo) {
   if (!conta.recorrente) {
     const isPaid = conta.status === "paga";
@@ -660,6 +682,7 @@ function processImportFiles() {
 
   importedDraftsState = files.map((file) => buildDraftFromFile(file));
   renderImportDrafts();
+  syncImportWorkflowState();
   showImportMessage(
     "success",
     "Arquivos lidos. Revise cada lancamento sugerido antes de confirmar a importacao."
@@ -731,6 +754,7 @@ function confirmImportedExpenses() {
     importFileInput.value = "";
   }
   renderImportDrafts();
+  syncImportWorkflowState();
   renderDailyExpenses();
 
   showImportMessage(
@@ -1577,6 +1601,23 @@ if (confirmImportButton) {
   confirmImportButton.addEventListener("click", confirmImportedExpenses);
 }
 
+if (importFileInput) {
+  importFileInput.addEventListener("change", () => {
+    importedDraftsState = [];
+    renderImportDrafts();
+    syncImportWorkflowState();
+
+    if (importFileInput.files?.length) {
+      showImportMessage(
+        "success",
+        "Arquivo selecionado. Clique em Ler arquivo para revisar os lancamentos antes de importar."
+      );
+    } else {
+      showImportMessage("hidden", "");
+    }
+  });
+}
+
 if (importPreviewList) {
   importPreviewList.addEventListener("input", updateImportDraft);
   importPreviewList.addEventListener("change", updateImportDraft);
@@ -1617,6 +1658,7 @@ window.addEventListener("mfinanceiro-supabase-hydrated", () => {
 
 syncAccountsTabFromHash({ replaceHash: true });
 renderAccountsPage();
+syncImportWorkflowState();
 ensureExpensesHydrated();
 })();
 

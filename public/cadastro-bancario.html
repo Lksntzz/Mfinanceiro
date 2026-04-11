@@ -284,6 +284,55 @@
                           </div>
                         </div>
                       </section>
+
+                      <section class="form-section accordion-section" data-accordion-section="beneficios">
+                        <button type="button" class="accordion-toggle" data-accordion-toggle="beneficios" aria-expanded="false">
+                          <div class="accordion-heading">
+                            <h4>5. Beneficios</h4>
+                            <p class="section-note">
+                              Registre o VR/VA previsto do ciclo para refletir esse valor no dashboard.
+                            </p>
+                          </div>
+                          <div class="accordion-summary" id="benefits-accordion-summary">
+                            VR/VA: R$ 0,00
+                          </div>
+                          <span class="accordion-icon" aria-hidden="true">+</span>
+                        </button>
+                        <div class="accordion-content" data-accordion-content="beneficios">
+                          <div class="accordion-content-inner">
+                            <div class="card-header">
+                              <div>
+                                <div class="card-label">Desconto em folha</div>
+                                <h3>VR/VA abatido no salário</h3>
+                              </div>
+                              <div class="status-chip" id="beneficios-status-chip">Sem benefícios ativos</div>
+                            </div>
+
+                            <article class="subtle-panel">
+                              <strong>VR/VA descontado em folha</strong>
+                              <div class="receipt-form-grid">
+                                <div class="field">
+                                  <span>Data de recebimento</span>
+                                  <input type="date" id="vrvaDataPrevista" />
+                                </div>
+                                <div class="field">
+                                  <span>Valor</span>
+                                  <input type="text" inputmode="decimal" id="vrvaValorPrevisto" />
+                                </div>
+                                <label class="toggle-row">
+                                  <input type="checkbox" id="vrvaRecebido" />
+                                  <span>Ja recebido</span>
+                                </label>
+                                <div class="field-hint" id="vrvaHint">Use esta área apenas para o VR/VA que reduz o salário líquido.</div>
+                                <div class="button-row align-start">
+                                  <button type="button" id="save-vrva-button" class="secondary-button">Salvar VR/VA</button>
+                                  <button type="button" id="edit-vrva-button" class="ghost-button">Editar VR/VA</button>
+                                </div>
+                              </div>
+                            </article>
+                          </div>
+                        </div>
+                      </section>
                     </div>
 
                     <div class="dual-grid base-finance-grid">
@@ -431,55 +480,6 @@
                                 <input type="text" id="cycle-percent-total" readonly value="100%" />
                               </div>
                             </div>
-                          </div>
-                        </div>
-                      </section>
-
-                      <section class="form-section accordion-section" data-accordion-section="beneficios">
-                        <button type="button" class="accordion-toggle" data-accordion-toggle="beneficios" aria-expanded="false">
-                          <div class="accordion-heading">
-                            <h4>5. Beneficios</h4>
-                            <p class="section-note">
-                              Registre o VR/VA previsto do ciclo para refletir esse valor no dashboard.
-                            </p>
-                          </div>
-                          <div class="accordion-summary" id="benefits-accordion-summary">
-                            VR/VA: R$ 0,00
-                          </div>
-                          <span class="accordion-icon" aria-hidden="true">+</span>
-                        </button>
-                        <div class="accordion-content" data-accordion-content="beneficios">
-                          <div class="accordion-content-inner">
-                            <div class="card-header">
-                              <div>
-                            <div class="card-label">Desconto em folha</div>
-                            <h3>VR/VA abatido no salário</h3>
-                              </div>
-                              <div class="status-chip" id="beneficios-status-chip">Sem benefícios ativos</div>
-                            </div>
-
-                            <article class="subtle-panel">
-                              <strong>VR/VA descontado em folha</strong>
-                              <div class="receipt-form-grid">
-                                <div class="field">
-                                  <span>Data de recebimento</span>
-                                  <input type="date" id="vrvaDataPrevista" />
-                                </div>
-                                <div class="field">
-                                  <span>Valor</span>
-                                  <input type="text" inputmode="decimal" id="vrvaValorPrevisto" />
-                                </div>
-                                <label class="toggle-row">
-                                  <input type="checkbox" id="vrvaRecebido" />
-                                  <span>Ja recebido</span>
-                                </label>
-                                <div class="field-hint" id="vrvaHint">Use esta área apenas para o VR/VA que reduz o salário líquido.</div>
-                                <div class="button-row align-start">
-                                  <button type="button" id="save-vrva-button" class="secondary-button">Salvar VR/VA</button>
-                                  <button type="button" id="edit-vrva-button" class="ghost-button">Editar VR/VA</button>
-                                </div>
-                              </div>
-                            </article>
                           </div>
                         </div>
                       </section>

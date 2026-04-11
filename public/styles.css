@@ -1210,7 +1210,7 @@ p {
 
 #saldoAtualField input {
   min-height: 64px;
-  padding: 18px 20px;
+  padding: 22px 24px;
   font-size: 1.4rem;
   font-weight: 700;
   border-radius: 18px;
@@ -7446,7 +7446,7 @@ p {
   body[data-page="contas"] .settings-grid,
   body[data-page="cartoes"] .settings-grid,
   body[data-page="recebimentos"] .settings-grid {
-    gap: 14px;
+    gap: 18px;
   }
 
   body[data-page="banking"] .compact-grid,
@@ -7609,7 +7609,8 @@ p {
     border-radius: 12px;
     background: rgba(18, 23, 37, 0.9);
     border: 1px solid rgba(110, 122, 168, 0.14);
-    width: fit-content;
+    width: 100%;
+    justify-content: flex-start;
   }
 
   body[data-page="contas"] .anchor-pill {
@@ -7637,12 +7638,19 @@ p {
     display: grid;
     grid-template-rows: auto auto auto auto;
     align-content: start;
-    gap: 14px;
+    gap: 18px;
     overflow: visible;
+    min-height: 100%;
   }
 
   body[data-page="contas"] .accounts-page-card .dual-grid {
     align-items: start;
+    grid-template-columns: minmax(0, 0.92fr) minmax(0, 1.08fr);
+    gap: 16px;
+  }
+
+  body[data-page="contas"] .accounts-page-card .dashboard-card {
+    min-height: 100%;
   }
 
   body[data-page="cartoes"] .cards-page-card {
@@ -8120,7 +8128,9 @@ body[data-page="recebimentos"] .finance-table tbody tr:hover {
   }
 
   body[data-page="contas"] .dashboard-secondary-grid.accounts-page-grid {
-    grid-template-columns: minmax(0, 1180px);
+    grid-template-columns: minmax(0, 1fr);
+    width: 100%;
+    max-width: none;
     justify-content: center;
     height: auto;
   }
@@ -8136,6 +8146,52 @@ body[data-page="recebimentos"] .receipts-page-card {
 body[data-page="banking"] .banking-page-card {
   overflow: visible;
   height: auto;
+}
+
+body[data-page="banking"] .base-finance-form {
+  display: grid;
+  grid-template-columns: minmax(0, 0.76fr) minmax(0, 1.24fr);
+  gap: 22px;
+  align-items: start;
+}
+
+body[data-page="banking"] .base-finance-form > .base-finance-grid {
+  min-width: 0;
+  gap: 22px;
+  align-items: start;
+}
+
+body[data-page="banking"] .base-finance-form > .base-finance-grid:nth-of-type(1) {
+  grid-template-columns: 1fr;
+}
+
+body[data-page="banking"] .base-finance-form > .base-finance-grid:nth-of-type(2) {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+body[data-page="banking"] .base-finance-form > .base-finance-grid:nth-of-type(2) > [data-accordion-section="descontos"] {
+  grid-column: 1 / -1;
+}
+
+body[data-page="banking"] .base-finance-form > .banking-form-actions,
+body[data-page="banking"] .base-finance-form > .summary-preview-section,
+body[data-page="banking"] .base-finance-form > #banking-message {
+  grid-column: 1 / -1;
+}
+
+body[data-page="banking"] .banking-form-actions {
+  justify-content: center;
+  gap: 14px;
+  padding-top: 18px;
+}
+
+body[data-page="banking"] .banking-form-actions .primary-button,
+body[data-page="banking"] .banking-form-actions .secondary-button {
+  flex: 0 1 240px;
+}
+
+body[data-page="banking"] .summary-preview-section {
+  margin-top: 2px;
 }
 
 body[data-page="banking"] .cycle-breakdown-card {
