@@ -6847,16 +6847,21 @@ p {
   overflow: visible !important;
   height: auto !important;
   min-height: 0;
+  display: flex !important;
+  flex-direction: column !important;
+  flex: 1 1 auto;
+  max-height: none !important;
 }
 
 [data-page="dashboard"] .cards-summary-card .dashboard-card-summary-list {
   display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: 10px;
+  grid-template-columns: 1fr;
+  gap: 8px;
   margin-top: 4px;
   min-height: 0;
   height: auto;
   overflow: visible;
+  max-height: none;
 }
 
 [data-page="dashboard"] .cards-summary-card .dashboard-card-summary-list .detail-row {
@@ -6865,6 +6870,12 @@ p {
 
 [data-page="dashboard"] .cards-summary-card .db2-bottom-card-footer {
   margin-top: 8px;
+  flex: 0 0 auto;
+}
+
+[data-page="dashboard"] .cards-summary-card .detail-list {
+  overflow: visible !important;
+  max-height: none !important;
   flex: 0 0 auto;
 }
 
