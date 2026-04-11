@@ -1,4 +1,4 @@
-console.log("[Dashboard Scripts] carregado: /src/pages/dashboard.js");
+﻿console.log("[Dashboard Scripts] carregado: /src/pages/dashboard.js");
 
 let loadDashboardBanking;
 let loadDashboardVariableAccounts;
@@ -7,19 +7,19 @@ let loadDashboardPayment;
 let loadDashboardVrVa;
 let loadDashboardData;
 
-let buildSpendingRhythmDataset;
+let buildDashboardSpendingRhythmDataset;
 let calculateCyclePriorities;
-let computeDashboardFinancialIntelligence;
-let calculateDashboardSummary;
-let formatDashboardCurrency;
-let formatDashboardDateLong;
-let getDashboardExpenseOverviewSummary;
-let getDashboardExpensePeriodSummary;
-let getDashboardLedgerExpenseEntries;
-let getDashboardLedgerMovements;
+let computeDashboardFinancialInsights;
+let calculateDashboardFinancialSummary;
+let formatDashboardCurrencyValue;
+let formatDashboardLongDate;
+let getDashboardExpenseOverviewData;
+let getDashboardExpensePeriodData;
+let getDashboardLedgerExpenseData;
+let getDashboardLedgerMovementData;
 let buildDashboardBalanceSeries;
 let buildDashboardDailySeries;
-let normalizeDashboardDate;
+let normalizeDashboardBaseDate;
 
 const dashboardState = {
   selectedExpensePeriod: "week",
@@ -120,10 +120,10 @@ const elements = {
 const overviewHelpers = {
   buildFinancialHealthStatus,
   formatCurrency(value) {
-    return formatDashboardCurrency(value);
+    return formatDashboardCurrencyValue(value);
   },
   formatDateLong(value) {
-    return formatDashboardDateLong(value);
+    return formatDashboardLongDate(value);
   },
   formatPercent,
   getDailyLimitStatus,
@@ -222,7 +222,7 @@ function switchDashboardTab(tabId = "overview") {
   const activePanels = dashboardTabPanels
     .filter((panel) => panel.classList.contains("is-active"))
     .map((panel) => panel.dataset.dashboardPanel);
-  console.log("[Dashboard Tabs] painéis ativos:", activePanels);
+  console.log("[Dashboard Tabs] painÃ©is ativos:", activePanels);
 }
 
 function setDailyLimitHighlight(color) {
@@ -308,7 +308,7 @@ function getDailyLimitStatus(summary, expenseOverview) {
       ratio,
       percentage,
       progressWidth,
-      detail: `${formatDashboardCurrency(spentToday)} de ${formatDashboardCurrency(limit)} usados hoje.`,
+      detail: `${formatDashboardCurrencyValue(spentToday)} de ${formatDashboardCurrencyValue(limit)} usados hoje.`,
     };
   }
 
@@ -320,7 +320,7 @@ function getDailyLimitStatus(summary, expenseOverview) {
       ratio,
       percentage,
       progressWidth,
-      detail: `${formatDashboardCurrency(spentToday)} de ${formatDashboardCurrency(limit)} usados hoje.`,
+      detail: `${formatDashboardCurrencyValue(spentToday)} de ${formatDashboardCurrencyValue(limit)} usados hoje.`,
     };
   }
 
@@ -331,7 +331,7 @@ function getDailyLimitStatus(summary, expenseOverview) {
     ratio,
     percentage,
     progressWidth,
-    detail: `${formatDashboardCurrency(spentToday)} gastos para um limite diario de ${formatDashboardCurrency(limit)}.`,
+    detail: `${formatDashboardCurrencyValue(spentToday)} gastos para um limite diario de ${formatDashboardCurrencyValue(limit)}.`,
   };
 }
 
@@ -342,8 +342,8 @@ function formatPercent(value) {
 }
 
 function getInclusiveDaySpan(startDate, endDate) {
-  const start = normalizeDashboardDate(startDate);
-  const end = normalizeDashboardDate(endDate);
+  const start = normalizeDashboardBaseDate(startDate);
+  const end = normalizeDashboardBaseDate(endDate);
   const differenceInMs = end.getTime() - start.getTime();
   const oneDay = 1000 * 60 * 60 * 24;
   return Math.max(Math.floor(differenceInMs / oneDay) + 1, 1);
@@ -390,7 +390,7 @@ function getCategoryGlyph(category) {
 function getWeekdayLabel(date) {
   return new Intl.DateTimeFormat("pt-BR", {
     weekday: "long",
-  }).format(normalizeDashboardDate(date));
+  }).format(normalizeDashboardBaseDate(date));
 }
 
 function getToneByType(type) {
@@ -477,13 +477,13 @@ function buildFinancialHealthStatus(summary) {
             type: "warning",
             title: "Limite diario baixo",
             description:
-              `O valor livre por dia caiu para ${formatDashboardCurrency(summary.limiteDiario)}. Vale reduzir gastos ate o proximo pagamento.`,
+              `O valor livre por dia caiu para ${formatDashboardCurrencyValue(summary.limiteDiario)}. Vale reduzir gastos ate o proximo pagamento.`,
           }
           : {
             type: "warning",
             title: "Janela curta ate o pagamento",
             description:
-              `Restam ${summary.diasRestantes} dia(s) para atravessar o ciclo com ${formatDashboardCurrency(summary.saldoDisponivel)} de saldo disponivel.`,
+              `Restam ${summary.diasRestantes} dia(s) para atravessar o ciclo com ${formatDashboardCurrencyValue(summary.saldoDisponivel)} de saldo disponivel.`,
           },
       ],
     };
@@ -501,7 +501,7 @@ function buildFinancialHealthStatus(summary) {
         type: "success",
         title: "Seu ciclo esta saudavel",
         description:
-          `O saldo disponivel esta positivo e o limite diario atual de ${formatDashboardCurrency(summary.limiteDiario)} indica uma margem mais confortavel.`,
+          `O saldo disponivel esta positivo e o limite diario atual de ${formatDashboardCurrencyValue(summary.limiteDiario)} indica uma margem mais confortavel.`,
       },
     ],
   };
@@ -600,7 +600,7 @@ function renderProjection(summary, projection) {
         ${yTicks
       .map(
         (tick) => `
-              <span style="top:${tick.yPercent.toFixed(2)}%">${formatDashboardCurrency(tick.value)}</span>
+              <span style="top:${tick.yPercent.toFixed(2)}%">${formatDashboardCurrencyValue(tick.value)}</span>
             `
       )
       .join("")}
@@ -647,7 +647,7 @@ function renderProjection(summary, projection) {
       <div class="projection-chart-callout projection-chart-callout-${lastPoint.tone}">
         <span>${lastPoint.label}</span>
         <strong>Saldo projetado</strong>
-        <em>${formatDashboardCurrency(lastPoint.balance)}</em>
+        <em>${formatDashboardCurrencyValue(lastPoint.balance)}</em>
       </div>
     </div>
   `;
@@ -753,7 +753,7 @@ function renderExpenseEvolution(summary) {
   );
 
   elements.expenseEvolutionChip.textContent = `${summary.evolutionSeries.length} ponto(s)`;
-  elements.expenseEvolutionCaption.textContent = `${formatDashboardDateLong(summary.startDate)} ate ${formatDashboardDateLong(summary.endDate)}.`;
+  elements.expenseEvolutionCaption.textContent = `${formatDashboardLongDate(summary.startDate)} ate ${formatDashboardLongDate(summary.endDate)}.`;
   elements.expenseEvolutionBars.innerHTML = summary.evolutionSeries
     .map((item) => {
       const height = Math.max((Math.abs(item.total) / referenceHeight) * 100, 8);
@@ -812,7 +812,7 @@ function renderExpenseCategories(summary) {
                 <strong style="color:var(--db2-text-primary);font-size:12.5px;font-weight:600;">${item.categoria}</strong>
               </div>
               <div style="display:flex;flex-direction:column;gap:2px;align-items:flex-end;">
-                <strong style="color:var(--db2-text-primary);font-size:12px;font-weight:600;">${formatDashboardCurrency(item.total)}</strong>
+                <strong style="color:var(--db2-text-primary);font-size:12px;font-weight:600;">${formatDashboardCurrencyValue(item.total)}</strong>
                 <span style="color:${c};font-size:11px;font-weight:600;">${formatPercent(item.percentual)}%</span>
               </div>
             </div>
@@ -894,13 +894,13 @@ function renderInsights(summary, selectedSummary, expenseOverview, intelligence)
             forecast.projectedBalanceAtPayment >= 0
               ? "No ritmo atual o saldo chega ao proximo pagamento"
               : "Voce ainda chega ao pagamento, mas com margem curta",
-          body: `O ritmo medio esta em ${formatDashboardCurrency(forecast.averageDailySpend)} por dia. O saldo atual dura cerca de ${formatDayEstimate(forecast.estimatedDaysWithBalance)} e deve ${forecast.projectedBalanceAtPayment >= 0 ? `sobrar ${formatDashboardCurrency(forecast.projectedBalanceAtPayment)}` : `ficar apertado em ${formatDashboardCurrency(Math.abs(forecast.projectedBalanceAtPayment))}`} ate o proximo pagamento.`,
+          body: `O ritmo medio esta em ${formatDashboardCurrencyValue(forecast.averageDailySpend)} por dia. O saldo atual dura cerca de ${formatDayEstimate(forecast.estimatedDaysWithBalance)} e deve ${forecast.projectedBalanceAtPayment >= 0 ? `sobrar ${formatDashboardCurrencyValue(forecast.projectedBalanceAtPayment)}` : `ficar apertado em ${formatDashboardCurrencyValue(Math.abs(forecast.projectedBalanceAtPayment))}`} ate o proximo pagamento.`,
         }
         : {
           label: "Previsao ate o pagamento",
           tone: "red",
           title: "No ritmo atual o saldo nao chega ao proximo pagamento",
-          body: `Mantido o ritmo medio de ${formatDashboardCurrency(forecast.averageDailySpend)} por dia, o saldo acaba cerca de ${formatDayEstimate(forecast.daysBeforeBalanceRunsOut)} antes do pagamento e pode faltar ${formatDashboardCurrency(forecast.estimatedDeficit)}.`,
+          body: `Mantido o ritmo medio de ${formatDashboardCurrencyValue(forecast.averageDailySpend)} por dia, o saldo acaba cerca de ${formatDayEstimate(forecast.daysBeforeBalanceRunsOut)} antes do pagamento e pode faltar ${formatDashboardCurrencyValue(forecast.estimatedDeficit)}.`,
         };
 
   const categoryInsight = dominantCategory
@@ -908,7 +908,7 @@ function renderInsights(summary, selectedSummary, expenseOverview, intelligence)
       label: "Categoria dominante",
       tone: dominantCategory.percentual >= 45 ? "yellow" : "blue",
       title: `${dominantCategory.categoria} lidera os gastos do periodo`,
-      body: `${formatDashboardCurrency(dominantCategory.total)} representam ${formatPercent(dominantCategory.percentual)}% do total em ${selectedSummary.label.toLowerCase()}.`,
+      body: `${formatDashboardCurrencyValue(dominantCategory.total)} representam ${formatPercent(dominantCategory.percentual)}% do total em ${selectedSummary.label.toLowerCase()}.`,
     }
     : {
       label: "Categoria dominante",
@@ -928,7 +928,7 @@ function renderInsights(summary, selectedSummary, expenseOverview, intelligence)
           : "Sem base recente para comparar o gasto de hoje",
       body:
         expenseOverview.today.totalGasto > 0
-          ? `Hoje soma ${formatDashboardCurrency(expenseOverview.today.totalGasto)} e ainda nao existe historico semanal suficiente para comparar.`
+          ? `Hoje soma ${formatDashboardCurrencyValue(expenseOverview.today.totalGasto)} e ainda nao existe historico semanal suficiente para comparar.`
           : "Registre alguns dias de gasto para destravar a comparacao com a media diaria recente.",
     };
   } else if (comparison.difference > 0) {
@@ -936,21 +936,21 @@ function renderInsights(summary, selectedSummary, expenseOverview, intelligence)
       label: "Comparacao com media",
       tone: comparison.difference / comparison.recentAverageDailySpend > 0.35 ? "red" : "yellow",
       title: "Hoje esta acima da media diaria recente",
-      body: `${formatDashboardCurrency(expenseOverview.today.totalGasto)} hoje contra media de ${formatDashboardCurrency(comparison.recentAverageDailySpend)}. Excesso atual: ${formatDashboardCurrency(comparison.difference)}.`,
+      body: `${formatDashboardCurrencyValue(expenseOverview.today.totalGasto)} hoje contra media de ${formatDashboardCurrencyValue(comparison.recentAverageDailySpend)}. Excesso atual: ${formatDashboardCurrencyValue(comparison.difference)}.`,
     };
   } else if (comparison.difference < 0) {
     comparisonInsight = {
       label: "Comparacao com media",
       tone: "green",
       title: "Hoje esta abaixo da media diaria recente",
-      body: `${formatDashboardCurrency(expenseOverview.today.totalGasto)} hoje contra media de ${formatDashboardCurrency(comparison.recentAverageDailySpend)}. Folga atual: ${formatDashboardCurrency(Math.abs(comparison.difference))}.`,
+      body: `${formatDashboardCurrencyValue(expenseOverview.today.totalGasto)} hoje contra media de ${formatDashboardCurrencyValue(comparison.recentAverageDailySpend)}. Folga atual: ${formatDashboardCurrencyValue(Math.abs(comparison.difference))}.`,
     };
   } else {
     comparisonInsight = {
       label: "Comparacao com media",
       tone: "blue",
       title: "Hoje esta alinhado com a media diaria recente",
-      body: `${formatDashboardCurrency(expenseOverview.today.totalGasto)} hoje, praticamente igual a media recente de ${formatDashboardCurrency(comparison.recentAverageDailySpend)}.`,
+      body: `${formatDashboardCurrencyValue(expenseOverview.today.totalGasto)} hoje, praticamente igual a media recente de ${formatDashboardCurrencyValue(comparison.recentAverageDailySpend)}.`,
     };
   }
 
@@ -959,7 +959,7 @@ function renderInsights(summary, selectedSummary, expenseOverview, intelligence)
       label: "Tendencia semanal",
       tone: weeklyTrend.percentual >= 45 ? "yellow" : "blue",
       title: `${weeklyTrend.weekday} concentra a maior parte do gasto semanal`,
-      body: `${formatDashboardCurrency(weeklyTrend.total)} sairam nesse dia, o que representa ${formatPercent(weeklyTrend.percentual)}% da semana atual.`,
+      body: `${formatDashboardCurrencyValue(weeklyTrend.total)} sairam nesse dia, o que representa ${formatPercent(weeklyTrend.percentual)}% da semana atual.`,
     }
     : {
       label: "Tendencia semanal",
@@ -1096,11 +1096,11 @@ function renderDailySummary(periodSummary) {
         <details class="day-accordion"${index === 0 ? " open" : ""}>
           <summary class="day-accordion-summary">
             <div>
-              <strong>${formatDashboardDateLong(group.date)}</strong>
+              <strong>${formatDashboardLongDate(group.date)}</strong>
               <span class="text-soft">Categoria dominante: ${group.topCategory}</span>
             </div>
             <div class="day-accordion-meta">
-              <strong>${formatDashboardCurrency(group.saidas)}</strong>
+              <strong>${formatDashboardCurrencyValue(group.saidas)}</strong>
               <span class="text-soft">${group.count} lancamento(s)</span>
             </div>
           </summary>
@@ -1115,7 +1115,7 @@ function renderDailySummary(periodSummary) {
               } | ${entry.origem || "manual"}</span>
                     </div>
                     <div class="day-entry-side">
-                      <strong>${formatDashboardCurrency(entry.valor)}</strong>
+                      <strong>${formatDashboardCurrencyValue(entry.valor)}</strong>
                     </div>
                   </div>
                 `
@@ -1187,25 +1187,25 @@ function renderSummaryTable(data, summary, alerts, expenseOverview, intelligence
     },
     {
       label: "Saldo disponivel",
-      value: formatDashboardCurrency(summary.saldoDisponivel),
+      value: formatDashboardCurrencyValue(summary.saldoDisponivel),
       statusClass: summary.saldoDisponivel >= 0 ? "status-positive" : "status-danger",
       note: summary.projectedBenefitsInSaldo > 0
-        ? `Saldo inicial mais ${formatDashboardCurrency(summary.projectedBenefitsInSaldo)} em beneficios contabilizados no saldo, menos o valor comprometido do ciclo.`
+        ? `Saldo inicial mais ${formatDashboardCurrencyValue(summary.projectedBenefitsInSaldo)} em beneficios contabilizados no saldo, menos o valor comprometido do ciclo.`
         : "Saldo inicial menos o valor comprometido ja registrado para o usuario autenticado.",
     },
     {
       label: "Saldo restante (alias)",
-      value: formatDashboardCurrency(summary.saldoRestante),
+      value: formatDashboardCurrencyValue(summary.saldoRestante),
       statusClass: summary.saldoRestante >= 0 ? "status-positive" : "status-danger",
       note: "Mantido como alias de saldo disponivel para preservar compatibilidade com o restante do sistema.",
     },
     {
       label: "Proximo pagamento",
-      value: formatDashboardCurrency(summary.paymentInfo.value),
+      value: formatDashboardCurrencyValue(summary.paymentInfo.value),
       statusClass: summary.paymentInfo.configured ? "status-positive" : "status-warning",
       note:
         summary.paymentInfo.configured && summary.paymentInfo.nextDate
-          ? `${summary.paymentInfo.daysRemaining} dia(s) ate ${formatDashboardDateLong(summary.paymentInfo.nextDate)}.`
+          ? `${summary.paymentInfo.daysRemaining} dia(s) ate ${formatDashboardLongDate(summary.paymentInfo.nextDate)}.`
           : "Configure salario, descontos e dias de pagamento em Base financeira.",
     },
     {
@@ -1216,55 +1216,55 @@ function renderSummaryTable(data, summary, alerts, expenseOverview, intelligence
     },
     {
       label: "Total de despesas",
-      value: formatDashboardCurrency(summary.totalDespesas),
+      value: formatDashboardCurrencyValue(summary.totalDespesas),
       statusClass: summary.totalDespesas > 0 ? "status-warning" : "status-positive",
       note: "Soma das despesas salvas no Supabase para o usuario autenticado.",
     },
     {
       label: "Gasto de hoje",
-      value: formatDashboardCurrency(expenseOverview.today.totalGasto),
+      value: formatDashboardCurrencyValue(expenseOverview.today.totalGasto),
       statusClass: expenseOverview.today.totalGasto > 0 ? "status-warning" : "status-positive",
       note: `${expenseOverview.today.quantidadeLancamentos} lancamento(s) registrados no dia atual.`,
     },
     {
       label: "Resumo de ontem",
-      value: formatDashboardCurrency(expenseOverview.yesterday.totalGasto),
+      value: formatDashboardCurrencyValue(expenseOverview.yesterday.totalGasto),
       statusClass: expenseOverview.yesterday.totalGasto > 0 ? "status-warning" : "status-positive",
       note: `${expenseOverview.yesterday.quantidadeLancamentos} lancamento(s) do dia anterior.`,
     },
     {
       label: "Semana ate agora",
-      value: formatDashboardCurrency(expenseOverview.week.totalGasto),
+      value: formatDashboardCurrencyValue(expenseOverview.week.totalGasto),
       statusClass: expenseOverview.week.totalGasto > 0 ? "status-warning" : "status-positive",
       note: `${expenseOverview.week.quantidadeLancamentos} lancamento(s) de segunda-feira ate hoje.`,
     },
     {
       label: "Mes ate agora",
-      value: formatDashboardCurrency(expenseOverview.month.totalGasto),
+      value: formatDashboardCurrencyValue(expenseOverview.month.totalGasto),
       statusClass: expenseOverview.month.totalGasto > 0 ? "status-warning" : "status-positive",
       note: `${expenseOverview.month.quantidadeLancamentos} lancamento(s) do dia 1 ate hoje.`,
     },
     {
       label: "Contas fixas no ciclo",
-      value: formatDashboardCurrency(summary.accounts.total),
+      value: formatDashboardCurrencyValue(summary.accounts.total),
       statusClass: summary.accounts.total > 0 ? "status-warning" : "status-positive",
       note: `${summary.accounts.items.length} conta(s) pendente(s) entre o ciclo atual e o proximo pagamento.`,
     },
     {
       label: "Fatura do cartao",
-      value: formatDashboardCurrency(summary.cards.total),
+      value: formatDashboardCurrencyValue(summary.cards.total),
       statusClass: summary.cards.total > 0 ? "status-warning" : "status-positive",
       note: `${summary.cards.items.length} cartao(es) afetam o ciclo atual.`,
     },
     {
       label: "Parcelamentos no ciclo",
-      value: formatDashboardCurrency(summary.installments.total),
+      value: formatDashboardCurrencyValue(summary.installments.total),
       statusClass: summary.installments.total > 0 ? "status-warning" : "status-positive",
       note: `${summary.installments.items.length} parcela(s) entram no valor comprometido do ciclo atual.`,
     },
     {
       label: "Saidas variaveis no ledger",
-      value: formatDashboardCurrency(summary.dailyExpenses.total),
+      value: formatDashboardCurrencyValue(summary.dailyExpenses.total),
       statusClass: summary.dailyExpenses.total > 0 ? "status-warning" : "status-positive",
       note: `${summary.dailyExpenses.items.length} movimentacao(oes) de saida no ledger ja afetam a leitura de consumo, os insights e a projecao do saldo.`,
     },
@@ -1277,7 +1277,7 @@ function renderSummaryTable(data, summary, alerts, expenseOverview, intelligence
       note: expenseOverview.month.categorySeries.length
         ? expenseOverview.month.categorySeries
           .slice(0, 3)
-          .map((item) => `${item.categoria}: ${formatDashboardCurrency(item.total)}`)
+          .map((item) => `${item.categoria}: ${formatDashboardCurrencyValue(item.total)}`)
           .join(" | ")
         : "As categorias aparecem aqui conforme os gastos do mes forem sendo registrados.",
     },
@@ -1292,39 +1292,39 @@ function renderSummaryTable(data, summary, alerts, expenseOverview, intelligence
     },
     {
       label: "Beneficios previstos no ciclo",
-      value: formatDashboardCurrency(projectedBenefits),
+      value: formatDashboardCurrencyValue(projectedBenefits),
       statusClass: projectedBenefits > 0 ? "status-positive" : "status-warning",
       note: vrVaBenefit
-        ? `VR/VA ${vrVaBenefit.status === "recebido" ? "recebido" : "pendente"} com previsao de ${formatDashboardCurrency(vrVaBenefit.value)} em ${formatDashboardDateLong(vrVaBenefit.nextDate)}.${summary.projectedBenefitsInSaldo > 0 ? ` ${formatDashboardCurrency(summary.projectedBenefitsInSaldo)} entram no saldo disponivel.` : ""}`
+        ? `VR/VA ${vrVaBenefit.status === "recebido" ? "recebido" : "pendente"} com previsao de ${formatDashboardCurrencyValue(vrVaBenefit.value)} em ${formatDashboardLongDate(vrVaBenefit.nextDate)}.${summary.projectedBenefitsInSaldo > 0 ? ` ${formatDashboardCurrencyValue(summary.projectedBenefitsInSaldo)} entram no saldo disponivel.` : ""}`
         : "Registre o VR/VA em Recebimentos quando esse beneficio fizer parte da sua leitura financeira.",
     },
     {
       label: "Valor comprometido",
-      value: formatDashboardCurrency(summary.valorComprometido),
+      value: formatDashboardCurrencyValue(summary.valorComprometido),
       statusClass: summary.valorComprometido > 0 ? "status-danger" : "status-positive",
-      note: `Hoje soma ${formatDashboardCurrency(summary.committedBreakdown.despesasRegistradas)} em despesas registradas, ${formatDashboardCurrency(summary.committedBreakdown.contasFixas)} em contas fixas, ${formatDashboardCurrency(summary.committedBreakdown.faturasCartao)} em faturas do ciclo e ${formatDashboardCurrency(summary.committedBreakdown.parcelamentos)} na parcela vigente do periodo.`,
+      note: `Hoje soma ${formatDashboardCurrencyValue(summary.committedBreakdown.despesasRegistradas)} em despesas registradas, ${formatDashboardCurrencyValue(summary.committedBreakdown.contasFixas)} em contas fixas, ${formatDashboardCurrencyValue(summary.committedBreakdown.faturasCartao)} em faturas do ciclo e ${formatDashboardCurrencyValue(summary.committedBreakdown.parcelamentos)} na parcela vigente do periodo.`,
     },
     {
       label: "Disponivel por dia",
-      value: formatDashboardCurrency(summary.limiteDiario),
+      value: formatDashboardCurrencyValue(summary.limiteDiario),
       statusClass: summary.limiteDiario > 0 ? "status-positive" : "status-warning",
       note: "Saldo disponivel dividido pelos dias restantes ate o proximo pagamento.",
     },
     {
       label: "Saldo apos gastos variaveis",
-      value: formatDashboardCurrency(summary.saldoAposGastosVariaveis),
+      value: formatDashboardCurrencyValue(summary.saldoAposGastosVariaveis),
       statusClass: summary.saldoAposGastosVariaveis >= 0 ? "status-positive" : "status-danger",
       note: "Neste momento acompanha o mesmo saldo disponivel, preservando compatibilidade para futuras camadas de comprometimento.",
     },
     {
       label: "Sugestao de investimento",
-      value: formatDashboardCurrency(summary.investimento.suggestedValue),
+      value: formatDashboardCurrencyValue(summary.investimento.suggestedValue),
       statusClass: summary.investimento.suggestedValue > 0 ? "status-positive" : "status-warning",
       note: `${summary.investimento.percentage}% do dinheiro livre atual, sem usar o valor comprometido.`,
     },
     {
       label: "Valor reservado para investir",
-      value: formatDashboardCurrency(summary.investimento.reservedValue),
+      value: formatDashboardCurrencyValue(summary.investimento.reservedValue),
       statusClass: summary.investimento.reservedValue > 0 ? "status-positive" : "status-warning",
       note:
         summary.investimento.status === "confirmado"
@@ -1333,7 +1333,7 @@ function renderSummaryTable(data, summary, alerts, expenseOverview, intelligence
     },
     {
       label: "Saldo livre apos investimento",
-      value: formatDashboardCurrency(summary.investimento.freeAfterSuggestion),
+      value: formatDashboardCurrencyValue(summary.investimento.freeAfterSuggestion),
       statusClass: summary.investimento.freeAfterSuggestion > 0 ? "status-positive" : "status-warning",
       note: "Quanto continuaria livre se a sugestao atual de investimento fosse reservada.",
     },
@@ -1424,7 +1424,7 @@ function bindSpendingRhythmPeriodFilters() {
 
 function bindDashboardTabs() {
   if (dashboardTabsBound) {
-    console.log("[Dashboard Tabs] bindDashboardTabs ignorado: já vinculado");
+    console.log("[Dashboard Tabs] bindDashboardTabs ignorado: jÃ¡ vinculado");
     return;
   }
 
@@ -1454,8 +1454,8 @@ function logDashboardIntegrationDebug(data, summary, expenseOverview, selectedSu
   }
 
   const rawLedger = Array.isArray(data?.ledgerMovimentacoes) ? data.ledgerMovimentacoes : [];
-  const normalizedLedger = getDashboardLedgerMovements(data);
-  const normalizedExpenses = getDashboardLedgerExpenseEntries(data);
+  const normalizedLedger = getDashboardLedgerMovementData(data);
+  const normalizedExpenses = getDashboardLedgerExpenseData(data);
   const comparisonPayload = {
     ledgerBruto: rawLedger.length,
     ledgerNormalizado: normalizedLedger.length,
@@ -1543,17 +1543,17 @@ function hydrateDashboardData() {
 
 function atualizarDashboard() {
   const data = hydrateDashboardData();
-  const summary = calculateDashboardSummary(data);
-  const expenseOverview = getDashboardExpenseOverviewSummary(data);
-  const selectedSummary = getDashboardExpensePeriodSummary(
+  const summary = calculateDashboardFinancialSummary(data);
+  const expenseOverview = getDashboardExpenseOverviewData(data);
+  const selectedSummary = getDashboardExpensePeriodData(
     data,
     dashboardState.selectedExpensePeriod
   );
-  const intelligence = computeDashboardFinancialIntelligence(
+  const intelligence = computeDashboardFinancialInsights(
     data,
     dashboardState.selectedExpensePeriod
   );
-  const spendingRhythm = buildSpendingRhythmDataset(
+  const spendingRhythm = buildDashboardSpendingRhythmDataset(
     data,
     dashboardState.selectedSpendingRhythmPeriod
   );
@@ -1599,19 +1599,19 @@ function assignDashboardModules() {
   } = financeStore);
 
   ({
-    buildSpendingRhythmDataset,
+    buildSpendingRhythmDataset: buildDashboardSpendingRhythmDataset,
     calcularPrioridadesDoCiclo: calculateCyclePriorities,
-    calculateFinancialIntelligence: computeDashboardFinancialIntelligence,
-    calculateDashboardSummary,
-    formatCurrency: formatDashboardCurrency,
-    formatDateLong: formatDashboardDateLong,
-    getExpenseOverviewSummary: getDashboardExpenseOverviewSummary,
-    getExpensePeriodSummary: getDashboardExpensePeriodSummary,
-    getLedgerExpenseEntries: getDashboardLedgerExpenseEntries,
-    getLedgerMovements: getDashboardLedgerMovements,
+    calculateFinancialIntelligence: computeDashboardFinancialInsights,
+    calculateDashboardSummary: calculateDashboardFinancialSummary,
+    formatCurrency: formatDashboardCurrencyValue,
+    formatDateLong: formatDashboardLongDate,
+    getExpenseOverviewSummary: getDashboardExpenseOverviewData,
+    getExpensePeriodSummary: getDashboardExpensePeriodData,
+    getLedgerExpenseEntries: getDashboardLedgerExpenseData,
+    getLedgerMovements: getDashboardLedgerMovementData,
     montarProjecaoSaldoPorDia: buildDashboardBalanceSeries,
     montarSerieGraficoContasVariaveis: buildDashboardDailySeries,
-    normalizeDate: normalizeDashboardDate,
+    normalizeDate: normalizeDashboardBaseDate,
   } = financeCalculations);
 
   overviewRenderer = window.DashboardOverview;
@@ -1691,7 +1691,7 @@ function initDashboardApp() {
   console.log("[Dashboard Init] initDashboardApp iniciou");
 
   if (dashboardAppInitialized) {
-    console.log("[Dashboard Init] initDashboardApp ignorado: já inicializado");
+    console.log("[Dashboard Init] initDashboardApp ignorado: jÃ¡ inicializado");
     return;
   }
 
@@ -1724,3 +1724,4 @@ if (document.readyState === "loading") {
 } else {
   initDashboardApp();
 }
+
