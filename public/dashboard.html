@@ -10,16 +10,30 @@
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet" />
     <link rel="stylesheet" href="/styles.css" />
     <link rel="stylesheet" href="/dashboard-v2.css" />
-    <script src="/src/lib/auth-session.js"></script>
-    <script src="/src/lib/config.js"></script>
-    <script src="/src/lib/supabase-bootstrap.js"></script>
-    <script src="/src/services/finance-store.js"></script>
-    <script src="/src/utils/finance-calculations.js"></script>
-    <script src="/src/services/app-shell.js"></script>
-    <script src="/src/services/supabase-sync.js"></script>
+    <script defer src="/src/lib/auth-session.js"></script>
+    <script defer src="/src/lib/config.js"></script>
+    <script defer src="/src/services/finance-store.js"></script>
+    <script defer src="/src/services/app-shell.js"></script>
+    <script defer src="/src/lib/supabase-bootstrap.js"></script>
+    <script defer src="/src/services/supabase-sync.js"></script>
+    <script defer src="/src/utils/finance-calculations.js"></script>
     <script>
       document.documentElement.classList.add("db2-html");
-      window.AuthSession.requireAuth();
+
+      function requireDashboardAuth() {
+        if (typeof window.AuthSession?.requireAuth === "function") {
+          window.AuthSession.requireAuth();
+          return;
+        }
+
+        console.error("[Dashboard Bootstrap] AuthSession.requireAuth indisponivel durante a inicializacao.");
+      }
+
+      if (document.readyState === "loading") {
+        document.addEventListener("DOMContentLoaded", requireDashboardAuth, { once: true });
+      } else {
+        requireDashboardAuth();
+      }
     </script>
   </head>
   <body data-page="dashboard" class="db2-body">
@@ -531,11 +545,11 @@
     <!-- Hidden sidebar (kept for app-shell compatibility) -->
     <aside id="app-sidebar" class="dashboard-sidebar dashboard-sidebar-hidden" aria-hidden="true"></aside>
 
-    <script src="/src/pages/dashboard-overview.js?v=2026-04-10-tabs"></script>
-    <script src="/src/pages/dashboard-details.js?v=2026-04-11-modular"></script>
-    <script src="/src/pages/dashboard-insights.js?v=2026-04-11-modular"></script>
-    <script src="/src/pages/dashboard-history.js?v=2026-04-11-modular"></script>
-    <script src="/src/pages/dashboard.js?v=2026-04-10-tabs"></script>
+    <script defer src="/src/pages/dashboard-overview.js?v=2026-04-10-tabs"></script>
+    <script defer src="/src/pages/dashboard-details.js?v=2026-04-11-modular"></script>
+    <script defer src="/src/pages/dashboard-insights.js?v=2026-04-11-modular"></script>
+    <script defer src="/src/pages/dashboard-history.js?v=2026-04-11-modular"></script>
+    <script defer src="/src/pages/dashboard.js?v=2026-04-10-tabs"></script>
   </body>
 </html>
 

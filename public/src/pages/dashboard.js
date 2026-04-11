@@ -35,6 +35,10 @@ const dashboardState = {
 let overviewRenderer;
 let dashboardAppInitialized = false;
 let dashboardTabsBound = false;
+let dashboardInitInFlight = null;
+
+const DASHBOARD_INIT_MAX_ATTEMPTS = 60;
+const DASHBOARD_INIT_RETRY_INTERVAL_MS = 100;
 
 const elements = {
   dashboardTabButtons: Array.from(document.querySelectorAll("[data-dashboard-tab-link]")),
@@ -1499,8 +1503,8 @@ function atualizarDashboard() {
 window.atualizarDashboard = atualizarDashboard;
 
 function assignDashboardModules() {
-  const financeStore = window.FinanceStore;
-  const financeCalculations = window.FinanceCalculations;
+  const financeStore = window.FinanceStore || {};
+  const financeCalculations = window.FinanceCalculations || {};
 
   ({
     carregarCadastroBancario: loadDashboardBanking,
@@ -1529,10 +1533,42 @@ function assignDashboardModules() {
   } = financeCalculations);
 
   overviewRenderer = window.DashboardOverview;
+
+  const assignedDependencies = [
+    ["FinanceStore.carregarCadastroBancario", loadDashboardBanking],
+    ["FinanceStore.carregarContasVariaveis", loadDashboardVariableAccounts],
+    ["FinanceStore.carregarLedgerMovimentacoes", loadDashboardLedger],
+    ["FinanceStore.carregarRegistroPagamento", loadDashboardPayment],
+    ["FinanceStore.carregarVRVA", loadDashboardVrVa],
+    ["FinanceStore.loadAppData", loadDashboardData],
+    ["FinanceCalculations.buildSpendingRhythmDataset", buildDashboardSpendingRhythmDataset],
+    ["FinanceCalculations.calcularPrioridadesDoCiclo", calculateCyclePriorities],
+    ["FinanceCalculations.calculateFinancialIntelligence", computeDashboardFinancialInsights],
+    ["FinanceCalculations.calculateDashboardSummary", calculateDashboardFinancialSummary],
+    ["FinanceCalculations.getCardsSummary", getDashboardCardsSummary],
+    ["FinanceCalculations.formatCurrency", formatDashboardCurrencyValue],
+    ["FinanceCalculations.formatDateLong", formatDashboardLongDate],
+    ["FinanceCalculations.getExpenseOverviewSummary", getDashboardExpenseOverviewData],
+    ["FinanceCalculations.getExpensePeriodSummary", getDashboardExpensePeriodData],
+    ["FinanceCalculations.getLedgerExpenseEntries", getDashboardLedgerExpenseData],
+    ["FinanceCalculations.getLedgerMovements", getDashboardLedgerMovementData],
+    ["FinanceCalculations.montarProjecaoSaldoPorDia", buildDashboardBalanceSeries],
+    ["FinanceCalculations.montarSerieGraficoContasVariaveis", buildDashboardDailySeries],
+    ["FinanceCalculations.normalizeDate", normalizeDashboardBaseDate],
+    ["DashboardOverview", overviewRenderer],
+  ].filter(([, dependency]) => typeof dependency !== "function" && typeof dependency !== "object");
+
+  if (assignedDependencies.length) {
+    throw new Error(
+      `[Dashboard Init] assignDashboardModules falhou: ${assignedDependencies
+        .map(([dependencyName]) => dependencyName)
+        .join(", ")}`
+    );
+  }
 }
 
-function validateDashboardDependencies() {
-  const dependencies = [
+function getDashboardDependencySnapshot() {
+  return [
     ["FinanceStore", window.FinanceStore, [
       "loadAppData",
       "carregarCadastroBancario",
@@ -1577,10 +1613,12 @@ function validateDashboardDependencies() {
       "bindHistoryFilters",
     ]],
   ];
+}
 
+function getMissingDashboardDependencies() {
   const missingDependencies = [];
 
-  dependencies.forEach(([name, value, requiredMethods]) => {
+  getDashboardDependencySnapshot().forEach(([name, value, requiredMethods]) => {
     if (!value) {
       missingDependencies.push(name);
       return;
@@ -1593,12 +1631,57 @@ function validateDashboardDependencies() {
     });
   });
 
+  return missingDependencies;
+}
+
+function validateDashboardDependencies() {
+  const missingDependencies = getMissingDashboardDependencies();
+
   if (!missingDependencies.length) {
     return true;
   }
 
   console.error("[Dashboard] Dependencias ausentes na inicializacao:", missingDependencies);
+  showDashboardFeedback(
+    `Falha ao iniciar dashboard. Dependencias ausentes: ${missingDependencies.join(", ")}`
+  );
+  if (elements.feedback) {
+    setMessageBoxTone(elements.feedback, "red");
+  }
   return false;
+}
+
+function waitForDashboardDependencies(maxAttempts = DASHBOARD_INIT_MAX_ATTEMPTS) {
+  return new Promise((resolve, reject) => {
+    let attempts = 0;
+    let lastMissingDependencies = [];
+
+    const intervalId = window.setInterval(() => {
+      attempts += 1;
+      lastMissingDependencies = getMissingDashboardDependencies();
+
+      if (!lastMissingDependencies.length) {
+        window.clearInterval(intervalId);
+        console.log(`[Dashboard Init] Dependencias prontas apos ${attempts} tentativa(s).`);
+        resolve();
+        return;
+      }
+
+      console.warn(
+        `[Dashboard Init] Aguardando dependencias (${attempts}/${maxAttempts}):`,
+        lastMissingDependencies
+      );
+
+      if (attempts >= maxAttempts) {
+        window.clearInterval(intervalId);
+        reject(
+          new Error(
+            `Dependencias do dashboard nao ficaram prontas a tempo: ${lastMissingDependencies.join(", ")}`
+          )
+        );
+      }
+    }, DASHBOARD_INIT_RETRY_INTERVAL_MS);
+  });
 }
 
 function bindDashboardRefreshEvents() {
@@ -1613,7 +1696,7 @@ function bindDashboardRefreshEvents() {
   });
 }
 
-function initDashboardApp() {
+async function initDashboardApp() {
   console.log("[Dashboard Init] initDashboardApp iniciou");
 
   if (dashboardAppInitialized) {
@@ -1621,27 +1704,46 @@ function initDashboardApp() {
     return;
   }
 
-  const dependenciesAreValid = validateDashboardDependencies();
-  console.log("[Dashboard Init] validateDashboardDependencies:", dependenciesAreValid);
-
-  if (!dependenciesAreValid) {
-    return;
+  if (dashboardInitInFlight) {
+    console.log("[Dashboard Init] initDashboardApp aguardando bootstrap ja em andamento");
+    return dashboardInitInFlight;
   }
 
-  assignDashboardModules();
-  console.log("[Dashboard Init] assignDashboardModules executado");
-  window.AppShell.initAppShell();
-  bindExpensePeriodFilters();
-  bindSpendingRhythmPeriodFilters();
-  bindHistoryFilters();
-  bindDashboardTabs();
-  console.log("[Dashboard Init] bindDashboardTabs executado");
-  bindDashboardRefreshEvents();
-  switchDashboardTab("overview");
-  console.log("[Dashboard Init] switchDashboardTab('overview') executado");
-  showDashboardFeedback(window.AppShell.consumeDashboardNotice());
-  dashboardAppInitialized = true;
-  atualizarDashboard();
+  dashboardInitInFlight = (async () => {
+    const dependenciesAreValid = validateDashboardDependencies();
+    console.log("[Dashboard Init] validateDashboardDependencies:", dependenciesAreValid);
+
+    if (!dependenciesAreValid) {
+      await waitForDashboardDependencies();
+    }
+
+    assignDashboardModules();
+    console.log("[Dashboard Init] assignDashboardModules executado");
+    window.AppShell.initAppShell();
+    bindExpensePeriodFilters();
+    bindSpendingRhythmPeriodFilters();
+    bindHistoryFilters();
+    bindDashboardTabs();
+    console.log("[Dashboard Init] bindDashboardTabs executado");
+    bindDashboardRefreshEvents();
+    switchDashboardTab("overview");
+    console.log("[Dashboard Init] switchDashboardTab('overview') executado");
+    showDashboardFeedback(window.AppShell.consumeDashboardNotice());
+    dashboardAppInitialized = true;
+    atualizarDashboard();
+  })()
+    .catch((error) => {
+      console.error("[Dashboard Init] Falha fatal durante a inicializacao do dashboard.", error);
+      showDashboardFeedback(error?.message || "Falha fatal ao iniciar o dashboard.");
+      if (elements.feedback) {
+        setMessageBoxTone(elements.feedback, "red");
+      }
+    })
+    .finally(() => {
+      dashboardInitInFlight = null;
+    });
+
+  return dashboardInitInFlight;
 }
 
 window.initDashboardApp = initDashboardApp;
