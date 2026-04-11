@@ -6858,8 +6858,10 @@ p {
   min-height: 0;
   display: flex !important;
   flex-direction: column !important;
-  flex: 1 1 auto;
+  flex: 0 0 auto;
   max-height: none !important;
+  align-self: start;
+  margin-bottom: 0;
 }
 
 [data-page="dashboard"] .cards-summary-card .dashboard-card-summary-list {
@@ -7684,9 +7686,20 @@ p {
     overflow: visible;
   }
 
+  body[data-page="cartoes"] .cards-page-card {
+    width: 100%;
+    max-width: none;
+  }
+
+  body[data-page="cartoes"] .cards-page-card .dual-grid {
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+    width: 100%;
+  }
+
   body[data-page="contas"] .accounts-page-card .finance-table,
   body[data-page="cartoes"] .cards-page-card .finance-table {
     margin-top: 2px;
+    width: 100%;
   }
 
   body[data-page="contas"] .accounts-page-card .section-divider,
@@ -8167,6 +8180,14 @@ body[data-page="recebimentos"] .finance-table tbody tr:hover {
   body[data-page="recebimentos"] .dashboard-secondary-grid.receipts-page-grid {
     grid-template-columns: minmax(0, 1120px);
     justify-content: center;
+  }
+
+  body[data-page="cartoes"] .dashboard-secondary-grid.cards-page-grid {
+    grid-template-columns: minmax(0, 1fr);
+    width: 100%;
+    max-width: none;
+    justify-content: stretch;
+    align-content: start;
   }
 
   body[data-page="banking"] .dashboard-secondary-grid.banking-page-grid {
