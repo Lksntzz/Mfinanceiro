@@ -112,47 +112,55 @@ function getTodayInputValue() {
   return new Date().toISOString().slice(0, 10);
 }
 
-function suggestImportCategory(text) {
-  const normalizedText = String(text || "").toLowerCase();
+// ============================================
+// 4. Categorização
+// ============================================
 
-  if (normalizedText.includes("pix recebido")) {
+function suggestImportCategory(text) {
+  const normalizedText = String(text || "")
+    .toLowerCase()
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, ""); // Remove acentos
+
+  if (/(pix recebido|entrada|estorno|reembolso|credito|resgate)/.test(normalizedText) && !normalizedText.includes("cartao")) {
     return "entrada";
   }
 
-  if (normalizedText.includes("rendimento")) {
+  if (normalizedText.includes("rendimento") || normalizedText.includes("juros recebido") || normalizedText.includes("poupanca: ")) {
     return "rendimento";
   }
 
-  if (normalizedText.includes("pagamento")) {
+  if (/(pagamento|qr pix|maquininha|boleto|compra|pag tit|debito|cartao|fatura|pag\/|mensalidade)/.test(normalizedText)) {
     return "compras";
   }
 
-  if (normalizedText.includes("uber")) {
+  if (/(uber|99|metro|onibus|transporte|combustivel|gasolina|posto |estacionamento|pedagio|99app|cabify)/.test(normalizedText)) {
     return "transporte";
   }
 
-  if (/(mercado|supermercado|atacadao)/.test(normalizedText)) {
+  if (/(mercado|supermercado|atacadao|atacadista|hortifruti|padaria|acougue|sonda|carrefour|extra|pao de acucar)/.test(normalizedText)) {
     return "mercado";
   }
 
-  if (/(uber|99|metro|onibus|transporte|combustivel|gasolina)/.test(normalizedText)) {
-    return "transporte";
-  }
-
-  if (/(restaurante|ifood|lanche|almoco|janta|padaria)/.test(normalizedText)) {
+  if (/(restaurante|ifood|lanche|almoco|janta|mcdonalds|burger king|pizza|sorvete|bar|cafe)/.test(normalizedText)) {
     return "alimentacao";
   }
 
-  if (/(farmacia|medico|hospital|saude)/.test(normalizedText)) {
+  if (/(farmacia|medico|hospital|saude|drogaria|remedio|exame|consulta|clinica)/.test(normalizedText)) {
     return "saude";
   }
 
-  if (/(cinema|lazer|show|streaming)/.test(normalizedText)) {
+  if (/(cinema|lazer|show|streaming|netflix|spotify|ingresso|teatro|jogo)/.test(normalizedText)) {
     return "lazer";
   }
 
-  if (/(loja|compra|shopping|mercado livre|amazon)/.test(normalizedText)) {
+  if (/(loja|shopping|mercado livre|amazon|shopee|aliexpress|magalu|americanas|casas bahia)/.test(normalizedText)) {
     return "compras";
+  }
+
+  // Tarifas bancárias, transações de envio de valores (TED, DOC, PIX ENVIADO) e impostos
+  if (/(tarifa|taxa|juros|iof|manutencao|mensalidade|encargo|anuidade|pix enviado|transferencia|ted|doc|imposto|tributo)/.test(normalizedText)) {
+    return "outros";
   }
 
   return "outros";
@@ -245,6 +253,10 @@ function parseBrazilianAmount(value) {
   const parsedValue = Number.parseFloat(normalizedValue);
   return Number.isFinite(parsedValue) ? parsedValue : 0;
 }
+
+// ============================================
+// 1. Detecção (Formato e Banco)
+// ============================================
 
 function detectStatementFormat(file) {
   const extension = String(file?.name || "")
@@ -384,6 +396,10 @@ function normalizeStatementDate(value) {
   return extractImportDate(normalizedValue);
 }
 
+// ============================================
+// 3. Normalização
+// ============================================
+
 function buildImportedStatementItem({
   prefix,
   date,
@@ -417,6 +433,10 @@ function buildImportedStatementItem({
     externalId: String(externalId || "").trim(),
   };
 }
+
+// ============================================
+// 5. Validação
+// ============================================
 
 function isStatementSummaryDescription(value) {
   const normalized = normalizeHeaderName(normalizeStatementDescription(value));
@@ -532,14 +552,6 @@ function filterDuplicateStatementItems(lancamentos) {
   };
 }
 
-function parseCSV(textContent, bank) {
-  if (bank === "mercado-pago") {
-    return parseMercadoPagoCSV(textContent);
-  }
-
-  return parseGenericCSV(textContent, bank);
-}
-
 function finalizeStructuredParserResult(result) {
   const deduplication = filterDuplicateStatementItems(result?.lancamentos || []);
   const lancamentos = deduplication.lancamentos;
@@ -562,7 +574,7 @@ function finalizeStructuredParserResult(result) {
   };
 }
 
-function detectStatementBankByContent({ selectedBank, fileName, contentText, headers = [] }) {
+function detectBankProfile({ selectedBank, fileName, contentText, headers = [] }) {
   if (selectedBank && selectedBank !== "outro") {
     return selectedBank;
   }
@@ -574,7 +586,7 @@ function detectStatementBankByContent({ selectedBank, fileName, contentText, hea
 
   const detectionRules = [
     {
-      bank: "mercado-pago",
+      bank: "mercado_pago", // Normalizado para registry
       match: () =>
         joinedHeaders.includes("RELEASE_DATE") &&
         joinedHeaders.includes("TRANSACTION_NET_AMOUNT") &&
@@ -611,6 +623,10 @@ function detectStatementBankByContent({ selectedBank, fileName, contentText, hea
   const detectedRule = detectionRules.find((rule) => rule.match());
   return detectedRule?.bank || selectedBank || "outro";
 }
+
+// ============================================
+// 2. Parsers (Registry e Implementações)
+// ============================================
 
 function parseMercadoPagoCSV(textContent) {
   const lines = String(textContent || "")
@@ -748,7 +764,7 @@ function parseGenericCSV(textContent, bank) {
     ),
   };
 
-  const detectedBank = detectStatementBankByContent({
+  const detectedBank = detectBankProfile({
     selectedBank: bank,
     headers: lines[headerIndex] ? splitDelimitedLine(lines[headerIndex], delimiter) : [],
     contentText: lines.slice(0, Math.min(lines.length, 12)).join(" "),
@@ -903,7 +919,7 @@ function parseRowsAsStructuredTable(rows, bank, parserMode, prefix) {
     credito: header.findIndex((cell) => ["CREDITO", "CREDIT"].includes(cell)),
   };
 
-  const detectedBank = detectStatementBankByContent({
+  const detectedBank = detectBankProfile({
     selectedBank: bank,
     headers: normalizedRows[headerIndex],
     contentText: normalizedRows.slice(0, Math.min(normalizedRows.length, 15)).flat().join(" "),
@@ -1199,7 +1215,7 @@ async function parseXLSX(fileContent, bank, format = "xlsx") {
 
 function parseOFX(textContent, bank) {
   const normalizedContent = String(textContent || "");
-  const detectedBank = detectStatementBankByContent({
+  const detectedBank = detectBankProfile({
     selectedBank: bank,
     contentText: normalizedContent,
   });
@@ -1254,6 +1270,17 @@ function parseOFX(textContent, bank) {
 }
 
 
+const statementParsers = {
+  mercado_pago: {
+    csv: parseMercadoPagoCSV,
+  },
+  generic: {
+    csv: parseGenericCSV,
+    ofx: parseOFX,
+    xls: async (fileContent, bank) => parseXLSX(fileContent, bank, "xls"),
+    xlsx: async (fileContent, bank) => parseXLSX(fileContent, bank, "xlsx"),
+  },
+};
 
 function parseGenerico(fileName, fileContent, bank) {
   const decodedContent = decodeImportedBinaryContent(fileContent);
@@ -2185,12 +2212,27 @@ async function processStatementFile() {
     statementImportFlowState = "structured";
     statementUnstructuredState = null;
 
-    if (format === "csv") {
-      parserResult = parseCSV(fileContent, bank);
-    } else if (format === "xls" || format === "xlsx") {
-      parserResult = await parseXLSX(fileContent, bank, format);
-    } else if (format === "ofx") {
-      parserResult = parseOFX(decodeImportedBinaryContent(fileContent), bank);
+    if (format === "csv" || format === "xls" || format === "xlsx" || format === "ofx") {
+      const bankProfile = detectBankProfile({
+        selectedBank: bank,
+        fileName: file.name,
+        contentText: format === "ofx" ? decodeImportedBinaryContent(fileContent) : "",
+      });
+
+      const parserMethod =
+        statementParsers[bankProfile]?.[format] || statementParsers.generic[format];
+
+      if (!parserMethod) {
+        throw new Error(`Nao existe parser compativel para o formato ${format} neste banco.`);
+      }
+
+      if (format === "xls" || format === "xlsx") {
+        parserResult = await parserMethod(fileContent, bank);
+      } else if (format === "ofx") {
+        parserResult = parserMethod(decodeImportedBinaryContent(fileContent), bank);
+      } else {
+        parserResult = parserMethod(fileContent, bank);
+      }
     } else {
       parserResult = parseGenerico(file.name, fileContent, bank);
     }
@@ -2293,6 +2335,10 @@ function handleStatementPreviewClick(event) {
   recalculateStatementValidation();
   renderStatementPreview();
 }
+
+// ============================================
+// 6. Persistência
+// ============================================
 
 function confirmImportedExpenses() {
   if (statementImportFlowState === "unstructured") {
