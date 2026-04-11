@@ -1494,6 +1494,12 @@ function renderSummaryTable(data, summary, alerts, expenseOverview, intelligence
       note: `${summary.cards.items.length} cartao(es) afetam o ciclo atual.`,
     },
     {
+      label: "Resumo de cartoes",
+      value: formatDashboardCurrencyValue(summary.cards.cards.reduce((sum, card) => sum + Number(card.limite || 0), 0)),
+      statusClass: summary.cards.total > 0 ? "status-warning" : "status-positive",
+      note: `Utilizado ${formatDashboardCurrencyValue(summary.cards.total)} | Disponivel ${formatDashboardCurrencyValue(Math.max(summary.cards.cards.reduce((sum, card) => sum + Number(card.limite || 0), 0) - summary.cards.total, 0))} <button type="button" class="db2-see-more-btn dashboard-inline-link btn-secondary btn-sm" data-dashboard-tab-link="cartoes">Ver detalhes</button>`,
+    },
+    {
       label: "Parcelamentos no ciclo",
       value: formatDashboardCurrencyValue(summary.installments.total),
       statusClass: summary.installments.total > 0 ? "status-warning" : "status-positive",

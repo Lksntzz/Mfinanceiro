@@ -46,6 +46,7 @@ const cartaoForm = document.getElementById("cartao-form");
 const lancamentoForm = document.getElementById("lancamento-form");
 const cartoesMessage = document.getElementById("cartoes-message");
 const cartoesTableBody = document.getElementById("cartoes-table-body");
+const cartoesListaVisuais = document.getElementById("cartoes-lista-visuais");
 const lancamentosTableBody = document.getElementById("lancamentos-table-body");
 const cartoesEmptyState = document.getElementById("cartoes-empty-state");
 const lancamentosEmptyState = document.getElementById("lancamentos-empty-state");
@@ -772,11 +773,94 @@ function renderCards() {
   const launches = [...loadAccountsCardExpenses()].sort((left, right) => {
     return new Date(right.data).getTime() - new Date(left.data).getTime();
   });
+  const totalLimit = cards.reduce((sum, card) => sum + Number(card.limite || 0), 0);
+  const totalUsed = cards.reduce((sum, card) => sum + Number(card.currentBill || 0), 0);
+  const totalAvailable = Math.max(totalLimit - totalUsed, 0);
+  const cardTable = cartoesTableBody?.closest("table");
+  const cardsPageCard = cartoesTableBody?.closest(".accounts-page-card");
+  const cardHeader = cardsPageCard?.querySelector(".card-header");
+  const existingHeaderActions = cardHeader?.querySelector(".card-header-actions");
+  let cartoesResumoTotal = document.getElementById("cartoes-resumo-total");
+  let cartoesResumoUtilizado = document.getElementById("cartoes-resumo-utilizado");
+  let cartoesResumoDisponivel = document.getElementById("cartoes-resumo-disponivel");
+  let cartoesNovoButton = document.getElementById("cartoes-novo-button");
+
+  if (cardsPageCard && !cartoesResumoTotal) {
+    const overviewStrip = document.createElement("section");
+    overviewStrip.className = "cards-overview-strip";
+    overviewStrip.innerHTML = `
+      <article class="summary-card analytics-card card-surface-compact">
+        <span>Limite total</span>
+        <strong id="cartoes-resumo-total">R$ 0,00</strong>
+        <small>Soma dos limites cadastrados</small>
+      </article>
+      <article class="summary-card analytics-card card-surface-compact">
+        <span>Utilizado</span>
+        <strong id="cartoes-resumo-utilizado">R$ 0,00</strong>
+        <small>Faturas em aberto</small>
+      </article>
+      <article class="summary-card analytics-card card-surface-compact">
+        <span>Disponível</span>
+        <strong id="cartoes-resumo-disponivel">R$ 0,00</strong>
+        <small>Limite ainda livre</small>
+      </article>
+    `;
+    cardHeader?.insertAdjacentElement("afterend", overviewStrip);
+    cartoesResumoTotal = overviewStrip.querySelector("#cartoes-resumo-total");
+    cartoesResumoUtilizado = overviewStrip.querySelector("#cartoes-resumo-utilizado");
+    cartoesResumoDisponivel = overviewStrip.querySelector("#cartoes-resumo-disponivel");
+  }
+
+  if (cardsPageCard && !cartoesNovoButton && cardHeader) {
+    const actions = existingHeaderActions || document.createElement("div");
+    actions.className = "card-header-actions";
+    if (!actions.isConnected) {
+      cardHeader.appendChild(actions);
+    }
+    cartoesNovoButton = document.createElement("button");
+    cartoesNovoButton.type = "button";
+    cartoesNovoButton.className = "secondary-button small-button";
+    cartoesNovoButton.id = "cartoes-novo-button";
+    cartoesNovoButton.textContent = "Novo cartão";
+    cartoesNovoButton.addEventListener("click", () => {
+      document.getElementById("cartaoNome")?.focus();
+    });
+    actions.appendChild(cartoesNovoButton);
+  }
 
   renderCardOptions(cards);
   document.getElementById("cartoes-status-chip").textContent = cards.length
     ? `${cards.length} cartao(es)`
     : "Sem cartoes";
+
+  if (cartoesResumoTotal) {
+    cartoesResumoTotal.textContent = formatAccountsCurrency(totalLimit);
+  }
+  if (cartoesResumoUtilizado) {
+    cartoesResumoUtilizado.textContent = formatAccountsCurrency(totalUsed);
+  }
+  if (cartoesResumoDisponivel) {
+    cartoesResumoDisponivel.textContent = formatAccountsCurrency(totalAvailable);
+  }
+  if (cartoesNovoButton) {
+    cartoesNovoButton.onclick = () => {
+      document.getElementById("cartaoNome")?.focus();
+    };
+  }
+  if (cardTable) {
+    const headerRow = cardTable.querySelector("thead tr");
+    if (headerRow) {
+      headerRow.innerHTML = `
+        <th>Cartão</th>
+        <th>Limite total</th>
+        <th>Utilizado</th>
+        <th>Disponível</th>
+        <th>Fatura atual</th>
+        <th>Vencimento</th>
+        <th>Ações</th>
+      `;
+    }
+  }
 
   if (!cards.length) {
     cartoesTableBody.innerHTML = "";
@@ -790,18 +874,42 @@ function renderCards() {
     cartoesEmptyState.innerHTML = "";
     cartoesTableBody.innerHTML = cards
       .map((card) => {
+        const limit = Number(card.limite || 0);
+        const used = Number(card.currentBill || 0);
+        const available = Math.max(limit - used, 0);
         const impactClass = card.impactsCycle ? "status-warning" : "status-positive";
         const impactLabel = card.impactsCycle ? "Compromete o ciclo" : "Fora do ciclo";
+        const cardInitial = String(card.nome || "C").trim().charAt(0).toUpperCase() || "C";
 
         return `
-          <tr>
+          <tr class="cards-visual-row">
             <td>
-              <strong>${card.nome}</strong><br />
-              <span class="text-soft">${card.tipo} - Limite ${formatAccountsCurrency(card.limite || 0)}</span>
+              <div class="card-miniature" aria-hidden="true">${cardInitial}</div>
+              <div class="card-visual-main">
+                <strong>${card.nome}</strong>
+                <span class="text-soft">Final ${String(card.numeroFinal || card.final || "").slice(-4) || "--"} · ${card.tipo || "credito"}</span>
+              </div>
             </td>
-            <td>${formatAccountsCurrency(card.currentBill)}</td>
-            <td>${card.dueDate ? formatAccountsDateLong(card.dueDate) : "--"}</td>
-            <td><span class="${impactClass}">${impactLabel}</span></td>
+            <td>
+              <strong>${formatAccountsCurrency(limit)}</strong>
+              <span class="text-soft">Limite total</span>
+            </td>
+            <td>
+              <strong>${formatAccountsCurrency(used)}</strong>
+              <span class="text-soft">Valor utilizado</span>
+            </td>
+            <td>
+              <strong>${formatAccountsCurrency(available)}</strong>
+              <span class="text-soft">Disponível</span>
+            </td>
+            <td>
+              <strong>${formatAccountsCurrency(card.currentBill)}</strong>
+              <span class="text-soft">Fatura atual</span>
+            </td>
+            <td>
+              <strong>${card.dueDate ? formatAccountsDateLong(card.dueDate) : "--"}</strong>
+              <span class="text-soft">${impactLabel}</span>
+            </td>
             <td>
               <div class="table-actions">
                 <button type="button" class="secondary-button small-button" data-action="edit-card" data-id="${card.id}">
