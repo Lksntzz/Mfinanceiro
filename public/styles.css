@@ -6837,16 +6837,36 @@ p {
     background: #1e293b;
   }
 
-  [data-page="dashboard"] .dashboard-list-surface {
-    display: flex;
-    flex-direction: column;
-    overflow: hidden;
-  }
-  [data-page="dashboard"] .dashboard-list-surface .trend-list {
-    flex: 1;
-    overflow-y: auto;
-    min-height: 0;
-    padding-right: 4px;
+[data-page="dashboard"] .dashboard-list-surface {
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+[data-page="dashboard"] .cards-summary-card {
+  overflow: visible;
+}
+
+[data-page="dashboard"] .cards-summary-card .dashboard-card-summary-list {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 10px;
+  margin-top: 4px;
+}
+
+[data-page="dashboard"] .cards-summary-card .dashboard-card-summary-list .detail-row {
+  min-height: 0;
+}
+
+[data-page="dashboard"] .cards-summary-card .db2-bottom-card-footer {
+  margin-top: 8px;
+}
+
+[data-page="dashboard"] .dashboard-list-surface .trend-list {
+  flex: 1;
+  overflow-y: auto;
+  min-height: 0;
+  padding-right: 4px;
   }
 
   [data-page="dashboard"] .compact-category-list,
