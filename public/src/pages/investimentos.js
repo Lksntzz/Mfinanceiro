@@ -126,9 +126,6 @@ function handleInvestmentSubmit(event) {
   });
 
   showInvestmentMessage("success", "Percentual da sugestao salvo com sucesso.");
-  window.AppShell.queueDashboardRedirect(
-    "Investimentos atualizados. O dashboard foi recalculado com a nova sugestao."
-  );
 }
 
 function confirmSuggestion() {
@@ -146,9 +143,6 @@ function confirmSuggestion() {
     "success",
     `Sugestao de ${formatInvestmentCurrency(summary.investimento.suggestedValue)} confirmada no app.`
   );
-  window.AppShell.queueDashboardRedirect(
-    "Sugestao de investimento confirmada. O dashboard foi atualizado."
-  );
 }
 
 function ignoreSuggestion() {
@@ -163,9 +157,6 @@ function ignoreSuggestion() {
   });
 
   showInvestmentMessage("success", "Sugestao ignorada por enquanto.");
-  window.AppShell.queueDashboardRedirect(
-    "Decisao de investimento registrada. O dashboard foi atualizado."
-  );
 }
 
 investimentoForm.addEventListener("submit", handleInvestmentSubmit);

@@ -239,16 +239,6 @@ function bindAppShellActions() {
   });
 }
 
-function queueDashboardRedirect(message, delay = 1200) {
-  if (message) {
-    sessionStorage.setItem(DASHBOARD_NOTICE_KEY, message);
-  }
-
-  window.setTimeout(() => {
-    window.location.assign("/dashboard.html");
-  }, delay);
-}
-
 function consumeDashboardNotice() {
   const notice = sessionStorage.getItem(DASHBOARD_NOTICE_KEY);
 
@@ -291,7 +281,6 @@ function initAppShell() {
 window.AppShell = {
   consumeDashboardNotice,
   initAppShell,
-  queueDashboardRedirect,
   refreshAppShell,
 };
 

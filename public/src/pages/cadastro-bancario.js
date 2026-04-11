@@ -1468,7 +1468,7 @@ function confirmImportedExpenses() {
   showMessage(
     statementMessage,
     "success",
-    `${expenseDrafts.length} lancamento(s) salvo(s) em Contas do dia a dia. O dashboard ja foi atualizado.`
+    `${expenseDrafts.length} lancamento(s) salvo(s) em Contas do dia a dia.`
   );
 }
 

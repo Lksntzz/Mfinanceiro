@@ -21,7 +21,6 @@ const {
   formatCurrency: formatAccountsCurrency,
   formatDateLong: formatAccountsDateLong,
   getAccountsInCycle: getAccountsCycleSummary,
-  getCardsSummary: getAccountsCardsSummary,
   getDailyExpensesSummary: getAccountsDailyExpensesSummary,
   getInstallmentsSummary: getAccountsInstallmentsSummary,
   getNextPaymentInfo,
@@ -43,14 +42,6 @@ const installmentForm = document.getElementById("parcelamento-form");
 const installmentMessage = document.getElementById("parcelamento-message");
 const installmentsTableBody = document.getElementById("parcelamentos-table-body");
 const installmentsEmptyState = document.getElementById("parcelamentos-empty-state");
-const cartaoForm = document.getElementById("cartao-form");
-const lancamentoForm = document.getElementById("lancamento-form");
-const cartoesMessage = document.getElementById("cartoes-message");
-const cartoesListaVisuais = document.getElementById("cartoes-lista-visuais");
-const lancamentosTableBody = document.getElementById("lancamentos-table-body");
-const cartoesEmptyState = document.getElementById("cartoes-empty-state");
-const lancamentosEmptyState = document.getElementById("lancamentos-empty-state");
-const cartaoSelect = document.getElementById("lancamentoCartaoId");
 const accountTabLinks = Array.from(
   document.querySelectorAll("[data-account-tab-link]")
 );
@@ -125,30 +116,6 @@ async function refreshFixedBillsFromSupabase() {
   return fixedBills;
 }
 
-async function refreshCardsFromSupabase() {
-  const syncApi = getExpenseSyncApi();
-
-  if (typeof syncApi?.getCards !== "function") {
-    return [];
-  }
-
-  const cards = await syncApi.getCards();
-  renderCards();
-  return cards;
-}
-
-async function refreshCardExpensesFromSupabase() {
-  const syncApi = getExpenseSyncApi();
-
-  if (typeof syncApi?.getCardExpenses !== "function") {
-    return [];
-  }
-
-  const cardExpenses = await syncApi.getCardExpenses();
-  renderCards();
-  return cardExpenses;
-}
-
 async function refreshInstallmentsFromSupabase() {
   const syncApi = getExpenseSyncApi();
 
@@ -174,8 +141,6 @@ async function ensureExpensesHydrated() {
 
       await refreshFixedBillsFromSupabase();
       await refreshExpensesFromSupabase();
-      await refreshCardsFromSupabase();
-      await refreshCardExpensesFromSupabase();
       await refreshInstallmentsFromSupabase();
     } catch (error) {
       if (isAuthSessionMissingError(error)) {
@@ -278,15 +243,6 @@ function setFormMode(form, editId, editLabel) {
 function showContaMessage(type, text) {
   contaMessage.textContent = text;
   contaMessage.className = `message-box ${type}`;
-}
-
-function showCartoesMessage(type, text) {
-  if (!cartoesMessage) {
-    return;
-  }
-
-  cartoesMessage.textContent = text;
-  cartoesMessage.className = `message-box ${type}`;
 }
 
 function showInstallmentMessage(type, text) {
@@ -761,217 +717,6 @@ function confirmImportedExpenses() {
     "success",
     "Lancamentos importados confirmados e adicionados em Contas do dia a dia."
   );
-  window.AppShell.queueDashboardRedirect(
-    "Gastos importados confirmados. O dashboard foi atualizado com os novos lancamentos."
-  );
-}
-
-function renderCardOptions(cards) {
-  if (!cartaoSelect || !lancamentoForm) {
-    return;
-  }
-
-  if (!cards.length) {
-    cartaoSelect.innerHTML = `<option value="">Cadastre um cartao primeiro</option>`;
-    cartaoSelect.disabled = true;
-    lancamentoForm.querySelector('button[type="submit"]').disabled = true;
-    return;
-  }
-
-  cartaoSelect.disabled = false;
-  lancamentoForm.querySelector('button[type="submit"]').disabled = false;
-  cartaoSelect.innerHTML = cards
-    .map((card) => `<option value="${card.id}">${card.nome}</option>`)
-    .join("");
-}
-
-function renderCards() {
-  if (!cartoesListaVisuais || !lancamentosTableBody || !cartoesEmptyState || !lancamentosEmptyState) {
-    return;
-  }
-
-  const data = loadAccountsData();
-  const summary = getAccountsCardsSummary(data);
-  const cards = loadAccountsCards().map((card) => {
-    return summary.cards.find((summaryCard) => summaryCard.id === card.id) || card;
-  });
-  const launches = [...loadAccountsCardExpenses()].sort((left, right) => {
-    return new Date(right.data).getTime() - new Date(left.data).getTime();
-  });
-  const totalLimit = cards.reduce((sum, card) => sum + Number(card.limite || 0), 0);
-  const totalUsed = cards.reduce((sum, card) => sum + Number(card.currentBill || 0), 0);
-  const totalAvailable = Math.max(totalLimit - totalUsed, 0);
-  const cardsPageCard = cartoesListaVisuais.closest(".accounts-page-card");
-  const cardHeader = cardsPageCard?.querySelector(".card-header");
-  const existingHeaderActions = cardHeader?.querySelector(".card-header-actions");
-  let cartoesResumoTotal = document.getElementById("cartoes-resumo-total");
-  let cartoesResumoUtilizado = document.getElementById("cartoes-resumo-utilizado");
-  let cartoesResumoDisponivel = document.getElementById("cartoes-resumo-disponivel");
-  let cartoesNovoButton = document.getElementById("cartoes-novo-button");
-
-  if (cardsPageCard && !cartoesResumoTotal) {
-    const overviewStrip = document.createElement("section");
-    overviewStrip.className = "cards-overview-strip";
-    overviewStrip.innerHTML = `
-      <article class="summary-card analytics-card card-surface-compact">
-        <span>Limite total</span>
-        <strong id="cartoes-resumo-total">R$ 0,00</strong>
-        <small>Soma dos limites cadastrados</small>
-      </article>
-      <article class="summary-card analytics-card card-surface-compact">
-        <span>Utilizado</span>
-        <strong id="cartoes-resumo-utilizado">R$ 0,00</strong>
-        <small>Faturas em aberto</small>
-      </article>
-      <article class="summary-card analytics-card card-surface-compact">
-        <span>Disponível</span>
-        <strong id="cartoes-resumo-disponivel">R$ 0,00</strong>
-        <small>Limite ainda livre</small>
-      </article>
-    `;
-    cardHeader?.insertAdjacentElement("afterend", overviewStrip);
-    cartoesResumoTotal = overviewStrip.querySelector("#cartoes-resumo-total");
-    cartoesResumoUtilizado = overviewStrip.querySelector("#cartoes-resumo-utilizado");
-    cartoesResumoDisponivel = overviewStrip.querySelector("#cartoes-resumo-disponivel");
-  }
-
-  if (cardsPageCard && !cartoesNovoButton && cardHeader) {
-    const actions = existingHeaderActions || document.createElement("div");
-    actions.className = "card-header-actions";
-    if (!actions.isConnected) {
-      cardHeader.appendChild(actions);
-    }
-    cartoesNovoButton = document.createElement("button");
-    cartoesNovoButton.type = "button";
-    cartoesNovoButton.className = "secondary-button small-button";
-    cartoesNovoButton.id = "cartoes-novo-button";
-    cartoesNovoButton.textContent = "Novo cartão";
-    cartoesNovoButton.addEventListener("click", () => {
-      document.getElementById("cartaoNome")?.focus();
-    });
-    actions.appendChild(cartoesNovoButton);
-  }
-
-  renderCardOptions(cards);
-  document.getElementById("cartoes-status-chip").textContent = cards.length
-    ? `${cards.length} cartao(es)`
-    : "Sem cartoes";
-
-  if (cartoesResumoTotal) {
-    cartoesResumoTotal.textContent = formatAccountsCurrency(totalLimit);
-  }
-  if (cartoesResumoUtilizado) {
-    cartoesResumoUtilizado.textContent = formatAccountsCurrency(totalUsed);
-  }
-  if (cartoesResumoDisponivel) {
-    cartoesResumoDisponivel.textContent = formatAccountsCurrency(totalAvailable);
-  }
-  if (cartoesNovoButton) {
-    cartoesNovoButton.onclick = () => {
-      document.getElementById("cartaoNome")?.focus();
-    };
-  }
-
-  if (!cards.length) {
-    cartoesListaVisuais.innerHTML = "";
-    cartoesEmptyState.classList.remove("hidden");
-    cartoesEmptyState.innerHTML = `
-      <strong>Nenhum cartao cadastrado</strong>
-      Cadastre seus cartoes para medir o impacto da fatura no ciclo.
-    `;
-  } else {
-    cartoesEmptyState.classList.add("hidden");
-    cartoesEmptyState.innerHTML = "";
-    cartoesListaVisuais.innerHTML = cards
-      .map((card) => {
-        const limit = Number(card.limite || 0);
-        const used = Number(card.currentBill || 0);
-        const available = Math.max(limit - used, 0);
-        const impactClass = card.impactsCycle ? "status-warning" : "status-positive";
-        const impactLabel = card.impactsCycle ? "Compromete o ciclo" : "Fora do ciclo";
-        const cardInitial = String(card.nome || "C").trim().charAt(0).toUpperCase() || "C";
-
-        return `
-          <article class="card-visual-item">
-            <header class="card-visual-header">
-              <div class="card-miniature" aria-hidden="true">${cardInitial}</div>
-              <div class="card-visual-main">
-                <strong>${card.nome}</strong>
-                <span class="text-soft">Final ${String(card.numeroFinal || card.final || "").slice(-4) || "--"} · ${card.tipo || "credito"}</span>
-              </div>
-              <span class="status-chip ${impactClass}">${impactLabel}</span>
-            </header>
-            <div class="card-visual-kpis">
-              <div class="card-visual-kpi">
-                <span>Limite total</span>
-                <strong>${formatAccountsCurrency(limit)}</strong>
-              </div>
-              <div class="card-visual-kpi">
-                <span>Utilizado</span>
-                <strong>${formatAccountsCurrency(used)}</strong>
-              </div>
-              <div class="card-visual-kpi">
-                <span>Disponível</span>
-                <strong>${formatAccountsCurrency(available)}</strong>
-              </div>
-              <div class="card-visual-kpi">
-                <span>Fatura atual</span>
-                <strong>${formatAccountsCurrency(card.currentBill)}</strong>
-              </div>
-              <div class="card-visual-kpi">
-                <span>Vencimento</span>
-                <strong>${card.dueDate ? formatAccountsDateLong(card.dueDate) : "--"}</strong>
-              </div>
-            </div>
-            <div class="table-actions card-visual-actions">
-              <button type="button" class="secondary-button small-button" data-action="edit-card" data-id="${card.id}">Editar</button>
-              <button type="button" class="ghost-button small-button" data-action="delete-card" data-id="${card.id}">Excluir</button>
-            </div>
-          </article>
-        `;
-      })
-      .join("");
-  }
-
-  if (!launches.length) {
-    lancamentosTableBody.innerHTML = "";
-    lancamentosEmptyState.classList.remove("hidden");
-    lancamentosEmptyState.innerHTML = `
-      <strong>Nenhum gasto de cartao registrado</strong>
-      Lance os gastos da fatura para acompanhar o valor real do cartao.
-    `;
-    return;
-  }
-
-  const cardsById = new Map(cards.map((card) => [card.id, card]));
-
-  lancamentosEmptyState.classList.add("hidden");
-  lancamentosEmptyState.innerHTML = "";
-  lancamentosTableBody.innerHTML = launches
-    .map((launch) => {
-      const statusClass = launch.status === "pago" ? "status-positive" : "status-warning";
-
-      return `
-        <tr>
-          <td>
-            <strong>${launch.descricao}</strong><br />
-            <span class="text-soft">${launch.categoria || "Sem categoria"}</span>
-          </td>
-          <td>${cardsById.get(launch.cartaoId)?.nome || "Cartao removido"}</td>
-          <td>${formatAccountsCurrency(launch.valor)}</td>
-          <td>${formatAccountsDateLong(launch.data)}</td>
-          <td><span class="${statusClass}">${launch.status === "pago" ? "Pago" : "Pendente"}</span></td>
-          <td>
-            <div class="table-actions">
-              <button type="button" class="secondary-button small-button" data-action="edit-launch" data-id="${launch.id}">Editar</button>
-              <button type="button" class="secondary-button small-button" data-action="toggle-launch" data-id="${launch.id}">${launch.status === "pago" ? "Reabrir" : "Marcar pago"}</button>
-              <button type="button" class="ghost-button small-button" data-action="delete-launch" data-id="${launch.id}">Excluir</button>
-            </div>
-          </td>
-        </tr>
-      `;
-    })
-    .join("");
 }
 
 async function handleFixedSubmit(event) {
@@ -1017,9 +762,6 @@ async function handleFixedSubmit(event) {
     resetFormMode(contaFixaForm, "Salvar conta fixa");
     renderFixedAccounts();
     showContaMessage("success", editId ? "Conta fixa atualizada com sucesso." : "Conta fixa salva com sucesso.");
-    window.AppShell.queueDashboardRedirect(
-      "Conta fixa salva. O dashboard foi atualizado com o novo compromisso."
-    );
   } catch (error) {
     console.error("[Contas] Falha ao salvar conta fixa no Supabase.", error);
     showContaMessage("error", "Nao foi possivel salvar a conta fixa agora. Tente novamente.");
@@ -1063,9 +805,6 @@ async function handleDailySubmit(event) {
     resetFormMode(diaADiaForm, "Salvar gasto");
     renderDailyExpenses();
     showContaMessage("success", editId ? "Gasto atualizado com sucesso." : "Gasto do dia a dia salvo com sucesso.");
-    window.AppShell.queueDashboardRedirect(
-      "Gasto salvo. O dashboard foi atualizado com o novo consumo."
-    );
   } catch (error) {
     console.error("[Contas] Falha ao salvar gasto no Supabase.", error);
     showContaMessage("error", "Nao foi possivel salvar o gasto agora. Tente novamente.");
@@ -1119,105 +858,11 @@ async function handleInstallmentSubmit(event) {
       "success",
       editId ? "Parcelamento atualizado com sucesso." : "Parcelamento salvo com sucesso."
     );
-    window.AppShell.queueDashboardRedirect(
-      "Parcelamento salvo. O dashboard foi atualizado com a nova parcela do ciclo."
-    );
   } catch (error) {
     console.error("[Contas] Falha ao salvar parcelamento no Supabase.", error);
     showInstallmentMessage("error", "Nao foi possivel salvar o parcelamento agora. Tente novamente.");
   } finally {
     setFormLoadingState(installmentForm, false);
-  }
-}
-
-async function handleCardSubmit(event) {
-  event.preventDefault();
-  const editId = cartaoForm.dataset.editId;
-
-  const payload = {
-    id: editId || createId("cartao"),
-    nome: document.getElementById("cartaoNome").value.trim(),
-    tipo: document.getElementById("cartaoTipo").value,
-    limite: toAccountsNumber(document.getElementById("cartaoLimite").value),
-    limiteUsado: toAccountsNumber(document.getElementById("cartaoLimiteUsado").value),
-    dataFechamento: toAccountsNumber(document.getElementById("cartaoFechamento").value),
-    dataVencimento: toAccountsNumber(document.getElementById("cartaoVencimento").value),
-  };
-
-  if (!payload.nome || !payload.dataVencimento) {
-    showCartoesMessage("error", "Preencha pelo menos o nome do cartao e a data de vencimento.");
-    return;
-  }
-
-  try {
-    setFormLoadingState(cartaoForm, true, editId ? "Atualizando..." : "Salvando...");
-
-    if (typeof getExpenseSyncApi()?.addCard === "function") {
-      await getExpenseSyncApi().addCard(payload);
-    } else if (typeof window.FinanceStore.salvarCartao === "function") {
-      window.FinanceStore.salvarCartao(payload);
-    }
-
-    cartaoForm.reset();
-    resetFormMode(cartaoForm, "Salvar cartao");
-    renderCards();
-    showCartoesMessage("success", editId ? "Cartao atualizado com sucesso." : "Cartao salvo com sucesso.");
-    window.AppShell.queueDashboardRedirect(
-      "Cartao salvo. O dashboard foi atualizado com o impacto da fatura."
-    );
-  } catch (error) {
-    console.error("[Contas] Falha ao salvar cartao no Supabase.", error);
-    showCartoesMessage("error", "Nao foi possivel salvar o cartao agora. Tente novamente.");
-  } finally {
-    setFormLoadingState(cartaoForm, false);
-  }
-}
-
-async function handleLaunchSubmit(event) {
-  event.preventDefault();
-  const editId = lancamentoForm.dataset.editId;
-
-  const payload = {
-    id: editId || createId("lancamento"),
-    cartaoId: cartaoSelect.value,
-    descricao: document.getElementById("lancamentoDescricao").value.trim(),
-    valor: toAccountsNumber(document.getElementById("lancamentoValor").value),
-    data: document.getElementById("lancamentoData").value,
-    categoria: document.getElementById("lancamentoCategoria").value.trim(),
-    status: "pendente",
-  };
-
-  if (!payload.cartaoId || !payload.descricao || !payload.valor || !payload.data) {
-    showCartoesMessage("error", "Preencha cartao, descricao, valor e data para salvar o gasto da fatura.");
-    return;
-  }
-
-  if (editId) {
-    const existing = loadAccountsData().lancamentosCartao.find((launch) => launch.id === editId);
-    payload.status = existing?.status || "pendente";
-  }
-
-  try {
-    setFormLoadingState(lancamentoForm, true, editId ? "Atualizando..." : "Salvando...");
-
-    if (typeof getExpenseSyncApi()?.addCardExpense === "function") {
-      await getExpenseSyncApi().addCardExpense(payload);
-    } else if (typeof window.FinanceStore.salvarLancamentoCartao === "function") {
-      window.FinanceStore.salvarLancamentoCartao(payload);
-    }
-
-    lancamentoForm.reset();
-    resetFormMode(lancamentoForm, "Salvar gasto da fatura");
-    renderCards();
-    showCartoesMessage("success", editId ? "Gasto da fatura atualizado com sucesso." : "Gasto da fatura salvo com sucesso.");
-    window.AppShell.queueDashboardRedirect(
-      "Gasto da fatura salvo. O dashboard foi atualizado com o novo lancamento."
-    );
-  } catch (error) {
-    console.error("[Contas] Falha ao salvar gasto da fatura no Supabase.", error);
-    showCartoesMessage("error", "Nao foi possivel salvar o gasto da fatura agora. Tente novamente.");
-  } finally {
-    setFormLoadingState(lancamentoForm, false);
   }
 }
 
@@ -1387,108 +1032,6 @@ async function handleInstallmentsTableClick(event) {
   }
 }
 
-async function handleCardsTableClick(event) {
-  const button = event.target.closest("button[data-action]");
-
-  if (!button) {
-    return;
-  }
-
-  const { action, id } = button.dataset;
-
-  if (action === "edit-card") {
-    const card = loadAccountsData().cartoes.find((item) => item.id === id);
-
-    if (!card) {
-      return;
-    }
-
-    document.getElementById("cartaoNome").value = card.nome || "";
-    document.getElementById("cartaoTipo").value = card.tipo || "credito";
-    document.getElementById("cartaoLimite").value = card.limite || "";
-    document.getElementById("cartaoLimiteUsado").value = card.limiteUsado || "";
-    document.getElementById("cartaoFechamento").value = card.dataFechamento || "";
-    document.getElementById("cartaoVencimento").value = card.dataVencimento || "";
-    setFormMode(cartaoForm, card.id, "Atualizar cartao");
-    showCartoesMessage("success", "Cartao carregado para edicao.");
-    return;
-  }
-
-  if (action === "delete-card") {
-    try {
-      if (typeof getExpenseSyncApi()?.deleteCard === "function") {
-        await getExpenseSyncApi().deleteCard(id);
-      } else {
-        updateAccountsData((draft) => {
-          draft.cartoes = draft.cartoes.filter((card) => card.id !== id);
-          draft.lancamentosCartao = draft.lancamentosCartao.filter((launch) => launch.cartaoId !== id);
-          return draft;
-        });
-      }
-      renderCards();
-      showCartoesMessage("success", "Cartao removido com seus gastos.");
-    } catch (error) {
-      console.error("[Contas] Falha ao remover cartao do Supabase.", error);
-      showCartoesMessage("error", "Nao foi possivel remover o cartao agora. Tente novamente.");
-    }
-    return;
-  }
-
-  if (action === "toggle-launch") {
-    updateAccountsData((draft) => {
-      draft.lancamentosCartao = draft.lancamentosCartao.map((launch) => {
-        if (launch.id !== id) {
-          return launch;
-        }
-
-        return {
-          ...launch,
-          status: launch.status === "pago" ? "pendente" : "pago",
-        };
-      });
-      return draft;
-    });
-    renderCards();
-    showCartoesMessage("success", "Status do gasto da fatura atualizado.");
-    return;
-  }
-
-  if (action === "edit-launch") {
-    const launch = loadAccountsData().lancamentosCartao.find((item) => item.id === id);
-
-    if (!launch) {
-      return;
-    }
-
-    cartaoSelect.value = launch.cartaoId || "";
-    document.getElementById("lancamentoDescricao").value = launch.descricao || "";
-    document.getElementById("lancamentoValor").value = launch.valor || "";
-    document.getElementById("lancamentoData").value = launch.data || "";
-    document.getElementById("lancamentoCategoria").value = launch.categoria || "";
-    setFormMode(lancamentoForm, launch.id, "Atualizar gasto da fatura");
-    showCartoesMessage("success", "Gasto da fatura carregado para edicao.");
-    return;
-  }
-
-  if (action === "delete-launch") {
-    try {
-      if (typeof getExpenseSyncApi()?.deleteCardExpense === "function") {
-        await getExpenseSyncApi().deleteCardExpense(id);
-      } else {
-        updateAccountsData((draft) => {
-          draft.lancamentosCartao = draft.lancamentosCartao.filter((launch) => launch.id !== id);
-          return draft;
-        });
-      }
-      renderCards();
-      showCartoesMessage("success", "Gasto da fatura removido.");
-    } catch (error) {
-      console.error("[Contas] Falha ao remover gasto da fatura do Supabase.", error);
-      showCartoesMessage("error", "Nao foi possivel remover o gasto da fatura agora. Tente novamente.");
-    }
-  }
-}
-
 function getPreferredForm() {
   const activeElement = document.activeElement;
   const candidate = activeElement?.closest?.("form");
@@ -1508,9 +1051,8 @@ function getPreferredForm() {
   }
 
   return (
-    [contaFixaForm, diaADiaForm, installmentForm, cartaoForm, lancamentoForm].find(
-      (form) => form?.dataset?.editId
-    ) || contaFixaForm
+    [contaFixaForm, diaADiaForm, installmentForm].find((form) => form?.dataset?.editId) ||
+    contaFixaForm
   );
 }
 
@@ -1542,21 +1084,12 @@ function triggerCurrentFormEditReset() {
     return;
   }
 
-  if (form === cartaoForm) {
-    resetFormMode(cartaoForm, "Salvar cartao");
-    showCartoesMessage("success", "Formulario de cartao liberado para nova edicao.");
-    return;
-  }
-
-  resetFormMode(lancamentoForm, "Salvar gasto da fatura");
-  showCartoesMessage("success", "Formulario de gasto da fatura liberado para nova edicao.");
 }
 
 function renderAccountsPage() {
   renderFixedAccounts();
   renderDailyExpenses();
   renderInstallments();
-  renderCards();
   renderImportDrafts();
 }
 
@@ -1572,14 +1105,6 @@ if (installmentForm) {
   installmentForm.addEventListener("submit", handleInstallmentSubmit);
 }
 
-if (cartaoForm) {
-  cartaoForm.addEventListener("submit", handleCardSubmit);
-}
-
-if (lancamentoForm) {
-  lancamentoForm.addEventListener("submit", handleLaunchSubmit);
-}
-
 if (contasTableBody) {
   contasTableBody.addEventListener("click", handleContasTableClick);
 }
@@ -1588,10 +1113,6 @@ if (installmentsTableBody) {
   installmentsTableBody.addEventListener("click", handleInstallmentsTableClick);
 }
 
-
-if (lancamentosTableBody) {
-  lancamentosTableBody.addEventListener("click", handleCardsTableClick);
-}
 
 if (processImportButton) {
   processImportButton.addEventListener("click", processImportFiles);

@@ -279,9 +279,6 @@
     lockPaymentReceiptEditing();
     renderReceiptArea();
     showMessage("success", "Recebimento salvo com sucesso.");
-    window.AppShell.queueDashboardRedirect(
-      "Recebimento salvo. O dashboard foi atualizado."
-    );
   }
 
   async function markPaymentAsReceived() {
@@ -344,9 +341,6 @@
       "success",
       `Recebimento confirmado em ${formatReceiptsCurrency(actualValue)}.`
     );
-    window.AppShell.queueDashboardRedirect(
-      "Recebimento confirmado. O dashboard foi atualizado para o proximo ciclo."
-    );
   }
 
   async function saveBenefitReceipt() {
@@ -385,9 +379,6 @@
 
     renderReceiptArea();
     showMessage("success", "Beneficio salvo com sucesso.");
-    window.AppShell.queueDashboardRedirect(
-      "Beneficio salvo. O dashboard foi atualizado."
-    );
   }
 
   function editPaymentReceipt() {
