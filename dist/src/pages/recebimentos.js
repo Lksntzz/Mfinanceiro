@@ -24,6 +24,10 @@
   const beneficiosStatusChip = document.getElementById("beneficios-status-chip");
   const incomesListElement = document.getElementById("recebimentos-list");
   const benefitsListElement = document.getElementById("beneficios-list");
+  const paymentValueInput = document.getElementById("pagamentoValorPrevisto");
+  const savePaymentButton = document.getElementById("save-pagamento-button");
+
+  let paymentEditMode = false;
 
   window.AppShell.initAppShell();
 
@@ -98,8 +102,12 @@
     getElement("pagamentoTipo").value = receipt.tipo || "pagamento";
     getElement("pagamentoDescricao").value = receipt.descricao || "";
     getElement("pagamentoDataPrevista").value = formatInputDate(receipt.dataPrevista);
+    const fallbackValue =
+      receipt.valorPrevisto !== undefined && receipt.valorPrevisto !== null
+        ? receipt.valorPrevisto
+        : receipt.valorRecebido;
     getElement("pagamentoValorPrevisto").value =
-      toReceiptsNumber(receipt.valorPrevisto || receipt.valorRecebido) || "";
+      fallbackValue !== undefined && fallbackValue !== null ? String(toReceiptsNumber(fallbackValue)) : "";
   }
 
   function fillBenefitForm(receipt = {}) {
@@ -180,11 +188,17 @@
       ? `${formatReceiptsDateLong(paymentInfo.nextDate)} - ${formatReceiptsCurrency(paymentInfo.value)}`
       : "--";
     getElement("pagamento-dias-restantes").textContent = String(paymentInfo.daysRemaining);
-    fillIncomeForm({
-      ...receipt,
-      dataPrevista: receipt.dataPrevista || paymentInfo.nextDate,
-      valorPrevisto: receipt.valorPrevisto || paymentInfo.value,
-    });
+    if (!paymentEditMode) {
+      fillIncomeForm({
+        ...receipt,
+        dataPrevista: receipt.dataPrevista || paymentInfo.nextDate,
+        valorPrevisto:
+          receipt.valorPrevisto !== undefined && receipt.valorPrevisto !== null
+            ? receipt.valorPrevisto
+            : paymentInfo.value,
+      });
+      lockPaymentReceiptEditing();
+    }
     pagamentoStatusChip.textContent = receipt.dataPrevista
       ? receipt.status === "recebido"
         ? "Recebido"
@@ -238,17 +252,19 @@
   async function savePaymentReceipt() {
     const syncApi = getSyncApi();
     const currentIncome = findIncomeById(getElement("pagamentoId").value);
+    const rawValue = String(getElement("pagamentoValorPrevisto").value || "").trim();
+    const prevValue = toReceiptsNumber(rawValue);
     const payload = {
       id: getElement("pagamentoId").value || currentIncome?.id || "",
       tipo: getElement("pagamentoTipo").value || "pagamento",
       descricao: getElement("pagamentoDescricao").value.trim() || "Recebimento principal",
       dataPrevista: getElement("pagamentoDataPrevista").value,
-      valorPrevisto: toReceiptsNumber(getElement("pagamentoValorPrevisto").value),
+      valorPrevisto: prevValue,
       valorRecebido: currentIncome?.valorRecebido || 0,
       status: currentIncome?.status || "pendente",
     };
 
-    if (!payload.dataPrevista || payload.valorPrevisto <= 0) {
+    if (!payload.dataPrevista || rawValue === "" || Number.isNaN(payload.valorPrevisto) || payload.valorPrevisto < 0) {
       showMessage("error", "Preencha tipo, data prevista e valor do recebimento.");
       return;
     }
@@ -259,6 +275,8 @@
       saveReceiptsPayment(payload);
     }
 
+    paymentEditMode = false;
+    lockPaymentReceiptEditing();
     renderReceiptArea();
     showMessage("success", "Recebimento salvo com sucesso.");
     window.AppShell.queueDashboardRedirect(
@@ -301,14 +319,14 @@
           getElement("pagamentoDescricao").value.trim() ||
           "Recebimento principal",
         dataPrevista: receiptDate,
-        valorPrevisto: currentValue || actualValue,
+        valorPrevisto: Number.isFinite(currentValue) ? currentValue : actualValue,
         valorRecebido: actualValue,
         status: "recebido",
       });
     } else {
       saveReceiptsPayment({
         dataPrevista: receiptDate,
-        valorPrevisto: currentValue || actualValue,
+        valorPrevisto: Number.isFinite(currentValue) ? currentValue : actualValue,
         valorRecebido: actualValue,
         status: "recebido",
       });
@@ -373,12 +391,38 @@
   }
 
   function editPaymentReceipt() {
+    paymentEditMode = true;
+    unlockPaymentReceiptEditing();
     const receipt =
       findIncomeById(loadReceiptsData()?.recebimentos?.pagamento?.sourceId) ||
       loadReceiptsData()?.recebimentos?.pagamento ||
       loadReceiptsPayment();
     fillIncomeForm(receipt);
     showMessage("success", "Recebimento carregado para edicao.");
+    paymentValueInput?.focus();
+    paymentValueInput?.select?.();
+  }
+
+  function lockPaymentReceiptEditing() {
+    if (paymentValueInput) {
+      paymentValueInput.readOnly = true;
+      paymentValueInput.setAttribute("aria-readonly", "true");
+    }
+
+    if (savePaymentButton) {
+      savePaymentButton.textContent = "Salvar recebimento";
+    }
+  }
+
+  function unlockPaymentReceiptEditing() {
+    if (paymentValueInput) {
+      paymentValueInput.readOnly = false;
+      paymentValueInput.removeAttribute("aria-readonly");
+    }
+
+    if (savePaymentButton) {
+      savePaymentButton.textContent = "Salvar";
+    }
   }
 
   function editBenefitReceipt() {

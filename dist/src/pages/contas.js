@@ -1,4 +1,4 @@
-(() => {
+﻿(() => {
 const {
   carregarCartoes: loadAccountsCards,
   carregarContasFixas: loadSavedFixedAccounts,
@@ -45,7 +45,6 @@ const installmentsEmptyState = document.getElementById("parcelamentos-empty-stat
 const cartaoForm = document.getElementById("cartao-form");
 const lancamentoForm = document.getElementById("lancamento-form");
 const cartoesMessage = document.getElementById("cartoes-message");
-const cartoesTableBody = document.getElementById("cartoes-table-body");
 const cartoesListaVisuais = document.getElementById("cartoes-lista-visuais");
 const lancamentosTableBody = document.getElementById("lancamentos-table-body");
 const cartoesEmptyState = document.getElementById("cartoes-empty-state");
@@ -318,7 +317,7 @@ function suggestCategory(text) {
     return "mercado";
   }
 
-  if (/(uber|99|metro|ônibus|onibus|combustivel|gasolina|transporte)/.test(normalizedText)) {
+  if (/(uber|99|metro|Ã´nibus|onibus|combustivel|gasolina|transporte)/.test(normalizedText)) {
     return "transporte";
   }
 
@@ -763,7 +762,7 @@ function renderCardOptions(cards) {
 }
 
 function renderCards() {
-  if (!cartoesTableBody || !lancamentosTableBody || !cartoesEmptyState || !lancamentosEmptyState) {
+  if (!cartoesListaVisuais || !lancamentosTableBody || !cartoesEmptyState || !lancamentosEmptyState) {
     return;
   }
 
@@ -778,8 +777,7 @@ function renderCards() {
   const totalLimit = cards.reduce((sum, card) => sum + Number(card.limite || 0), 0);
   const totalUsed = cards.reduce((sum, card) => sum + Number(card.currentBill || 0), 0);
   const totalAvailable = Math.max(totalLimit - totalUsed, 0);
-  const cardTable = cartoesTableBody?.closest("table");
-  const cardsPageCard = cartoesTableBody?.closest(".accounts-page-card");
+  const cardsPageCard = cartoesListaVisuais.closest(".accounts-page-card");
   const cardHeader = cardsPageCard?.querySelector(".card-header");
   const existingHeaderActions = cardHeader?.querySelector(".card-header-actions");
   let cartoesResumoTotal = document.getElementById("cartoes-resumo-total");
@@ -849,23 +847,9 @@ function renderCards() {
       document.getElementById("cartaoNome")?.focus();
     };
   }
-  if (cardTable) {
-    const headerRow = cardTable.querySelector("thead tr");
-    if (headerRow) {
-      headerRow.innerHTML = `
-        <th>Cartão</th>
-        <th>Limite total</th>
-        <th>Utilizado</th>
-        <th>Disponível</th>
-        <th>Fatura atual</th>
-        <th>Vencimento</th>
-        <th>Ações</th>
-      `;
-    }
-  }
 
   if (!cards.length) {
-    cartoesTableBody.innerHTML = "";
+    cartoesListaVisuais.innerHTML = "";
     cartoesEmptyState.classList.remove("hidden");
     cartoesEmptyState.innerHTML = `
       <strong>Nenhum cartao cadastrado</strong>
@@ -874,7 +858,7 @@ function renderCards() {
   } else {
     cartoesEmptyState.classList.add("hidden");
     cartoesEmptyState.innerHTML = "";
-    cartoesTableBody.innerHTML = cards
+    cartoesListaVisuais.innerHTML = cards
       .map((card) => {
         const limit = Number(card.limite || 0);
         const used = Number(card.currentBill || 0);
@@ -884,45 +868,42 @@ function renderCards() {
         const cardInitial = String(card.nome || "C").trim().charAt(0).toUpperCase() || "C";
 
         return `
-          <tr class="cards-visual-row">
-            <td>
+          <article class="card-visual-item">
+            <header class="card-visual-header">
               <div class="card-miniature" aria-hidden="true">${cardInitial}</div>
               <div class="card-visual-main">
                 <strong>${card.nome}</strong>
                 <span class="text-soft">Final ${String(card.numeroFinal || card.final || "").slice(-4) || "--"} · ${card.tipo || "credito"}</span>
               </div>
-            </td>
-            <td>
-              <strong>${formatAccountsCurrency(limit)}</strong>
-              <span class="text-soft">Limite total</span>
-            </td>
-            <td>
-              <strong>${formatAccountsCurrency(used)}</strong>
-              <span class="text-soft">Valor utilizado</span>
-            </td>
-            <td>
-              <strong>${formatAccountsCurrency(available)}</strong>
-              <span class="text-soft">Disponível</span>
-            </td>
-            <td>
-              <strong>${formatAccountsCurrency(card.currentBill)}</strong>
-              <span class="text-soft">Fatura atual</span>
-            </td>
-            <td>
-              <strong>${card.dueDate ? formatAccountsDateLong(card.dueDate) : "--"}</strong>
-              <span class="text-soft">${impactLabel}</span>
-            </td>
-            <td>
-              <div class="table-actions">
-                <button type="button" class="secondary-button small-button" data-action="edit-card" data-id="${card.id}">
-                  Editar
-                </button>
-                <button type="button" class="ghost-button small-button" data-action="delete-card" data-id="${card.id}">
-                  Excluir
-                </button>
+              <span class="status-chip ${impactClass}">${impactLabel}</span>
+            </header>
+            <div class="card-visual-kpis">
+              <div class="card-visual-kpi">
+                <span>Limite total</span>
+                <strong>${formatAccountsCurrency(limit)}</strong>
               </div>
-            </td>
-          </tr>
+              <div class="card-visual-kpi">
+                <span>Utilizado</span>
+                <strong>${formatAccountsCurrency(used)}</strong>
+              </div>
+              <div class="card-visual-kpi">
+                <span>Disponível</span>
+                <strong>${formatAccountsCurrency(available)}</strong>
+              </div>
+              <div class="card-visual-kpi">
+                <span>Fatura atual</span>
+                <strong>${formatAccountsCurrency(card.currentBill)}</strong>
+              </div>
+              <div class="card-visual-kpi">
+                <span>Vencimento</span>
+                <strong>${card.dueDate ? formatAccountsDateLong(card.dueDate) : "--"}</strong>
+              </div>
+            </div>
+            <div class="table-actions card-visual-actions">
+              <button type="button" class="secondary-button small-button" data-action="edit-card" data-id="${card.id}">Editar</button>
+              <button type="button" class="ghost-button small-button" data-action="delete-card" data-id="${card.id}">Excluir</button>
+            </div>
+          </article>
         `;
       })
       .join("");
@@ -958,15 +939,9 @@ function renderCards() {
           <td><span class="${statusClass}">${launch.status === "pago" ? "Pago" : "Pendente"}</span></td>
           <td>
             <div class="table-actions">
-              <button type="button" class="secondary-button small-button" data-action="edit-launch" data-id="${launch.id}">
-                Editar
-              </button>
-              <button type="button" class="secondary-button small-button" data-action="toggle-launch" data-id="${launch.id}">
-                ${launch.status === "pago" ? "Reabrir" : "Marcar pago"}
-              </button>
-              <button type="button" class="ghost-button small-button" data-action="delete-launch" data-id="${launch.id}">
-                Excluir
-              </button>
+              <button type="button" class="secondary-button small-button" data-action="edit-launch" data-id="${launch.id}">Editar</button>
+              <button type="button" class="secondary-button small-button" data-action="toggle-launch" data-id="${launch.id}">${launch.status === "pago" ? "Reabrir" : "Marcar pago"}</button>
+              <button type="button" class="ghost-button small-button" data-action="delete-launch" data-id="${launch.id}">Excluir</button>
             </div>
           </td>
         </tr>
@@ -1589,9 +1564,6 @@ if (installmentsTableBody) {
   installmentsTableBody.addEventListener("click", handleInstallmentsTableClick);
 }
 
-if (cartoesTableBody) {
-  cartoesTableBody.addEventListener("click", handleCardsTableClick);
-}
 
 if (lancamentosTableBody) {
   lancamentosTableBody.addEventListener("click", handleCardsTableClick);
@@ -1647,3 +1619,6 @@ syncAccountsTabFromHash({ replaceHash: true });
 renderAccountsPage();
 ensureExpensesHydrated();
 })();
+
+
+
