@@ -6844,7 +6844,9 @@ p {
 }
 
 [data-page="dashboard"] .cards-summary-card {
-  overflow: visible;
+  overflow: visible !important;
+  height: auto !important;
+  min-height: 0;
 }
 
 [data-page="dashboard"] .cards-summary-card .dashboard-card-summary-list {
@@ -6852,6 +6854,9 @@ p {
   grid-template-columns: repeat(3, minmax(0, 1fr));
   gap: 10px;
   margin-top: 4px;
+  min-height: 0;
+  height: auto;
+  overflow: visible;
 }
 
 [data-page="dashboard"] .cards-summary-card .dashboard-card-summary-list .detail-row {
@@ -6860,6 +6865,7 @@ p {
 
 [data-page="dashboard"] .cards-summary-card .db2-bottom-card-footer {
   margin-top: 8px;
+  flex: 0 0 auto;
 }
 
 [data-page="dashboard"] .dashboard-list-surface .trend-list {
