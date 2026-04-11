@@ -28,6 +28,7 @@ const dashboardState = {
 
 let overviewRenderer;
 let dashboardAppInitialized = false;
+let dashboardTabsBound = false;
 
 const elements = {
   dashboardTabButtons: Array.from(document.querySelectorAll("[data-dashboard-tab-link]")),
@@ -200,18 +201,25 @@ function setSurfaceTone(element, tone) {
 function switchDashboardTab(tabId = "overview") {
   console.log("[Dashboard Tabs] switchDashboardTab recebeu:", tabId);
 
-  elements.dashboardTabButtons.forEach((button) => {
+  const dashboardTabButtons = Array.from(
+    document.querySelectorAll("[data-dashboard-tab-link]")
+  );
+  const dashboardTabPanels = Array.from(
+    document.querySelectorAll("[data-dashboard-panel]")
+  );
+
+  dashboardTabButtons.forEach((button) => {
     const isActive = button.dataset.dashboardTabLink === tabId;
     button.classList.toggle("is-active", isActive);
     button.setAttribute("aria-pressed", String(isActive));
   });
 
-  elements.dashboardTabPanels.forEach((panel) => {
+  dashboardTabPanels.forEach((panel) => {
     const isActive = panel.dataset.dashboardPanel === tabId;
     panel.classList.toggle("is-active", isActive);
   });
 
-  const activePanels = elements.dashboardTabPanels
+  const activePanels = dashboardTabPanels
     .filter((panel) => panel.classList.contains("is-active"))
     .map((panel) => panel.dataset.dashboardPanel);
   console.log("[Dashboard Tabs] painéis ativos:", activePanels);
@@ -1415,18 +1423,29 @@ function bindSpendingRhythmPeriodFilters() {
 }
 
 function bindDashboardTabs() {
+  if (dashboardTabsBound) {
+    console.log("[Dashboard Tabs] bindDashboardTabs ignorado: já vinculado");
+    return;
+  }
+
   console.log("[Dashboard Tabs] bindDashboardTabs executado", {
     buttons: elements.dashboardTabButtons.map((button) => button.dataset.dashboardTabLink || ""),
   });
 
-  elements.dashboardTabButtons.forEach((button) => {
-    button.addEventListener("click", () => {
-      const nextTab = button.dataset.dashboardTabLink || "overview";
-      console.log("[Dashboard Tabs] clique detectado:", nextTab);
-      console.log("[Dashboard Tabs] chamando switchDashboardTab");
-      switchDashboardTab(nextTab);
-    });
+  document.addEventListener("click", (event) => {
+    const tabTrigger = event.target.closest("[data-dashboard-tab-link]");
+
+    if (!tabTrigger) {
+      return;
+    }
+
+    const nextTab = tabTrigger.dataset.dashboardTabLink || "overview";
+    console.log("[Dashboard Tabs] clique detectado:", nextTab);
+    console.log("[Dashboard Tabs] chamando switchDashboardTab");
+    switchDashboardTab(nextTab);
   });
+
+  dashboardTabsBound = true;
 }
 
 function logDashboardIntegrationDebug(data, summary, expenseOverview, selectedSummary, intelligence) {
