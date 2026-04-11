@@ -2743,17 +2743,19 @@ function calculatePrimaryFinancialMetrics(data, referenceDate = new Date()) {
     faturasCartao: 0,
     parcelamentos: 0,
   };
-  const projectedBenefitsInSaldo = benefits.active.reduce((total, benefit) => {
-    if (!benefit.contabilizarNoSaldo || !benefit.nextDate || benefit.status === "recebido") {
-      return total;
-    }
+  const projectedBenefitsInSaldo = nextPaymentDate
+    ? benefits.active.reduce((total, benefit) => {
+      if (!benefit.contabilizarNoSaldo || !benefit.nextDate || benefit.status === "recebido") {
+        return total;
+      }
 
-    if (nextPaymentDate && benefit.nextDate.getTime() > nextPaymentDate.getTime()) {
-      return total;
-    }
+      if (benefit.nextDate.getTime() > nextPaymentDate.getTime()) {
+        return total;
+      }
 
-    return total + Number(benefit.value || 0);
-  }, 0);
+      return total + Number(benefit.value || 0);
+    }, 0)
+    : 0;
   const valorComprometido =
     committedBreakdown.despesasRegistradas +
     committedBreakdown.contasFixas +
