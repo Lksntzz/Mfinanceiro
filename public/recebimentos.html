@@ -131,9 +131,6 @@
                           <button type="button" id="mark-pagamento-recebido-button" class="secondary-button">
                             Recebido
                           </button>
-                          <button type="button" id="edit-pagamento-button" class="secondary-button">
-                            Editar recebimento
-                          </button>
                         </div>
 
                         <div class="list-stack" id="recebimentos-list"></div>
@@ -143,18 +140,18 @@
                       <article class="dashboard-card">
                         <div class="card-header">
                           <div>
-                            <div class="card-label">Beneficio</div>
-                            <h3>Beneficios previstos do ciclo</h3>
+                            <div class="card-label">Benefício recebido</div>
+                            <h3>VR/VA e outros benefícios</h3>
                           </div>
                           <div class="status-chip" id="beneficios-status-chip">Sem beneficio</div>
                         </div>
 
                         <article class="subtle-panel">
-                          <strong>VR, VA e beneficios</strong>
+                          <strong>Benefícios que entram no saldo</strong>
                           <div class="receipt-form-grid">
                             <input type="hidden" id="beneficioId" />
                             <div class="field">
-                              <span>Tipo</span>
+                              <span>Tipo de benefício</span>
                               <select id="beneficioTipo">
                                 <option value="vrVa">VR/VA</option>
                                 <option value="vr">VR</option>
@@ -163,11 +160,11 @@
                               </select>
                             </div>
                             <div class="field">
-                              <span>Data de recebimento</span>
+                              <span>Data prevista ou recebida</span>
                               <input type="date" id="vrvaDataPrevista" />
                             </div>
                             <div class="field">
-                              <span>Valor</span>
+                              <span>Valor do benefício</span>
                               <input type="text" inputmode="decimal" id="vrvaValorPrevisto" />
                             </div>
                             <label class="toggle-row">
@@ -183,7 +180,7 @@
                               <span>Ja recebido</span>
                             </label>
                             <div class="field-hint" id="vrvaHint">
-                              Registre a previsao do beneficio para refletir esse valor no dashboard.
+                              Use esta area para benefício efetivamente recebido ou previsto como entrada extra.
                             </div>
                             <div class="button-row align-start">
                               <button type="button" id="save-vrva-button" class="secondary-button">

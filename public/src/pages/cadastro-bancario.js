@@ -649,6 +649,12 @@ function syncCycleFields() {
   const isCycleTwo = tipoCicloInput.value === "ciclo2";
   getElement("diaPagamento2").disabled = !isCycleTwo;
   diaPagamento2Wrapper.style.display = isCycleTwo ? "grid" : "none";
+  getElement("percentualPagamento1").parentElement.style.display = isCycleTwo ? "grid" : "none";
+  getElement("percentualPagamento2").parentElement.style.display = isCycleTwo ? "grid" : "none";
+  getElement("cycle-next-payment-value").parentElement.style.display = isCycleTwo ? "grid" : "none";
+  getElement("cycle-next-payment-date").parentElement.style.display = "none";
+  getElement("cycle-next-payment-days").parentElement.style.display = "none";
+  getElement("cycle-percent-total").parentElement.style.display = "none";
 
   if (!isCycleTwo) {
     getElement("percentualPagamento1").value = 100;
@@ -892,11 +898,14 @@ function updateAccordionSummaries() {
     const daysLabel = paymentDays.length
       ? paymentDays.map((day) => `Dia ${day}`).join(" / ")
       : "Dias nao definidos";
-    const percentagesLabel = paymentPercentages
-      .map((percentage) => `${Number(percentage || 0)}%`)
-      .join(" / ");
-
-    cycleAccordionSummary.textContent = `${daysLabel} | ${percentagesLabel}`;
+    if (payload.tipoCiclo === "ciclo2") {
+      const percentagesLabel = paymentPercentages
+        .map((percentage) => `${Number(percentage || 0)}%`)
+        .join(" / ");
+      cycleAccordionSummary.textContent = `${daysLabel} | ${percentagesLabel}`;
+    } else {
+      cycleAccordionSummary.textContent = daysLabel;
+    }
   }
 
   if (benefitsAccordionSummary) {
@@ -1635,7 +1644,6 @@ getElement("add-outro-desconto-button").addEventListener("click", addOutroDescon
 outrosDescontosList.addEventListener("click", removeOutroDesconto);
 getElement("save-pagamento-button").addEventListener("click", savePaymentReceipt);
 getElement("mark-pagamento-recebido-button").addEventListener("click", markPaymentAsReceived);
-getElement("edit-pagamento-button").addEventListener("click", editPaymentReceipt);
 getElement("save-vrva-button").addEventListener("click", saveVrVaReceipt);
 getElement("edit-vrva-button").addEventListener("click", editVrVaReceipt);
 getElement("read-statement-button").addEventListener("click", processStatementFile);

@@ -329,6 +329,33 @@
                 </div>
               </article>
 
+              <article class="db2-bottom-card dashboard-surface dashboard-list-surface bottom-card">
+                <div class="db2-bottom-header card-header">
+                  <div>
+                    <h3 class="db2-bottom-title section-title">CartÃµes</h3>
+                    <p class="db2-bottom-sub section-subtitle">Resumo do limite no ciclo</p>
+                  </div>
+                  <a href="/cartoes.html" class="db2-see-more-btn dashboard-inline-link btn-secondary btn-sm">Ver detalhes</a>
+                </div>
+                <div class="detail-list dashboard-card-summary-list">
+                  <div class="detail-row">
+                    <span>Limite total</span>
+                    <strong id="cards-summary-total">R$ 0,00</strong>
+                  </div>
+                  <div class="detail-row">
+                    <span>Utilizado</span>
+                    <strong id="cards-summary-used">R$ 0,00</strong>
+                  </div>
+                  <div class="detail-row">
+                    <span>DisponÃ­vel</span>
+                    <strong id="cards-summary-available">R$ 0,00</strong>
+                  </div>
+                </div>
+                <div class="db2-bottom-card-footer">
+                  <span id="cards-summary-count" class="section-note">Sem cartÃµes no ciclo</span>
+                </div>
+              </article>
+
               <!-- Prioridades -->
               <article class="db2-bottom-card dashboard-surface dashboard-list-surface bottom-card">
                 <div class="db2-bottom-header card-header">
@@ -504,6 +531,10 @@
     <aside id="app-sidebar" class="dashboard-sidebar dashboard-sidebar-hidden" aria-hidden="true"></aside>
 
     <script src="/src/pages/dashboard-overview.js?v=2026-04-10-tabs"></script>
+    <script src="/src/pages/dashboard-details.js?v=2026-04-11-modular"></script>
+    <script src="/src/pages/dashboard-insights.js?v=2026-04-11-modular"></script>
+    <script src="/src/pages/dashboard-history.js?v=2026-04-11-modular"></script>
+    <script src="/src/pages/dashboard-finance-base.js?v=2026-04-11-modular"></script>
     <script src="/src/pages/dashboard.js?v=2026-04-10-tabs"></script>
   </body>
 </html>

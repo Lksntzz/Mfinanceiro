@@ -65,6 +65,7 @@ function renderMetrics({
   elements,
   summary,
   expenseOverview,
+  data,
   helpers,
 }) {
   const projectedBenefits = getProjectedBenefitsTotal(summary);
@@ -72,6 +73,7 @@ function renderMetrics({
   const todayExpenseTotal = expenseOverview.today.totalGasto;
   const todayExpenseCount = expenseOverview.today.quantidadeLancamentos;
   const dailyLimitStatus = helpers.getDailyLimitStatus(summary, expenseOverview);
+  const cardsSummary = helpers.getCardsSummary ? helpers.getCardsSummary(data) : null;
 
   elements.cardSaldoAtual.textContent = helpers.formatCurrency(summary.saldoDisponivel);
   elements.cardSaldoAtualSubtitle.textContent =
@@ -303,6 +305,30 @@ function renderExpenseOverview({
   if (elements.overviewBudgetProgressFill) {
     elements.overviewBudgetProgressFill.style.width = `${budgetProgress}%`;
   }
+
+  if (elements.cardsSummaryTotal) {
+    elements.cardsSummaryTotal.textContent = helpers.formatCurrency(cardsSummary?.total || 0);
+  }
+
+  if (elements.cardsSummaryUsed) {
+    elements.cardsSummaryUsed.textContent = helpers.formatCurrency(
+      cardsSummary?.cards?.reduce((total, card) => total + Number(card.currentBill || 0), 0) || 0
+    );
+  }
+
+  if (elements.cardsSummaryAvailable) {
+    const available =
+      cardsSummary?.cards?.reduce((total, card) => total + Number(card.limite || 0), 0) || 0;
+    elements.cardsSummaryAvailable.textContent = helpers.formatCurrency(
+      Math.max(available - Number(cardsSummary?.total || 0), 0)
+    );
+  }
+
+  if (elements.cardsSummaryCount) {
+    elements.cardsSummaryCount.textContent = cardsSummary?.items?.length
+      ? `${cardsSummary.items.length} cartao(oes) no ciclo`
+      : "Sem cartoes no ciclo";
+  }
 }
 
 function renderOverviewSpotlights({
@@ -394,7 +420,7 @@ function renderRecentTransactions({
       const rightTime = (right.dataHora || right.dataNormalizada)?.getTime?.() || 0;
       return rightTime - leftTime;
     })
-    .slice(0, 5);
+    .slice(0, 3);
 
   if (!recentItems.length) {
     elements.recentTransactionsList.innerHTML = `

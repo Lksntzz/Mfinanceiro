@@ -996,7 +996,7 @@
 /* ── ROW 4: Bottom 3 cards ── */
 .db2-bottom-row {
   display: grid;
-  grid-template-columns: repeat(3, 1fr);
+  grid-template-columns: repeat(3, minmax(0, 1fr));
   gap: var(--db2-gap);
   flex: 0.82 1 0;
   min-height: 0;
@@ -1014,6 +1014,22 @@
   -webkit-backdrop-filter: var(--db2-blur);
   overflow: hidden;
   min-height: 0;
+}
+
+.db2-bottom-card-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  margin-top: 10px;
+}
+
+.dashboard-card-summary-list {
+  margin-top: 4px;
+}
+
+.db2-bottom-row > :last-child {
+  grid-column: 1 / -1;
 }
 
 .db2-bottom-header {
@@ -1309,6 +1325,10 @@
   border-bottom: none;
 }
 
+.recent-transactions-list > :nth-child(n + 4) {
+  display: none;
+}
+
 /* Priority list items (.trend-list rendered by JS) */
 .db2-priority-list .trend-item,
 .trend-list .trend-item {
@@ -1421,6 +1441,8 @@
 
 .db2-panel[data-dashboard-panel="details"] .cycle-breakdown-card {
   grid-area: cycle;
+  overflow: visible;
+  height: auto;
 }
 
 .db2-panel[data-dashboard-panel="details"] .cycle-breakdown-card .finance-table {

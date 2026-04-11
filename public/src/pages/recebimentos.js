@@ -91,7 +91,7 @@
       vrVa: "VR/VA",
       vr: "VR",
       va: "VA",
-      outro: "Outro",
+      outro: "Outro beneficio",
     };
 
     return labels[type] || type || "Beneficio";
@@ -132,7 +132,7 @@
 
     if (!incomes.length) {
       incomesListElement.innerHTML =
-        '<div class="list-row"><div class="list-row-content"><strong>Nenhum recebimento salvo</strong><span>Cadastre a previsao do proximo pagamento ou outra entrada do ciclo.</span></div></div>';
+        '<div class="list-row"><div class="list-row-content"><strong>Nenhum recebimento salvo</strong><span>Cadastre o pagamento principal, um adiantamento ou um bonus.</span></div></div>';
       return;
     }
 
@@ -159,7 +159,7 @@
 
     if (!benefits.length) {
       benefitsListElement.innerHTML =
-        '<div class="list-row"><div class="list-row-content"><strong>Nenhum beneficio salvo</strong><span>Cadastre VR, VA ou outro beneficio que influencie o ciclo.</span></div></div>';
+        '<div class="list-row"><div class="list-row-content"><strong>Nenhum beneficio salvo</strong><span>Cadastre VR, VA ou outro beneficio que entre no saldo.</span></div></div>';
       return;
     }
 
