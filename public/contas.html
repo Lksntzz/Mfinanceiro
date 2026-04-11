@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="pt-BR">
   <head>
     <meta charset="UTF-8" />
@@ -68,7 +68,6 @@
                   <a href="#contas-fixas" class="anchor-pill active" data-account-tab-link="contas-fixas" aria-selected="true" aria-controls="contas-fixas">Contas fixas</a>
                   <a href="#dia-a-dia" class="anchor-pill" data-account-tab-link="dia-a-dia" aria-selected="false" aria-controls="dia-a-dia">Contas do dia a dia</a>
                   <a href="#parcelamentos" class="anchor-pill" data-account-tab-link="parcelamentos" aria-selected="false" aria-controls="parcelamentos">Parcelamentos</a>
-                  <a href="#cartoes" class="anchor-pill" data-account-tab-link="cartoes" aria-selected="false" aria-controls="cartoes">Cartões</a>
                 </nav>
 
                 <!-- Contas Fixas -->
@@ -309,117 +308,6 @@
                     <div id="parcelamentos-empty-state" class="empty-state hidden"></div>
                   </article>
                 </section>
-
-                <!-- Cartoes (sub-aba dentro de Contas) -->
-                <section class="section-stack hidden" id="cartoes" data-account-tab-panel="cartoes" aria-hidden="true">
-                  <article class="dashboard-surface dashboard-secondary-surface accounts-page-card">
-                    <div class="card-header">
-                      <div>
-                        <div class="card-label">Cartões</div>
-                        <h2 class="section-title">Limite, fechamento, vencimento e gastos da fatura</h2>
-                        <p class="table-caption section-subtitle">
-                          Essa area alimenta o valor comprometido do dashboard com base na fatura atual do ciclo.
-                        </p>
-                      </div>
-                      <div class="status-chip" id="cartoes-status-chip">Sem cartões</div>
-                    </div>
-
-                    <section class="dual-grid">
-                      <article class="dashboard-card">
-                        <form id="cartao-form" class="settings-grid compact-grid">
-                          <div class="field">
-                            <span>Nome do cartão</span>
-                            <input type="text" id="cartaoNome" required />
-                          </div>
-                          <div class="field">
-                            <span>Crédito ou débito</span>
-                            <select id="cartaoTipo" class="app-select">
-                              <option value="credito">Crédito</option>
-                              <option value="debito">Débito</option>
-                            </select>
-                          </div>
-                          <div class="field">
-                            <span>Limite total</span>
-                            <input type="text" inputmode="decimal" id="cartaoLimite" placeholder="0,00" />
-                          </div>
-                          <div class="field">
-                            <span class="field-label">
-                              Limite usado
-                              <span class="info-icon" title="Se você ainda não detalhou a fatura, pode informar aqui o valor total já usado no cartão.">i</span>
-                            </span>
-                            <input type="text" inputmode="decimal" id="cartaoLimiteUsado" placeholder="0,00" />
-                          </div>
-                          <div class="field">
-                            <span class="field-label">
-                              Data de fechamento
-                              <span class="info-icon" title="Dia em que a fatura fecha para formar o ciclo do cartão.">i</span>
-                            </span>
-                            <input type="number" min="1" max="31" id="cartaoFechamento" />
-                          </div>
-                          <div class="field">
-                            <span>Data de vencimento</span>
-                            <input type="number" min="1" max="31" id="cartaoVencimento" />
-                          </div>
-                          <button type="submit" class="primary-button">Salvar cartão</button>
-                        </form>
-                      </article>
-
-                      <article class="dashboard-card">
-                        <form id="lancamento-form" class="settings-grid compact-grid">
-                          <div class="field">
-                            <span>Cartão</span>
-                            <select id="lancamentoCartaoId" class="app-select"></select>
-                          </div>
-                          <div class="field">
-                            <span>Descrição</span>
-                            <input type="text" id="lancamentoDescricao" required />
-                          </div>
-                          <div class="field">
-                            <span>Valor</span>
-                            <input type="text" inputmode="decimal" id="lancamentoValor" required />
-                          </div>
-                          <div class="field">
-                            <span>Data</span>
-                            <input type="date" id="lancamentoData" required />
-                          </div>
-                          <div class="field">
-                            <span>Categoria</span>
-                            <input type="text" id="lancamentoCategoria" />
-                          </div>
-                          <button type="submit" class="primary-button">Salvar gasto da fatura</button>
-                        </form>
-                      </article>
-                    </section>
-
-                    <div id="cartoes-message" class="message-box hidden" aria-live="polite"></div>
-                    <div id="cartoes-lista-visuais" class="cards-visual-grid"></div>
-                    <div class="hidden" aria-hidden="true">
-                      <div id="cartoes-resumo-total"></div>
-                      <div id="cartoes-resumo-utilizado"></div>
-                      <div id="cartoes-resumo-disponivel"></div>
-                      <button type="button" id="cartoes-novo-button"></button>
-                    </div>
-                    <div id="cartoes-empty-state" class="empty-state hidden"></div>
-
-                    <div class="section-divider"></div>
-
-                    <table class="finance-table">
-                      <thead>
-                        <tr>
-                          <th>Descrição</th>
-                          <th>Cartão</th>
-                          <th>Valor</th>
-                          <th>Data</th>
-                          <th>Status</th>
-                          <th>Ações</th>
-                        </tr>
-                      </thead>
-                      <tbody id="lancamentos-table-body"></tbody>
-                    </table>
-                    <div id="lancamentos-empty-state" class="empty-state hidden"></div>
-                  </article>
-                </section>
-
               </div>
         </section>
       </div><!-- /db2-panels -->
