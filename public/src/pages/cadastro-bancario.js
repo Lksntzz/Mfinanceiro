@@ -55,6 +55,9 @@ const bankingSummarySaldo = document.getElementById("banking-summary-saldo");
 const bankingSummaryPayment = document.getElementById("banking-summary-payment");
 const bankingSummaryDays = document.getElementById("banking-summary-days");
 const bankingSummaryDaily = document.getElementById("banking-summary-daily");
+const salarioLiquidoManualField = document.getElementById("salarioLiquidoManualField");
+const salarioLiquidoManualInput = document.getElementById("salarioLiquidoManual");
+const salaryModeButtons = Array.from(document.querySelectorAll("[data-salary-liquido-mode]"));
 const balanceAccordionSummary = document.getElementById("balance-accordion-summary");
 const salaryAccordionSummary = document.getElementById("salary-accordion-summary");
 const discountsAccordionSummary = document.getElementById("discounts-accordion-summary");
@@ -67,6 +70,8 @@ const accordionSections = Array.from(
 let outrosDescontosState = [];
 let statementDraftsState = [];
 let statementBalanceSuggestion = 0;
+let salarioLiquidoModoState = "auto";
+let salarioLiquidoManualState = 0;
 
 window.AppShell.initAppShell();
 
@@ -735,6 +740,10 @@ function buildBankingPayload() {
       ultimoSaldoImportado: statementBalanceSuggestion,
     },
     salarioBruto: toBankingNumber(getElement("salarioBruto").value),
+    salarioLiquidoModo: salarioLiquidoModoState,
+    salarioLiquidoManual: salarioLiquidoModoState === "manual"
+      ? toBankingNumber(salarioLiquidoManualInput?.value)
+      : 0,
     descontosDetalhados: {
       planoSaude: toBankingNumber(getElement("planoSaude").value),
       planoOdontologico: toBankingNumber(getElement("planoOdontologico").value),
@@ -764,10 +773,13 @@ function buildBankingPayload() {
     inss: salarySummary.inss,
     irpf: salarySummary.irpf,
   };
-  payload.salarioLiquido = calcularSalarioLiquidoBanco({
+  const salarioLiquidoCalculado = calcularSalarioLiquidoBanco({
     ...payload,
     salarioLiquido: salarySummary.salarioLiquido,
   });
+  payload.salarioLiquido = salarioLiquidoModoState === "manual"
+    ? Math.max(toBankingNumber(salarioLiquidoManualInput?.value), 0)
+    : salarioLiquidoCalculado;
   return payload;
 }
 
@@ -867,7 +879,7 @@ function updateAccordionSummaries() {
   if (salaryAccordionSummary) {
     salaryAccordionSummary.textContent = `Bruto: ${formatBankingCurrency(
       payload.salarioBruto
-    )} | Liquido: ${formatBankingCurrency(payload.salarioLiquido)}`;
+    )} | Líquido: ${formatBankingCurrency(payload.salarioLiquido)}`;
   }
 
   if (discountsAccordionSummary) {
@@ -894,6 +906,32 @@ function updateAccordionSummaries() {
   }
 }
 
+function setSalarioLiquidoMode(mode) {
+  salarioLiquidoModoState = mode === "manual" ? "manual" : "auto";
+
+  if (salarioLiquidoManualField) {
+    salarioLiquidoManualField.classList.toggle("hidden", salarioLiquidoModoState !== "manual");
+  }
+
+  salaryModeButtons.forEach((button) => {
+    const isActive = button.dataset.salaryLiquidoMode === salarioLiquidoModoState;
+    button.classList.toggle("is-active", isActive);
+    button.classList.toggle("active", isActive);
+  });
+}
+
+function syncSalarioLiquidoModeFromPayload(banking) {
+  const mode = banking?.salarioLiquidoModo || banking?.salarioLiquidoModoOverride || "auto";
+  salarioLiquidoManualState = toBankingNumber(
+    banking?.salarioLiquidoManual ?? banking?.salarioLiquidoReal ?? 0
+  );
+  setSalarioLiquidoMode(mode);
+  if (salarioLiquidoManualInput) {
+    salarioLiquidoManualInput.value =
+      salarioLiquidoManualState > 0 ? formatBankingCurrency(salarioLiquidoManualState) : "";
+  }
+}
+
 function bindAccordionToggles() {
   accordionSections.forEach((section) => {
     const name = section.dataset.accordionSection;
@@ -911,6 +949,12 @@ function bindAccordionToggles() {
 
 function updateSalaryPreview() {
   const payload = buildBankingPayload();
+  const salarySummary = calculateBankingNetSalary(payload);
+  const salarioLiquidoCalculado = salarySummary.salarioLiquido;
+  const salarioLiquidoExibido =
+    salarioLiquidoModoState === "manual"
+      ? Math.max(toBankingNumber(salarioLiquidoManualInput?.value), 0)
+      : salarioLiquidoCalculado;
 
   getElement("inssCalculado").value = formatBankingCurrency(
     payload.descontosAutomaticos?.inss ?? calculateBankingInss(payload.salarioBruto)
@@ -922,9 +966,10 @@ function updateSalaryPreview() {
         payload.descontosAutomaticos?.inss || 0
       )
   );
-  getElement("salarioLiquido").value = formatBankingCurrency(
-    payload.salarioLiquido
-  );
+  getElement("salarioLiquido").value = formatBankingCurrency(salarioLiquidoExibido);
+  if (salarioLiquidoModoState === "auto" && salarioLiquidoManualInput) {
+    salarioLiquidoManualInput.value = formatBankingCurrency(salarioLiquidoManualState || salarioLiquidoCalculado);
+  }
   updateAccordionSummaries();
 }
 
@@ -1025,6 +1070,8 @@ function renderBankingForm() {
     banking.percentuaisPagamento?.[0] || 100;
   getElement("percentualPagamento2").value =
     banking.percentuaisPagamento?.[1] || 0;
+
+  syncSalarioLiquidoModeFromPayload(banking);
 
   outrosDescontosState = Array.isArray(banking.descontosDetalhados?.outrosDescontos)
     ? [...banking.descontosDetalhados.outrosDescontos]
@@ -1524,6 +1571,29 @@ function bindLiveUpdates() {
   });
 
   getElement("origemSaldoModo").addEventListener("change", handleBalanceModeChange);
+
+  salaryModeButtons.forEach((button) => {
+    button.addEventListener("click", () => {
+      setSalarioLiquidoMode(button.dataset.salaryLiquidoMode || "auto");
+      if (salarioLiquidoModoState === "manual" && salarioLiquidoManualInput && !salarioLiquidoManualInput.value) {
+        salarioLiquidoManualInput.value = formatBankingCurrency(buildBankingPayload().salarioLiquido);
+      }
+      updateSalaryPreview();
+      updateSummaryPreview();
+      updateBankingStatusChip();
+    });
+  });
+
+  if (salarioLiquidoManualInput) {
+    salarioLiquidoManualInput.addEventListener("input", () => {
+      salarioLiquidoManualState = toBankingNumber(salarioLiquidoManualInput.value);
+      if (salarioLiquidoModoState === "manual") {
+        updateSalaryPreview();
+        updateSummaryPreview();
+        updateBankingStatusChip();
+      }
+    });
+  }
 
   getElement("origemSaldoBanco").addEventListener("change", () => {
     getElement("statementBank").value = getElement("origemSaldoBanco").value;

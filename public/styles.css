@@ -1182,6 +1182,7 @@ p {
 .banking-form-actions {
   padding: 18px 20px 0;
   border-top: 1px solid rgba(42, 54, 85, 0.68);
+  justify-content: stretch;
 }
 
 .balance-highlight-section {
@@ -1237,6 +1238,37 @@ p {
 
 .summary-preview-section {
   background: linear-gradient(180deg, rgba(14, 20, 36, 0.94), rgba(24, 35, 59, 0.82));
+}
+
+.salary-confirmation-panel {
+  display: grid;
+  gap: 12px;
+  padding: 16px 18px;
+  border-radius: 16px;
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(120, 133, 173, 0.1);
+}
+
+.salary-confirmation-panel strong {
+  color: #f5f7ff;
+  font-size: 0.92rem;
+}
+
+.salary-confirmation-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.salary-confirmation-button {
+  min-width: 120px;
+}
+
+.salary-confirmation-button.is-active,
+.salary-confirmation-button.active {
+  background: linear-gradient(135deg, rgba(91, 140, 255, 0.24), rgba(53, 214, 255, 0.14));
+  border-color: rgba(91, 140, 255, 0.34);
+  color: #f5f7ff;
 }
 
 .summary-preview-grid {
@@ -7916,13 +7948,34 @@ body[data-page="recebimentos"] .finance-table tbody tr:hover {
     justify-content: center;
   }
 
-  body[data-page="banking"] .banking-page-card,
-  body[data-page="contas"] .accounts-page-card,
-  body[data-page="cartoes"] .cards-page-card,
-  body[data-page="recebimentos"] .receipts-page-card {
-    overflow: auto;
-    padding: 18px 20px;
-  }
+body[data-page="banking"] .banking-page-card,
+body[data-page="contas"] .accounts-page-card,
+body[data-page="cartoes"] .cards-page-card,
+body[data-page="recebimentos"] .receipts-page-card {
+  overflow: auto;
+  padding: 18px 20px;
+}
+
+body[data-page="banking"] .banking-page-card {
+  grid-template-rows: auto minmax(0, 1fr);
+}
+
+body[data-page="banking"] .receipt-inline-section .button-row {
+  justify-content: flex-start;
+}
+
+body[data-page="banking"] .receipt-inline-section .dashboard-card {
+  min-height: 0;
+}
+
+body[data-page="banking"] .receipt-inline-section .card-header {
+  align-items: flex-start;
+}
+
+body[data-page="banking"] .banking-form-actions .primary-button,
+body[data-page="banking"] .banking-form-actions .secondary-button {
+  flex: 1 1 240px;
+}
 
   body[data-page="banking"] .base-finance-form {
     grid-template-columns: 1fr;

@@ -685,6 +685,145 @@ function extractDashboardTimeLabel(value) {
   return match ? match[1] : "";
 }
 
+function buildDashboardHistoryGroups(entries) {
+  const groups = new Map();
+
+  (Array.isArray(entries) ? entries : []).forEach((entry) => {
+    const date = normalizeDashboardHistoryDate(entry.data || entry.dataHora || entry.dataNormalizada);
+    if (!date) {
+      return;
+    }
+
+    const key = date.toISOString().slice(0, 10);
+    const current = groups.get(key) || {
+      date,
+      saidas: 0,
+      count: 0,
+      items: [],
+      topCategory: "Sem categoria",
+    };
+
+    const value = Number(entry.valor || 0);
+    current.saidas += value;
+    current.count += 1;
+    current.items.push(entry);
+    groups.set(key, current);
+  });
+
+  return [...groups.values()]
+    .sort((left, right) => right.date.getTime() - left.date.getTime())
+    .map((group) => {
+      const categoryTotals = group.items.reduce((accumulator, item) => {
+        const category = item.categoria || "Sem categoria";
+        accumulator.set(category, (accumulator.get(category) || 0) + Number(item.valor || 0));
+        return accumulator;
+      }, new Map());
+      const topCategory = [...categoryTotals.entries()].sort((a, b) => b[1] - a[1])[0]?.[0] || "Sem categoria";
+      return {
+        ...group,
+        topCategory,
+        items: group.items.slice().sort((left, right) => {
+          const leftTime = normalizeDashboardHistoryDate(left.data || left.dataHora)?.getTime?.() || 0;
+          const rightTime = normalizeDashboardHistoryDate(right.data || right.dataHora)?.getTime?.() || 0;
+          return leftTime - rightTime;
+        }),
+      };
+    });
+}
+
+function normalizeDashboardHistoryDate(value) {
+  if (!value) {
+    return null;
+  }
+
+  const date = normalizeDashboardBaseDate?.(value) || new Date(value);
+  return Number.isNaN(date.getTime()) ? null : date;
+}
+
+function getDashboardHistoryPeriodDescriptor(period, referenceDate = new Date(), customStart, customEnd) {
+  const today = normalizeDashboardBaseDate(referenceDate);
+  const normalizedPeriod = String(period || "7d");
+
+  if (normalizedPeriod === "today") {
+    return { label: "Hoje", startDate: today, endDate: today };
+  }
+
+  if (normalizedPeriod === "7d") {
+    const startDate = new Date(today);
+    startDate.setDate(today.getDate() - 6);
+    return { label: "Ultimos 7 dias", startDate, endDate: today };
+  }
+
+  if (normalizedPeriod === "30d") {
+    const startDate = new Date(today);
+    startDate.setDate(today.getDate() - 29);
+    return { label: "Ultimos 30 dias", startDate, endDate: today };
+  }
+
+  if (normalizedPeriod === "month") {
+    const startDate = new Date(today.getFullYear(), today.getMonth(), 1);
+    return { label: "Mes atual", startDate, endDate: today };
+  }
+
+  const normalizedStart = normalizeDashboardHistoryDate(customStart) || new Date(today.getFullYear(), today.getMonth(), 1);
+  const normalizedEnd = normalizeDashboardHistoryDate(customEnd) || today;
+  return {
+    label: "Periodo personalizado",
+    startDate: normalizedStart,
+    endDate: normalizedEnd,
+  };
+}
+
+function formatDashboardHistorySummaryLabel(periodSummary, period, visibleGroups) {
+  const descriptor = getDashboardHistoryPeriodDescriptor(
+    period,
+    new Date(),
+    dashboardState.historyCustomStart,
+    dashboardState.historyCustomEnd
+  );
+
+  return `${descriptor.label} | ${periodSummary.quantidadeLancamentos || 0} lancamento(s) | ${formatDashboardCurrencyValue(
+    periodSummary.totalGasto || 0
+  )} em saidas | ${visibleGroups} grupo(s) visivel(is)`;
+}
+
+function renderDashboardHistoryEmptyState(title, body) {
+  return `
+    <div class="history-empty-state">
+      <strong>${title}</strong>
+      <span>${body}</span>
+    </div>
+  `;
+}
+
+function renderDashboardHistoryGroups(groups, visibleGroups) {
+  return groups.slice(0, visibleGroups).map((group, index) => `
+    <details class="history-day-card"${index === 0 ? " open" : ""}>
+      <summary class="history-day-summary">
+        <div class="history-day-summary-main">
+          <strong class="history-day-date">${formatDashboardLongDate(group.date)}</strong>
+          <span class="history-day-category">Categoria dominante: ${group.topCategory || "Sem categoria"}</span>
+        </div>
+        <div class="history-day-summary-meta">
+          <strong class="history-day-total">${formatDashboardCurrencyValue(group.saidas)}</strong>
+          <span class="history-day-count">${group.count} lancamento(s)</span>
+        </div>
+      </summary>
+      <div class="history-day-content">
+        ${(group.items || []).map((entry) => `
+          <div class="history-entry-row">
+            <div class="history-entry-main">
+              <strong>${entry.descricao || "Lancamento"}</strong>
+              <span>${entry.categoria || "Sem categoria"} · ${extractDashboardTimeLabel(entry.data) || "--:--"}</span>
+            </div>
+            <div class="history-entry-value">${formatDashboardCurrencyValue(entry.valor)}</div>
+          </div>
+        `).join("")}
+      </div>
+    </details>
+  `).join("");
+}
+
 function buildSummaryNote(summary, fallbackText) {
   if (!summary.quantidadeLancamentos) {
     return fallbackText;
@@ -1081,61 +1220,84 @@ function renderInsights(summary, selectedSummary, expenseOverview, intelligence)
     .join("");
 }
 
-function renderDailySummary(periodSummary) {
+function renderDailySummary(data, periodSummary) {
   if (!elements.dailySummaryList || !elements.dailySummaryChip) {
     return;
   }
 
-  if (!periodSummary.groups.length) {
-    elements.dailySummaryChip.textContent = "Sem lancamentos";
-    elements.dailySummaryList.innerHTML = `
-      <div class="detail-row">
-        <span>Resumo do periodo indisponivel</span>
-        <strong>Adicione ou importe lancamentos</strong>
-      </div>
-    `;
+  const selectedPeriod = dashboardState.selectedHistoryPeriod || "7d";
+  const descriptor = getDashboardHistoryPeriodDescriptor(
+    selectedPeriod,
+    new Date(),
+    dashboardState.historyCustomStart,
+    dashboardState.historyCustomEnd
+  );
+  const visibleGroups = Math.max(1, Number(dashboardState.historyVisibleGroups) || 6);
+  const historyEntries = buildDashboardHistoryGroups(getDashboardLedgerExpenseData(data));
+  const filteredGroups = historyEntries.filter((group) => {
+    const day = normalizeDashboardHistoryDate(group.date);
+    if (!day) {
+      return false;
+    }
+    return day >= descriptor.startDate && day <= descriptor.endDate;
+  });
+  const displayGroups = filteredGroups.slice(0, visibleGroups);
+  const canLoadMore = filteredGroups.length > displayGroups.length;
+
+  if (elements.historyPanelSubtitle) {
+    elements.historyPanelSubtitle.textContent = `${descriptor.label} - ${periodSummary.quantidadeLancamentos || 0} lancamento(s), ${formatDashboardCurrencyValue(periodSummary.totalGasto || 0)} em saidas.`;
+  }
+
+  if (elements.dailySummaryChip) {
+    elements.dailySummaryChip.textContent = descriptor.label;
+  }
+
+  elements.historyPeriodButtons.forEach((button) => {
+    const isActive = button.dataset.historyPeriod === selectedPeriod;
+    button.classList.toggle("active", isActive);
+    button.classList.toggle("is-active", isActive);
+    button.setAttribute("aria-pressed", String(isActive));
+  });
+
+  if (!filteredGroups.length) {
+    elements.dailySummaryList.innerHTML = renderDashboardHistoryEmptyState(
+      "Sem lançamentos nesse período",
+      "Não há despesas reais no intervalo selecionado."
+    );
+    if (elements.historyLoadMore) {
+      elements.historyLoadMore.hidden = true;
+    }
     return;
   }
 
-  elements.dailySummaryChip.textContent = `${periodSummary.groups.length} dia(s)`;
-  elements.dailySummaryList.innerHTML = periodSummary.groups
-    .slice()
-    .reverse()
-    .map(
-      (group, index) => `
-        <details class="day-accordion"${index === 0 ? " open" : ""}>
-          <summary class="day-accordion-summary">
-            <div>
-              <strong>${formatDashboardLongDate(group.date)}</strong>
-              <span class="text-soft">Categoria dominante: ${group.topCategory}</span>
-            </div>
-            <div class="day-accordion-meta">
-              <strong>${formatDashboardCurrencyValue(group.saidas)}</strong>
-              <span class="text-soft">${group.count} lancamento(s)</span>
-            </div>
-          </summary>
-          <div class="day-accordion-content">
-            ${(group.items || [])
-          .map(
-            (entry) => `
-                  <div class="day-entry-row">
-                    <div class="day-entry-main">
-                      <strong>${entry.descricao || "Lancamento"}</strong>
-                      <span class="text-soft">${entry.categoria || "Sem categoria"} | ${extractDashboardTimeLabel(entry.data) || "--:--"
-              } | ${entry.origem || "manual"}</span>
-                    </div>
-                    <div class="day-entry-side">
-                      <strong>${formatDashboardCurrencyValue(entry.valor)}</strong>
-                    </div>
-                  </div>
-                `
-          )
-          .join("")}
-          </div>
-        </details>
-      `
-    )
-    .join("");
+  elements.dailySummaryList.innerHTML = `
+    <div class="history-summary-band">
+      <div class="history-summary-kpi">
+        <span>Período</span>
+        <strong>${descriptor.label}</strong>
+      </div>
+      <div class="history-summary-kpi">
+        <span>Dias exibidos</span>
+        <strong>${displayGroups.length}</strong>
+      </div>
+      <div class="history-summary-kpi">
+        <span>Lançamentos</span>
+        <strong>${periodSummary.quantidadeLancamentos || 0}</strong>
+      </div>
+      <div class="history-summary-kpi">
+        <span>Total gasto</span>
+        <strong>${formatDashboardCurrencyValue(periodSummary.totalGasto || 0)}</strong>
+      </div>
+    </div>
+    <div class="history-group-list">
+      ${renderDashboardHistoryGroups(displayGroups, displayGroups.length)}
+    </div>
+    ${canLoadMore ? '<div class="history-load-more-row"><button type="button" class="db2-see-more-btn dashboard-inline-link btn-secondary btn-sm" id="history-load-more">Carregar mais</button></div>' : ""}
+  `;
+
+  if (elements.historyLoadMore) {
+    elements.historyLoadMore.hidden = !canLoadMore;
+  }
 }
 
 function renderAlerts(summary, alerts) {
@@ -1432,6 +1594,57 @@ function bindSpendingRhythmPeriodFilters() {
   });
 }
 
+function bindHistoryFilters() {
+  const handleHistoryChange = (nextPeriod, customStart, customEnd) => {
+    dashboardState.selectedHistoryPeriod = nextPeriod;
+    if (typeof customStart === "string") {
+      dashboardState.historyCustomStart = customStart;
+    }
+    if (typeof customEnd === "string") {
+      dashboardState.historyCustomEnd = customEnd;
+    }
+    dashboardState.historyVisibleGroups = 6;
+    atualizarDashboard();
+  };
+
+  document.addEventListener("click", (event) => {
+    const periodTrigger = event.target.closest("[data-history-period]");
+    if (periodTrigger) {
+      const nextPeriod = periodTrigger.dataset.historyPeriod || "7d";
+      handleHistoryChange(nextPeriod, elements.historyCustomStart?.value || "", elements.historyCustomEnd?.value || "");
+      return;
+    }
+
+    const loadMoreTrigger = event.target.closest("#history-load-more");
+    if (loadMoreTrigger) {
+      dashboardState.historyVisibleGroups += 4;
+      atualizarDashboard();
+      return;
+    }
+
+    const applyTrigger = event.target.closest("#history-custom-apply");
+    if (applyTrigger) {
+      handleHistoryChange(
+        "custom",
+        elements.historyCustomStart?.value || "",
+        elements.historyCustomEnd?.value || ""
+      );
+    }
+  });
+
+  if (elements.historyCustomStart) {
+    elements.historyCustomStart.addEventListener("change", () => {
+      dashboardState.historyCustomStart = elements.historyCustomStart.value;
+    });
+  }
+
+  if (elements.historyCustomEnd) {
+    elements.historyCustomEnd.addEventListener("change", () => {
+      dashboardState.historyCustomEnd = elements.historyCustomEnd.value;
+    });
+  }
+}
+
 function bindDashboardTabs() {
   if (dashboardTabsBound) {
     console.log("[Dashboard Tabs] bindDashboardTabs ignorado: jÃ¡ vinculado");
@@ -1588,7 +1801,7 @@ function atualizarDashboard() {
     elements.recentTransactionsSubtitle.textContent = selectedSummary.label || "Periodo atual";
   }
   atualizarGraficoDashboard(summary, projection, dailySeries);
-  renderDailySummary(selectedSummary);
+  renderDailySummary(data, selectedSummary);
   renderAlerts(summary, alerts);
   renderSummaryTable(data, summary, alerts, expenseOverview, intelligence);
 }
@@ -1717,6 +1930,7 @@ function initDashboardApp() {
   window.AppShell.initAppShell();
   bindExpensePeriodFilters();
   bindSpendingRhythmPeriodFilters();
+  bindHistoryFilters();
   bindDashboardTabs();
   console.log("[Dashboard Init] bindDashboardTabs executado");
   bindDashboardRefreshEvents();
