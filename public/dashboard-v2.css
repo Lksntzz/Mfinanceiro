@@ -2160,6 +2160,8 @@ body[data-page="dashboard"] .cards-summary-card.dashboard-surface {
   overflow-x: hidden !important;
   height: auto !important;
   max-height: none !important;
+  align-self: start !important;
+  justify-self: stretch !important;
   flex: 0 0 auto !important;
 }
 
