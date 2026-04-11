@@ -227,9 +227,6 @@
     renderCardsPage();
 
     showCardsMessage("success", editId ? "Cartao atualizado com sucesso." : "Cartao salvo com sucesso.");
-    window.AppShell.queueDashboardRedirect(
-      "Cartao salvo. O dashboard foi atualizado com o impacto da fatura."
-    );
   }
 
   function handleLaunchSubmit(event) {
@@ -264,9 +261,6 @@
     showCardsMessage(
       "success",
       editId ? "Gasto da fatura atualizado com sucesso." : "Gasto da fatura salvo com sucesso."
-    );
-    window.AppShell.queueDashboardRedirect(
-      "Gasto do cartao salvo. O dashboard foi atualizado com o novo lancamento."
     );
   }
 

@@ -1109,9 +1109,12 @@ function renderPaymentReceipt() {
   getElement("pagamentoDataPrevista").value = formatInputDate(
     receipt.dataPrevista || paymentInfo.nextDate
   );
-  getElement("pagamentoValorPrevisto").value = toBankingNumber(
-    receipt.valorPrevisto || paymentInfo.value
-  ) || "";
+  const paymentValue =
+    receipt.valorPrevisto !== undefined && receipt.valorPrevisto !== null
+      ? receipt.valorPrevisto
+      : paymentInfo.value;
+  getElement("pagamentoValorPrevisto").value =
+    paymentValue !== undefined && paymentValue !== null ? toBankingNumber(paymentValue) : "";
   getElement("pagamento-status-chip").textContent = receipt.dataPrevista
     ? receipt.status === "recebido"
       ? "Recebido"
@@ -1128,9 +1131,12 @@ function renderBenefitReceipt() {
   getElement("vrvaDataPrevista").value = formatInputDate(
     receipt.dataPrevista || benefitInfo.nextDate
   );
-  getElement("vrvaValorPrevisto").value = toBankingNumber(
-    receipt.valorPrevisto || benefitInfo.value
-  ) || "";
+  const benefitValue =
+    receipt.valorPrevisto !== undefined && receipt.valorPrevisto !== null
+      ? receipt.valorPrevisto
+      : benefitInfo.value;
+  getElement("vrvaValorPrevisto").value =
+    benefitValue !== undefined && benefitValue !== null ? toBankingNumber(benefitValue) : "";
   getElement("vrvaRecebido").checked = receipt.status === "recebido";
 
   ["vrvaDataPrevista", "vrvaValorPrevisto", "vrvaRecebido"].forEach((id) => {
@@ -1238,11 +1244,6 @@ function handleSaveBanking(event) {
       savedBanking.saldoAtual
     )}.`
   );
-  window.AppShell.queueDashboardRedirect(
-    `Base financeira salva. Saldo atual registrado: ${formatBankingCurrency(
-      savedBanking.saldoAtual
-    )}.`
-  );
 }
 
 function handleEditBanking() {
@@ -1270,9 +1271,6 @@ function savePaymentReceipt() {
   renderReceiptArea();
   updateCyclePreview();
   showMessage(receiptMessage, "success", "Previsao do pagamento salva com sucesso.");
-  window.AppShell.queueDashboardRedirect(
-    "Previsao do pagamento salva. O dashboard foi atualizado."
-  );
 }
 
 function markPaymentAsReceived() {
@@ -1316,9 +1314,6 @@ function markPaymentAsReceived() {
     receiptMessage,
     "success",
     `Recebimento confirmado em ${formatBankingCurrency(actualValue)}. O ciclo foi avancado automaticamente.`
-  );
-  window.AppShell.queueDashboardRedirect(
-    "Recebimento confirmado. O dashboard foi atualizado para o proximo ciclo."
   );
 }
 
@@ -1534,9 +1529,6 @@ function saveVrVaReceipt() {
   renderReceiptArea();
   updateAccordionSummaries();
   showMessage(receiptMessage, "success", "Registro de VR/VA salvo com sucesso.");
-  window.AppShell.queueDashboardRedirect(
-    "Registro de VR/VA salvo. O dashboard foi atualizado."
-  );
 }
 
 function editPaymentReceipt() {

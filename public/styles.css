@@ -7316,6 +7316,12 @@ p {
     align-content: stretch;
   }
 
+  body[data-page="banking"] .dashboard-secondary-grid {
+    height: auto;
+    overflow: visible;
+    align-content: start;
+  }
+
   body[data-page="banking"] .dashboard-secondary-surface,
   body[data-page="contas"] .dashboard-secondary-surface,
   body[data-page="cartoes"] .dashboard-secondary-surface,
@@ -7546,7 +7552,11 @@ p {
 
   body[data-page="contas"] .accounts-page-grid {
     grid-template-columns: 1fr;
-    grid-template-rows: auto minmax(0, 1fr);
+    grid-template-rows: auto;
+    align-content: start;
+    height: auto;
+    min-height: 100%;
+    gap: 16px;
   }
 
   body[data-page="contas"] .accounts-anchor-nav {
@@ -7578,16 +7588,34 @@ p {
 
   body[data-page="contas"] .section-stack {
     min-height: 0;
-    overflow: hidden;
+    overflow: visible;
   }
 
   body[data-page="contas"] .accounts-page-card {
     display: grid;
-    grid-template-rows: auto auto auto minmax(0, 1fr);
+    grid-template-rows: auto auto auto auto;
+    align-content: start;
+    gap: 14px;
+    overflow: visible;
+  }
+
+  body[data-page="contas"] .accounts-page-card .dual-grid {
+    align-items: start;
   }
 
   body[data-page="cartoes"] .cards-page-card {
     grid-template-rows: auto auto auto auto minmax(0, 1fr);
+  }
+
+  body[data-page="cartoes"] .cards-page-card .card-label {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  body[data-page="cartoes"] .cards-page-card .card-label svg {
+    flex: 0 0 auto;
+    color: var(--cyan);
   }
 
   body[data-page="recebimentos"] .receipts-page-card {
@@ -8052,6 +8080,7 @@ body[data-page="recebimentos"] .finance-table tbody tr:hover {
   body[data-page="contas"] .dashboard-secondary-grid.accounts-page-grid {
     grid-template-columns: minmax(0, 1180px);
     justify-content: center;
+    height: auto;
   }
 
 body[data-page="banking"] .banking-page-card,
@@ -8062,8 +8091,13 @@ body[data-page="recebimentos"] .receipts-page-card {
   padding: 18px 20px;
 }
 
+body[data-page="banking"] .banking-page-card {
+  overflow: visible;
+  height: auto;
+}
+
 body[data-page="banking"] .cycle-breakdown-card {
-  overflow: hidden;
+  overflow: visible;
 }
 
 body[data-page="banking"] .cycle-breakdown-card .finance-table {
@@ -8907,5 +8941,9 @@ body[data-page="banking"] .banking-form-actions .secondary-button {
   body[data-page="contas"] .section-stack {
     display: grid;
     align-content: start;
+  }
+
+  body[data-page="contas"] .accounts-page-card {
+    height: auto;
   }
 }

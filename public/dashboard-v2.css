@@ -1441,8 +1441,9 @@
 
 .db2-panel[data-dashboard-panel="details"] .cycle-breakdown-card {
   grid-area: cycle;
-  overflow: visible;
-  height: auto;
+  overflow: visible !important;
+  height: auto !important;
+  max-height: none !important;
 }
 
 .db2-panel[data-dashboard-panel="details"] .cycle-breakdown-card .finance-table {
