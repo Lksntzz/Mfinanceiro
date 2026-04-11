@@ -2154,6 +2154,22 @@ html:has(body.db2-body) {
   padding: 14px !important;
 }
 
+body[data-page="dashboard"] .cards-summary-card.dashboard-surface {
+  overflow: visible !important;
+  overflow-y: visible !important;
+  overflow-x: visible !important;
+  height: auto !important;
+  max-height: none !important;
+  flex: 0 0 auto !important;
+}
+
+body[data-page="dashboard"] .cards-summary-card.dashboard-surface .dashboard-card-summary-list,
+body[data-page="dashboard"] .cards-summary-card.dashboard-surface .detail-list {
+  overflow: visible !important;
+  max-height: none !important;
+  height: auto !important;
+}
+
 .dual-grid, .settings-grid {
   gap: var(--db2-gap) !important;
 }
