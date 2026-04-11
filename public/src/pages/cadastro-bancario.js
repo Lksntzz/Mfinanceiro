@@ -71,6 +71,8 @@ let outrosDescontosState = [];
 let statementDraftsState = [];
 let statementBalanceSuggestion = 0;
 let statementValidationState = null;
+let statementImportFlowState = "structured";
+let statementUnstructuredState = null;
 let salarioLiquidoModoState = "auto";
 let salarioLiquidoManualState = 0;
 
@@ -198,10 +200,29 @@ function normalizeStatementDescription(value) {
     .trim();
 }
 
-async function lerArquivoImportado(file) {
-  const format = detectStatementFormat(file);
+function decodeImportedBinaryContent(content) {
+  if (typeof content === "string") {
+    return content;
+  }
 
-  if (format === "xlsx") {
+  if (content instanceof ArrayBuffer) {
+    try {
+      return new TextDecoder("utf-8", { fatal: false }).decode(new Uint8Array(content));
+    } catch (error) {
+      return "";
+    }
+  }
+
+  return "";
+}
+
+async function lerArquivoImportado(file) {
+  const extension = String(file?.name || "")
+    .split(".")
+    .pop()
+    .toLowerCase();
+
+  if (["xlsx", "xls", "jpg", "jpeg", "png", "webp"].includes(extension)) {
     return file.arrayBuffer();
   }
 
@@ -235,6 +256,14 @@ function detectStatementFormat(file) {
     return "csv";
   }
 
+  if (extension === "ofx") {
+    return "ofx";
+  }
+
+  if (extension === "xls") {
+    return "xls";
+  }
+
   if (extension === "xlsx") {
     return "xlsx";
   }
@@ -243,7 +272,54 @@ function detectStatementFormat(file) {
     return "pdf";
   }
 
+  if (["jpg", "jpeg", "png", "webp"].includes(extension)) {
+    return "image";
+  }
+
   return "binary";
+}
+
+function detectStatementFormatByContent(file, fileContent) {
+  const baseFormat = detectStatementFormat(file);
+  const decodedContent = decodeImportedBinaryContent(fileContent);
+  const normalizedContent = String(decodedContent || "").toUpperCase();
+
+  if (baseFormat === "pdf") {
+    if (
+      /%PDF/i.test(normalizedContent) &&
+      /(BT|ET|TJ|TJ|RELEASE_DATE|TRANSACTION_TYPE|FITID|TRNAMT)/.test(normalizedContent)
+    ) {
+      return "pdf-text";
+    }
+
+    return "pdf-image";
+  }
+
+  if (baseFormat === "binary") {
+    if (/<OFX>|<BANKTRANLIST>|<STMTTRN>/i.test(normalizedContent)) {
+      return "ofx";
+    }
+  }
+
+  return baseFormat;
+}
+
+function isUnstructuredStatementFormat(format) {
+  return format === "image" || format === "pdf-image";
+}
+
+function buildUnstructuredImportSession(file, bank, format) {
+  return {
+    bank,
+    format,
+    fileName: file?.name || "",
+    blocked: true,
+    reason:
+      "Arquivo nao estruturado detectado. A camada OCR foi preparada, mas ainda nao extrai linhas automaticamente nesta versao.",
+    reviewItems: [],
+    lowConfidenceCount: 0,
+    requiresManualReview: true,
+  };
 }
 
 function splitDelimitedLine(line, delimiter) {
@@ -326,7 +402,13 @@ function buildImportedStatementItem({
     data: normalizeStatementDate(date),
     descricao: normalizedDescription,
     valor: normalizedValue,
-    saldo: Number.isFinite(Number(balance)) ? Number(balance) : 0,
+    saldo:
+      balance !== undefined &&
+      balance !== null &&
+      String(balance).trim() !== "" &&
+      Number.isFinite(Number(balance))
+        ? Number(balance)
+        : null,
     tipo: normalizedValue < 0 ? "saida" : "entrada",
     categoria: suggestImportCategory(normalizedDescription),
     categoriaSugerida: suggestImportCategory(normalizedDescription),
@@ -397,12 +479,137 @@ function recalculateStatementValidation() {
   statementValidationState = validateStatementBalance(statementDraftsState);
 }
 
+function createStatementDuplicateKey(item) {
+  const normalizedDescription = normalizeHeaderName(item?.descricao || "");
+  const normalizedDate = normalizeStatementDate(item?.data || "");
+  const normalizedValue = Number(item?.valor || 0).toFixed(2);
+  const normalizedExternalId = String(item?.externalId || item?.external_id || "").trim();
+
+  return normalizedExternalId
+    ? `external:${normalizedExternalId}`
+    : `${normalizedDate}|${normalizedDescription}|${normalizedValue}`;
+}
+
+function getExistingLedgerDuplicateKeys() {
+  const data = loadBankingData();
+  const ledgerItems = Array.isArray(data?.ledgerMovimentacoes) ? data.ledgerMovimentacoes : [];
+
+  return new Set(
+    ledgerItems
+      .filter(Boolean)
+      .map((item) =>
+        createStatementDuplicateKey({
+          data: item.data,
+          descricao: item.descricao,
+          valor: item.valor,
+          externalId: item.external_id || item.externalId || item.id,
+        })
+      )
+  );
+}
+
+function filterDuplicateStatementItems(lancamentos) {
+  const existingKeys = getExistingLedgerDuplicateKeys();
+  const batchKeys = new Set();
+  const deduplicatedItems = [];
+  let ignoredCount = 0;
+
+  (Array.isArray(lancamentos) ? lancamentos : []).forEach((item) => {
+    const key = createStatementDuplicateKey(item);
+
+    if (existingKeys.has(key) || batchKeys.has(key)) {
+      ignoredCount += 1;
+      return;
+    }
+
+    batchKeys.add(key);
+    deduplicatedItems.push(item);
+  });
+
+  return {
+    lancamentos: deduplicatedItems,
+    ignoredCount,
+  };
+}
+
 function parseCSV(textContent, bank) {
   if (bank === "mercado-pago") {
     return parseMercadoPagoCSV(textContent);
   }
 
   return parseGenericCSV(textContent, bank);
+}
+
+function finalizeStructuredParserResult(result) {
+  const deduplication = filterDuplicateStatementItems(result?.lancamentos || []);
+  const lancamentos = deduplication.lancamentos;
+
+  if (!lancamentos.length) {
+    throw new Error("O arquivo nao trouxe movimentacoes novas e validas para importar.");
+  }
+
+  const saldoItems = lancamentos.filter((item) => Number.isFinite(Number(item?.saldo)));
+  const saldoSugerido = saldoItems.length
+    ? Number(saldoItems[saldoItems.length - 1].saldo || 0)
+    : Number(result?.saldoSugerido || 0);
+
+  return {
+    ...result,
+    lancamentos,
+    saldoSugerido,
+    validation: validateStatementBalance(lancamentos),
+    duplicateCount: deduplication.ignoredCount,
+  };
+}
+
+function detectStatementBankByContent({ selectedBank, fileName, contentText, headers = [] }) {
+  if (selectedBank && selectedBank !== "outro") {
+    return selectedBank;
+  }
+
+  const normalizedFileName = normalizeHeaderName(fileName || "");
+  const normalizedContent = normalizeHeaderName(contentText || "");
+  const normalizedHeaders = headers.map((item) => normalizeHeaderName(item));
+  const joinedHeaders = normalizedHeaders.join(" ");
+
+  const detectionRules = [
+    {
+      bank: "mercado-pago",
+      match: () =>
+        joinedHeaders.includes("RELEASE_DATE") &&
+        joinedHeaders.includes("TRANSACTION_NET_AMOUNT") &&
+        joinedHeaders.includes("PARTIAL_BALANCE"),
+    },
+    {
+      bank: "nubank",
+      match: () =>
+        /NUBANK|NU PAGAMENTOS/.test(normalizedContent) ||
+        /NUBANK|NU PAGAMENTOS/.test(normalizedFileName),
+    },
+    {
+      bank: "inter",
+      match: () => /BANCO INTER|INTERMEDIUM/.test(normalizedContent),
+    },
+    {
+      bank: "c6",
+      match: () => /C6 BANK|CARBON HOLDING/.test(normalizedContent),
+    },
+    {
+      bank: "santander",
+      match: () => /SANTANDER/.test(normalizedContent),
+    },
+    {
+      bank: "bradesco",
+      match: () => /BRADESCO/.test(normalizedContent),
+    },
+    {
+      bank: "picpay",
+      match: () => /PICPAY/.test(normalizedContent),
+    },
+  ];
+
+  const detectedRule = detectionRules.find((rule) => rule.match());
+  return detectedRule?.bank || selectedBank || "outro";
 }
 
 function parseMercadoPagoCSV(textContent) {
@@ -477,16 +684,13 @@ function parseMercadoPagoCSV(textContent) {
     );
   }
 
-  const validation = validateStatementBalance(lancamentos);
-
-  return {
+  return finalizeStructuredParserResult({
     saldoSugerido: lancamentos.length
       ? Number(lancamentos[lancamentos.length - 1].saldo || 0)
       : 0,
     lancamentos,
-    validation,
     parserMode: "CSV Mercado Pago / parser estruturado",
-  };
+  });
 }
 
 function detectGenericDelimiter(lines) {
@@ -544,6 +748,11 @@ function parseGenericCSV(textContent, bank) {
     ),
   };
 
+  const detectedBank = detectStatementBankByContent({
+    selectedBank: bank,
+    headers: lines[headerIndex] ? splitDelimitedLine(lines[headerIndex], delimiter) : [],
+    contentText: lines.slice(0, Math.min(lines.length, 12)).join(" "),
+  });
   const lancamentos = [];
 
   for (let index = headerIndex + 1; index < lines.length; index += 1) {
@@ -577,7 +786,7 @@ function parseGenericCSV(textContent, bank) {
         value,
         balance: indexes.saldo >= 0 ? parseBrazilianAmount(row[indexes.saldo]) : 0,
         externalId,
-        bank,
+        bank: detectedBank,
       })
     );
   }
@@ -586,20 +795,462 @@ function parseGenericCSV(textContent, bank) {
     throw new Error("O CSV nao trouxe movimentacoes reais validas para importar.");
   }
 
-  return {
+  return finalizeStructuredParserResult({
     saldoSugerido: lancamentos.length
       ? Number(lancamentos[lancamentos.length - 1].saldo || 0)
       : 0,
     lancamentos,
-    validation: validateStatementBalance(lancamentos),
     parserMode: "CSV / parser generico",
-  };
+  });
 }
 
-function parseXLSX() {
+function normalizeSpreadsheetCellValue(value) {
+  if (value === null || value === undefined) {
+    return "";
+  }
+
+  return String(value)
+    .replace(/\uFEFF/g, "")
+    .replace(/\r/g, " ")
+    .replace(/\n/g, " ")
+    .replace(/\s+/g, " ")
+    .trim();
+}
+
+function excelSerialToDate(value) {
+  const numericValue = Number(value);
+
+  if (!Number.isFinite(numericValue) || numericValue <= 0) {
+    return "";
+  }
+
+  const utcDays = Math.floor(numericValue - 25569);
+  const utcValue = utcDays * 86400;
+  const dateInfo = new Date(utcValue * 1000);
+
+  if (Number.isNaN(dateInfo.getTime())) {
+    return "";
+  }
+
+  return dateInfo.toISOString().slice(0, 10);
+}
+
+function extractStructuredValueFromRow(row, indexes) {
+  const directValue = indexes.valor >= 0 ? parseBrazilianAmount(row[indexes.valor]) : 0;
+  const debitValue = indexes.debito >= 0 ? Math.abs(parseBrazilianAmount(row[indexes.debito])) : 0;
+  const creditValue = indexes.credito >= 0 ? Math.abs(parseBrazilianAmount(row[indexes.credito])) : 0;
+
+  if (indexes.valor >= 0) {
+    return directValue;
+  }
+
+  if (creditValue > 0 && debitValue > 0) {
+    return creditValue - debitValue;
+  }
+
+  if (creditValue > 0) {
+    return creditValue;
+  }
+
+  if (debitValue > 0) {
+    return -debitValue;
+  }
+
+  return 0;
+}
+
+function parseRowsAsStructuredTable(rows, bank, parserMode, prefix) {
+  const normalizedRows = (Array.isArray(rows) ? rows : [])
+    .map((row) => (Array.isArray(row) ? row.map((cell) => normalizeSpreadsheetCellValue(cell)) : []))
+    .filter((row) => row.some((cell) => cell));
+
+  const headerIndex = normalizedRows.findIndex((row) => {
+    const cells = row.map((cell) => normalizeHeaderName(cell));
+
+    return (
+      cells.some((cell) => ["DATA", "DATE", "RELEASE_DATE", "DTPOSTED"].includes(cell)) &&
+      cells.some((cell) =>
+        ["DESCRICAO", "DESCRIPTION", "TRANSACTION_TYPE", "HISTORICO", "MEMO", "NAME"].includes(
+          cell
+        )
+      ) &&
+      cells.some((cell) =>
+        ["VALOR", "AMOUNT", "TRANSACTION_NET_AMOUNT", "DEBITO", "CREDITO", "TRNAMT"].includes(cell)
+      )
+    );
+  });
+
+  if (headerIndex === -1) {
+    throw new Error("Nao encontrei cabecalho compativel na planilha enviada.");
+  }
+
+  const header = normalizedRows[headerIndex].map((cell) => normalizeHeaderName(cell));
+  const indexes = {
+    data: header.findIndex((cell) => ["DATA", "DATE", "RELEASE_DATE", "DTPOSTED"].includes(cell)),
+    descricao: header.findIndex((cell) =>
+      ["DESCRICAO", "DESCRIPTION", "TRANSACTION_TYPE", "HISTORICO", "MEMO", "NAME"].includes(cell)
+    ),
+    valor: header.findIndex((cell) =>
+      ["VALOR", "AMOUNT", "TRANSACTION_NET_AMOUNT", "TRNAMT"].includes(cell)
+    ),
+    saldo: header.findIndex((cell) =>
+      ["SALDO", "BALANCE", "PARTIAL_BALANCE", "SALDO PARCIAL"].includes(cell)
+    ),
+    referencia: header.findIndex((cell) =>
+      ["REFERENCE_ID", "ID_EXTERNO", "EXTERNAL_ID", "ID", "FITID"].includes(cell)
+    ),
+    debito: header.findIndex((cell) => ["DEBITO", "DEBIT"].includes(cell)),
+    credito: header.findIndex((cell) => ["CREDITO", "CREDIT"].includes(cell)),
+  };
+
+  const detectedBank = detectStatementBankByContent({
+    selectedBank: bank,
+    headers: normalizedRows[headerIndex],
+    contentText: normalizedRows.slice(0, Math.min(normalizedRows.length, 15)).flat().join(" "),
+  });
+  const lancamentos = [];
+
+  for (let index = headerIndex + 1; index < normalizedRows.length; index += 1) {
+    const row = normalizedRows[index];
+    const rawDateValue = indexes.data >= 0 ? row[indexes.data] : "";
+    const rawDate =
+      /^\d{4,5}(\.\d+)?$/.test(String(rawDateValue || ""))
+        ? excelSerialToDate(rawDateValue)
+        : rawDateValue;
+    const description = indexes.descricao >= 0 ? normalizeStatementDescription(row[indexes.descricao]) : "";
+    const externalId = indexes.referencia >= 0 ? row[indexes.referencia] : "";
+    const value = extractStructuredValueFromRow(row, indexes);
+    const balance = indexes.saldo >= 0 ? parseBrazilianAmount(row[indexes.saldo]) : null;
+
+    if (!isValidTransactionDate(rawDate)) {
+      continue;
+    }
+
+    if (isStatementSummaryDescription(description)) {
+      continue;
+    }
+
+    if (!description && !value) {
+      continue;
+    }
+
+    lancamentos.push(
+      buildImportedStatementItem({
+        prefix,
+        date: rawDate,
+        description,
+        externalId,
+        value,
+        balance,
+        bank: detectedBank,
+      })
+    );
+  }
+
+  if (!lancamentos.length) {
+    throw new Error("A planilha nao trouxe movimentacoes reais validas para importar.");
+  }
+
+  return finalizeStructuredParserResult({
+    saldoSugerido: lancamentos.length
+      ? Number(lancamentos[lancamentos.length - 1].saldo || 0)
+      : 0,
+    lancamentos,
+    parserMode,
+  });
+}
+
+async function unzipZipEntries(arrayBuffer) {
+  const bytes = new Uint8Array(arrayBuffer);
+  const view = new DataView(arrayBuffer);
+  const entries = new Map();
+  let eocdOffset = -1;
+
+  for (let index = bytes.length - 22; index >= 0; index -= 1) {
+    if (view.getUint32(index, true) === 0x06054b50) {
+      eocdOffset = index;
+      break;
+    }
+  }
+
+  if (eocdOffset === -1) {
+    throw new Error("Nao foi possivel localizar a estrutura ZIP do arquivo XLSX.");
+  }
+
+  const centralDirectorySize = view.getUint32(eocdOffset + 12, true);
+  const centralDirectoryOffset = view.getUint32(eocdOffset + 16, true);
+  let pointer = centralDirectoryOffset;
+  const decoder = new TextDecoder("utf-8");
+
+  async function inflateZipEntry(compressedBytes, method) {
+    if (method === 0) {
+      return compressedBytes;
+    }
+
+    if (method !== 8 || typeof DecompressionStream === "undefined") {
+      throw new Error("Este navegador nao conseguiu descompactar a planilha XLSX com seguranca.");
+    }
+
+    const stream = new Blob([compressedBytes]).stream().pipeThrough(
+      new DecompressionStream("deflate-raw")
+    );
+    const response = new Response(stream);
+    return new Uint8Array(await response.arrayBuffer());
+  }
+
+  while (pointer < centralDirectoryOffset + centralDirectorySize) {
+    if (view.getUint32(pointer, true) !== 0x02014b50) {
+      break;
+    }
+
+    const compressionMethod = view.getUint16(pointer + 10, true);
+    const compressedSize = view.getUint32(pointer + 20, true);
+    const fileNameLength = view.getUint16(pointer + 28, true);
+    const extraLength = view.getUint16(pointer + 30, true);
+    const commentLength = view.getUint16(pointer + 32, true);
+    const localHeaderOffset = view.getUint32(pointer + 42, true);
+    const fileNameBytes = bytes.slice(pointer + 46, pointer + 46 + fileNameLength);
+    const fileName = decoder.decode(fileNameBytes);
+    const localFileNameLength = view.getUint16(localHeaderOffset + 26, true);
+    const localExtraLength = view.getUint16(localHeaderOffset + 28, true);
+    const dataStart = localHeaderOffset + 30 + localFileNameLength + localExtraLength;
+    const compressedBytes = bytes.slice(dataStart, dataStart + compressedSize);
+    const inflatedBytes = await inflateZipEntry(compressedBytes, compressionMethod);
+
+    entries.set(fileName, decoder.decode(inflatedBytes));
+    pointer += 46 + fileNameLength + extraLength + commentLength;
+  }
+
+  return entries;
+}
+
+function getXlsxCellColumn(ref) {
+  const match = String(ref || "").match(/[A-Z]+/i);
+  return match ? match[0].toUpperCase() : "";
+}
+
+function getXlsxCellRow(ref) {
+  const match = String(ref || "").match(/\d+/);
+  return match ? Number(match[0]) : 0;
+}
+
+function parseXlsxRows(entries) {
+  const parser = new DOMParser();
+  const sharedStringsXml = entries.get("xl/sharedStrings.xml");
+  const workbookXml = entries.get("xl/workbook.xml");
+  const workbookRelsXml = entries.get("xl/_rels/workbook.xml.rels");
+
+  if (!workbookXml) {
+    throw new Error("A planilha XLSX nao trouxe workbook valido.");
+  }
+
+  const sharedStrings = [];
+
+  if (sharedStringsXml) {
+    const sharedStringsDoc = parser.parseFromString(sharedStringsXml, "application/xml");
+    sharedStringsDoc.querySelectorAll("si").forEach((node) => {
+      const textValue = Array.from(node.querySelectorAll("t"))
+        .map((item) => item.textContent || "")
+        .join("");
+      sharedStrings.push(textValue);
+    });
+  }
+
+  const workbookDoc = parser.parseFromString(workbookXml, "application/xml");
+  const workbookRelsDoc = workbookRelsXml
+    ? parser.parseFromString(workbookRelsXml, "application/xml")
+    : null;
+  const firstSheet = workbookDoc.querySelector("sheet");
+
+  if (!firstSheet) {
+    throw new Error("A planilha XLSX nao trouxe abas com dados.");
+  }
+
+  const relationshipId =
+    firstSheet.getAttribute("r:id") ||
+    firstSheet.getAttribute("id") ||
+    "";
+  let targetPath = "xl/worksheets/sheet1.xml";
+
+  if (workbookRelsDoc && relationshipId) {
+    const relationshipNode = Array.from(workbookRelsDoc.querySelectorAll("Relationship")).find(
+      (node) => node.getAttribute("Id") === relationshipId
+    );
+
+    if (relationshipNode?.getAttribute("Target")) {
+      targetPath = `xl/${relationshipNode.getAttribute("Target").replace(/^\/+/, "")}`.replace(
+        "xl/xl/",
+        "xl/"
+      );
+    }
+  }
+
+  const sheetXml = entries.get(targetPath);
+
+  if (!sheetXml) {
+    throw new Error("Nao foi possivel localizar a primeira planilha XLSX com dados.");
+  }
+
+  const sheetDoc = parser.parseFromString(sheetXml, "application/xml");
+  const rowsMap = new Map();
+
+  sheetDoc.querySelectorAll("sheetData row").forEach((rowNode) => {
+    rowNode.querySelectorAll("c").forEach((cellNode) => {
+      const ref = cellNode.getAttribute("r") || "";
+      const column = getXlsxCellColumn(ref);
+      const rowNumber = getXlsxCellRow(ref);
+      const type = cellNode.getAttribute("t") || "";
+      const valueNode = cellNode.querySelector("v");
+      const inlineTextNode = cellNode.querySelector("is t");
+      let cellValue = "";
+
+      if (type === "s" && valueNode) {
+        cellValue = sharedStrings[Number(valueNode.textContent || 0)] || "";
+      } else if (type === "inlineStr" && inlineTextNode) {
+        cellValue = inlineTextNode.textContent || "";
+      } else if (valueNode) {
+        cellValue = valueNode.textContent || "";
+      }
+
+      if (!rowsMap.has(rowNumber)) {
+        rowsMap.set(rowNumber, {});
+      }
+
+      rowsMap.get(rowNumber)[column] = cellValue;
+    });
+  });
+
+  const orderedColumns = Array.from(
+    new Set(Array.from(rowsMap.values()).flatMap((row) => Object.keys(row)))
+  ).sort((left, right) => left.localeCompare(right));
+
+  return Array.from(rowsMap.entries())
+    .sort((left, right) => left[0] - right[0])
+    .map(([, row]) =>
+      orderedColumns.map((column) => {
+        const value = row[column] || "";
+        const normalizedValue = normalizeSpreadsheetCellValue(value);
+
+        if (/^\d{4,5}(\.\d+)?$/.test(normalizedValue) && ["A", "B"].includes(column)) {
+          const excelDate = excelSerialToDate(normalizedValue);
+          return excelDate || normalizedValue;
+        }
+
+        return normalizedValue;
+      })
+    );
+}
+
+function parseXlsRows(arrayBuffer) {
+  const decodedText = decodeImportedBinaryContent(arrayBuffer);
+  const normalizedText = String(decodedText || "").trim();
+
+  if (!normalizedText) {
+    throw new Error("O arquivo XLS nao trouxe conteudo legivel para importacao segura.");
+  }
+
+  if (/<WORKBOOK|<WORKSHEET|<TABLE|<ROW|<CELL/i.test(normalizedText)) {
+    const parser = new DOMParser();
+    const doc = parser.parseFromString(normalizedText, "application/xml");
+    return Array.from(doc.querySelectorAll("Worksheet Table Row")).map((rowNode) =>
+      Array.from(rowNode.querySelectorAll("Cell")).map((cellNode) =>
+        normalizeSpreadsheetCellValue(cellNode.textContent || "")
+      )
+    );
+  }
+
+  if (/<table|<tr|<td/i.test(normalizedText)) {
+    const parser = new DOMParser();
+    const doc = parser.parseFromString(normalizedText, "text/html");
+    return Array.from(doc.querySelectorAll("tr")).map((rowNode) =>
+      Array.from(rowNode.querySelectorAll("th, td")).map((cellNode) =>
+        normalizeSpreadsheetCellValue(cellNode.textContent || "")
+      )
+    );
+  }
+
+  if (/\t/.test(normalizedText)) {
+    return normalizedText
+      .replace(/\r/g, "")
+      .split("\n")
+      .map((line) => line.split("\t").map((cell) => normalizeSpreadsheetCellValue(cell)))
+      .filter((row) => row.some((cell) => cell));
+  }
+
   throw new Error(
-    "Leitura de Excel ainda nao esta disponivel nesta versao local. Use CSV para maior precisao."
+    "O arquivo XLS enviado nao trouxe estrutura tabular legivel com seguranca. Exporte como XLSX ou CSV."
   );
+}
+
+async function parseXLSX(fileContent, bank, format = "xlsx") {
+  if (!(fileContent instanceof ArrayBuffer)) {
+    throw new Error("A leitura da planilha exige o arquivo original em formato binario.");
+  }
+
+  if (format === "xls") {
+    const rows = parseXlsRows(fileContent);
+    return parseRowsAsStructuredTable(rows, bank, "XLS / parser estruturado", "extrato_xls");
+  }
+
+  const entries = await unzipZipEntries(fileContent);
+  const rows = parseXlsxRows(entries);
+  return parseRowsAsStructuredTable(rows, bank, "XLSX / parser estruturado", "extrato_xlsx");
+}
+
+function parseOFX(textContent, bank) {
+  const normalizedContent = String(textContent || "");
+  const detectedBank = detectStatementBankByContent({
+    selectedBank: bank,
+    contentText: normalizedContent,
+  });
+  const statementBlocks = normalizedContent.match(/<STMTTRN>[\s\S]*?<\/STMTTRN>/gi) || [];
+  const ledgerBalanceMatch = normalizedContent.match(/<LEDGERBAL>[\s\S]*?<BALAMT>([^<\r\n]+)/i);
+  const finalBalance = ledgerBalanceMatch ? Number(String(ledgerBalanceMatch[1]).replace(",", ".")) : null;
+  const lancamentos = statementBlocks
+    .map((block) => {
+      const dateMatch = block.match(/<DTPOSTED>(\d{8})/i);
+      const amountMatch = block.match(/<TRNAMT>([^<\r\n]+)/i);
+      const fitIdMatch = block.match(/<FITID>([^<\r\n]+)/i);
+      const memoMatch = block.match(/<MEMO>([^<]+)/i);
+      const nameMatch = block.match(/<NAME>([^<]+)/i);
+      const typeMatch = block.match(/<TRNTYPE>([^<]+)/i);
+      const rawDate = dateMatch
+        ? `${dateMatch[1].slice(0, 4)}-${dateMatch[1].slice(4, 6)}-${dateMatch[1].slice(6, 8)}`
+        : "";
+      const rawAmount = amountMatch ? Number(String(amountMatch[1]).replace(",", ".")) : NaN;
+      const description = normalizeStatementDescription(
+        memoMatch?.[1] || nameMatch?.[1] || typeMatch?.[1] || ""
+      );
+
+      if (!isValidTransactionDate(rawDate)) {
+        return null;
+      }
+
+      if (!description || isStatementSummaryDescription(description) || !Number.isFinite(rawAmount)) {
+        return null;
+      }
+
+      return buildImportedStatementItem({
+        prefix: "extrato_ofx",
+        date: rawDate,
+        description,
+        value: rawAmount,
+        externalId: fitIdMatch?.[1] || "",
+        balance: null,
+        bank: detectedBank,
+      });
+    })
+    .filter(Boolean);
+
+  if (!lancamentos.length) {
+    throw new Error("O OFX nao trouxe movimentacoes reais validas para importar.");
+  }
+
+  return finalizeStructuredParserResult({
+    saldoSugerido: Number.isFinite(finalBalance) ? finalBalance : 0,
+    lancamentos,
+    parserMode: "OFX / parser estruturado",
+  });
 }
 
 function parsePDFMercadoPago(fileName, fileContent) {
@@ -625,24 +1276,94 @@ function parsePDFMercadoPago(fileName, fileContent) {
 }
 
 function parseGenerico(fileName, fileContent, bank) {
-  const source = `${fileName} ${String(fileContent || "")}`;
-  const value = extractImportAmount(source);
+  const decodedContent = decodeImportedBinaryContent(fileContent);
 
-  return {
-    saldoSugerido: value,
-    lancamentos: [
-      buildImportedStatementItem({
-        prefix: "extrato_generico",
-        date: extractImportDate(source),
-        description: normalizeImportDescription(fileName) || "Lancamento importado",
-        value,
-        balance: value,
-        bank,
-      }),
-    ],
-    validation: null,
-    parserMode: "Fallback generico",
-  };
+  if (/<OFX>|<BANKTRANLIST>|<STMTTRN>/i.test(decodedContent)) {
+    return parseOFX(decodedContent, bank);
+  }
+
+  if (/[;,]/.test(decodedContent) && /\n/.test(decodedContent)) {
+    return parseGenericCSV(decodedContent, bank);
+  }
+
+  throw new Error(
+    `O arquivo ${fileName || "selecionado"} nao trouxe estrutura suficiente para importacao segura nesta etapa.`
+  );
+}
+
+function montarRevisaoImportacaoOcr(session) {
+  if (!session) {
+    return `
+      <div class="subtle-panel">
+        <strong>Nenhum arquivo nao estruturado preparado</strong>
+        <span class="section-note">
+          Selecione um print, screenshot ou PDF imagem para iniciar a camada OCR separada.
+        </span>
+      </div>
+    `;
+  }
+
+  const reviewItems = Array.isArray(session.reviewItems) ? session.reviewItems : [];
+
+  if (!reviewItems.length) {
+    return `
+      <div class="subtle-panel">
+        <strong>Arquivo nao estruturado detectado</strong>
+        <span class="section-note">
+          ${session.fileName || "Arquivo sem nome"} | ${session.bank || "Banco nao identificado"} | ${
+            session.format || "formato nao identificado"
+          }
+        </span>
+        <span class="section-note">${session.reason}</span>
+        <span class="section-note">
+          Nenhuma linha sera gravada no ledger sem extracao OCR confiavel e revisao manual.
+        </span>
+      </div>
+    `;
+  }
+
+  return reviewItems
+    .map(
+      (item) => `
+        <div class="subtle-panel" data-statement-id="${item.id}">
+          <strong>${item.descricao}</strong>
+          <span class="section-note">
+            ${item.data || ""} | Confianca: ${Math.round(Number(item.confidence || 0) * 100)}% | ${
+              item.tipo === "saida" ? "Saida" : "Entrada"
+            }
+          </span>
+          <div class="receipt-form-grid">
+            <div class="field">
+              <span>Descricao</span>
+              <input type="text" data-statement-field="descricao" value="${item.descricao}" />
+            </div>
+            <div class="field">
+              <span>Valor</span>
+              <input type="text" inputmode="decimal" data-statement-field="valor" value="${item.valor || ""}" />
+            </div>
+            <div class="field">
+              <span>Data</span>
+              <input type="date" data-statement-field="data" value="${item.data || ""}" />
+            </div>
+            <div class="field">
+              <span>Categoria</span>
+              <select class="app-select" data-statement-field="categoria">
+                ${IMPORT_CATEGORIES.map((category) => `
+                  <option value="${category}" ${item.categoria === category ? "selected" : ""}>${category}</option>
+                `).join("")}
+              </select>
+            </div>
+          </div>
+          <div class="detail-list">
+            <div class="detail-row">
+              <span>Score de confianca</span>
+              <strong>${Math.round(Number(item.confidence || 0) * 100)}%</strong>
+            </div>
+          </div>
+        </div>
+      `
+    )
+    .join("");
 }
 
 function renderStatementPreview() {
@@ -652,17 +1373,45 @@ function renderStatementPreview() {
 
   const entryCount = statementDraftsState.filter((item) => item.tipo === "entrada").length;
   const exitCount = statementDraftsState.filter((item) => item.tipo === "saida").length;
+  const unstructuredReviewItems = statementUnstructuredState?.reviewItems || [];
 
   if (statementTotalPreview) {
-    statementTotalPreview.textContent = String(statementDraftsState.length);
+    statementTotalPreview.textContent = String(
+      statementImportFlowState === "unstructured"
+        ? unstructuredReviewItems.length
+        : statementDraftsState.length
+    );
   }
 
   if (statementEntriesPreview) {
-    statementEntriesPreview.textContent = String(entryCount);
+    statementEntriesPreview.textContent = String(
+      statementImportFlowState === "unstructured"
+        ? unstructuredReviewItems.filter((item) => item.tipo === "entrada").length
+        : entryCount
+    );
   }
 
   if (statementExitsPreview) {
-    statementExitsPreview.textContent = String(exitCount);
+    statementExitsPreview.textContent = String(
+      statementImportFlowState === "unstructured"
+        ? unstructuredReviewItems.filter((item) => item.tipo === "saida").length
+        : exitCount
+    );
+  }
+
+  if (statementImportFlowState === "unstructured") {
+    getElement("statement-status-chip").textContent = statementUnstructuredState?.blocked
+      ? "OCR pendente"
+      : "Revisao OCR pronta";
+    getElement("statement-balance-preview").textContent = formatBankingCurrency(0);
+    getElement("confirm-imported-expenses-button").classList.add("hidden");
+
+    if (statementBalanceActions) {
+      statementBalanceActions.classList.add("hidden");
+    }
+
+    statementPreviewList.innerHTML = montarRevisaoImportacaoOcr(statementUnstructuredState);
+    return;
   }
 
   if (!statementDraftsState.length) {
@@ -792,6 +1541,8 @@ function resetStatementWorkflow() {
   statementDraftsState = [];
   statementBalanceSuggestion = 0;
   statementValidationState = null;
+  statementImportFlowState = "structured";
+  statementUnstructuredState = null;
 
   if (statementFileInput) {
     statementFileInput.value = "";
@@ -1432,16 +2183,36 @@ async function processStatementFile() {
   }
 
   try {
-    const format = detectStatementFormat(file);
     const fileContent = await lerArquivoImportado(file);
+    const format = detectStatementFormatByContent(file, fileContent);
     let parserResult;
+
+    if (isUnstructuredStatementFormat(format)) {
+      statementImportFlowState = "unstructured";
+      statementDraftsState = [];
+      statementBalanceSuggestion = 0;
+      statementValidationState = null;
+      statementUnstructuredState = buildUnstructuredImportSession(file, bank, format);
+      renderStatementPreview();
+      showMessage(
+        statementMessage,
+        "error",
+        "Arquivo nao estruturado detectado. A camada OCR ficou separada e bloqueada ate haver extracao confiavel e revisao manual."
+      );
+      return;
+    }
+
+    statementImportFlowState = "structured";
+    statementUnstructuredState = null;
 
     if (format === "csv") {
       parserResult = parseCSV(fileContent, bank);
-    } else if (format === "xlsx") {
-      parserResult = parseXLSX(fileContent, bank);
-    } else if (format === "pdf" && bank === "mercado-pago") {
-      parserResult = parsePDFMercadoPago(file.name, fileContent);
+    } else if (format === "xls" || format === "xlsx") {
+      parserResult = await parseXLSX(fileContent, bank, format);
+    } else if (format === "ofx") {
+      parserResult = parseOFX(decodeImportedBinaryContent(fileContent), bank);
+    } else if (format === "pdf-text" && bank === "mercado-pago") {
+      parserResult = parsePDFMercadoPago(file.name, decodeImportedBinaryContent(fileContent));
     } else {
       parserResult = parseGenerico(file.name, fileContent, bank);
     }
@@ -1470,12 +2241,16 @@ async function processStatementFile() {
     showMessage(
       statementMessage,
       "success",
-      "Arquivo lido com sucesso. Revise os lancamentos e confirme a importacao."
+      parserResult?.duplicateCount
+        ? `Arquivo lido com sucesso. ${parserResult.duplicateCount} duplicidade(s) foram ignoradas antes da revisao.`
+        : "Arquivo lido com sucesso. Revise os lancamentos e confirme a importacao."
     );
   } catch (error) {
     statementDraftsState = [];
     statementBalanceSuggestion = 0;
     statementValidationState = null;
+    statementImportFlowState = "structured";
+    statementUnstructuredState = null;
     renderStatementPreview();
     showMessage(
       statementMessage,
@@ -1486,6 +2261,10 @@ async function processStatementFile() {
 }
 
 function updateStatementDraft(event) {
+  if (statementImportFlowState === "unstructured") {
+    return;
+  }
+
   const field = event.target?.dataset?.statementField;
   const root = event.target?.closest?.("[data-statement-id]");
 
@@ -1522,6 +2301,10 @@ function updateStatementDraft(event) {
 }
 
 function handleStatementPreviewClick(event) {
+  if (statementImportFlowState === "unstructured") {
+    return;
+  }
+
   const button = event.target.closest("[data-action='remove-statement-item']");
 
   if (!button) {
@@ -1534,6 +2317,15 @@ function handleStatementPreviewClick(event) {
 }
 
 function confirmImportedExpenses() {
+  if (statementImportFlowState === "unstructured") {
+    showMessage(
+      statementMessage,
+      "error",
+      "Importacao bloqueada: arquivos nao estruturados ainda exigem extracao OCR confiavel antes de qualquer gravacao no ledger."
+    );
+    return;
+  }
+
   if (!statementDraftsState.length) {
     showMessage(statementMessage, "error", "Nao ha lancamentos revisados para importar.");
     return;
@@ -1739,6 +2531,8 @@ function bindLiveUpdates() {
 
       getElement("read-statement-button").classList.toggle("hidden", !selectedFile);
       getElement("confirm-imported-expenses-button").classList.add("hidden");
+      statementImportFlowState = "structured";
+      statementUnstructuredState = null;
 
       if (statementBalanceActions) {
         statementBalanceActions.classList.add("hidden");
