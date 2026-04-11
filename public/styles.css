@@ -2243,7 +2243,7 @@ p {
 .dashboard-tab-panels {
   min-height: 0;
   height: 100%;
-  overflow-y: auto;
+  overflow: hidden;
   overflow-x: hidden;
 }
 
@@ -2267,6 +2267,9 @@ p {
   display: grid;
   grid-template-rows: auto auto minmax(0, 1.45fr) minmax(0, 1fr) auto;
   gap: 16px;
+  min-height: 0;
+  height: 100%;
+  overflow: hidden;
 }
 
 .dashboard-hero-row,
@@ -2274,6 +2277,8 @@ p {
 .dashboard-bottom-row {
   display: grid;
   gap: 16px;
+  min-height: 0;
+  overflow: hidden;
 }
 
 .dashboard-hero-row {
