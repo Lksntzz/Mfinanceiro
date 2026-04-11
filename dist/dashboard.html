@@ -58,10 +58,6 @@
             <svg class="db2-tab-icon" width="14" height="14" viewBox="0 0 24 24" fill="none"><path d="M9 5H7a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2h-2M9 5a2 2 0 0 0 2 2h2a2 2 0 0 0 2-2M9 5a2 2 0 0 1 2-2h2a2 2 0 0 1 2 2" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
             Detalhes
           </button>
-          <button type="button" class="db2-nav-tab" data-dashboard-tab-link="insights" id="tab-insights">
-            <svg class="db2-tab-icon" width="14" height="14" viewBox="0 0 24 24" fill="none"><path d="M12 2a7 7 0 0 1 7 7c0 3.1-2 5.7-4.8 6.6V17a2 2 0 0 1-2 2H11a2 2 0 0 1-2-2v-1.4A7 7 0 0 1 12 2z" stroke="currentColor" stroke-width="2"/><path d="M9 21h6" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
-            Insights
-          </button>
           <button type="button" class="db2-nav-tab" data-dashboard-tab-link="history" id="tab-history">
             <svg class="db2-tab-icon" width="14" height="14" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="9" stroke="currentColor" stroke-width="2"/><path d="M12 7v5l3 3" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
             Histórico
@@ -69,7 +65,7 @@
 
           <span class="db2-nav-sep" aria-hidden="true"></span>
 
-          <a href="/cadastro-bancario.html" class="db2-nav-link" id="link-banco">Banco</a>
+          <a href="/cadastro-bancario.html" class="db2-nav-link" id="link-banco">Base Financeira</a>
           <a href="/contas.html" class="db2-nav-link" id="link-contas">Contas</a>
           <a href="/cartoes.html" class="db2-nav-link" id="link-cartoes">Cartões</a>
           <a href="/recebimentos.html" class="db2-nav-link" id="link-recebimentos">Recebimentos</a>
@@ -210,9 +206,6 @@
                     <span class="db2-insight-label card-label">Insight do dia</span>
                     <span class="db2-chip db2-chip--muted" id="overview-insight-chip">Leitura inicial</span>
                   </div>
-                  <button type="button" class="db2-see-all-btn dashboard-inline-link dashboard-inline-link-button" data-dashboard-tab-link="insights">
-                    Ver todos insights <svg width="12" height="12" viewBox="0 0 24 24" fill="none"><path d="M9 18l6-6-6-6" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
-                  </button>
                 </div>
                 <strong class="db2-insight-title" id="overview-daily-insight-title">O insight mais importante do dia aparece aqui</strong>
                 <p class="db2-insight-text" id="overview-daily-insight-body">O sistema destaca a melhor orientação prática do momento.</p>
@@ -272,24 +265,6 @@
                     <small class="db2-stat-note" id="overview-top-category-note">—</small>
                   </div>
                 </div>
-
-                <!-- Budget progress -->
-                <div class="db2-budget-wrap">
-                  <div class="db2-budget-track dashboard-budget-progress-track" style="height: 8px; background: rgba(255,255,255,0.06); border-radius: 10px; margin-bottom: 8px; overflow: visible;">
-                    <div class="db2-budget-fill dashboard-budget-progress-fill" id="overview-budget-progress-fill" style="height: 100%; border-radius: 10px; background: linear-gradient(90deg, #a78bfa, #c084fc); box-shadow: 0 0 10px rgba(167,139,250,0.5);"></div>
-                  </div>
-                  <div class="db2-budget-header dashboard-budget-progress-top" style="justify-content: flex-start; gap: 4px; margin-bottom: 5px;">
-                    <strong class="db2-budget-pct" id="overview-budget-progress-label" style="color: #c084fc;">0%</strong>
-                    <span class="db2-budget-label" style="font-size: 11px;">do orçamento utilizado</span>
-                  </div>
-                </div>
-
-                <!-- Period filter pills -->
-                <div class="db2-period-pills dashboard-period-tabs" role="tablist" aria-label="Filtro de período">
-                  <button type="button" class="db2-period-pill period-filter-button" data-expense-period="day">Dia</button>
-                  <button type="button" class="db2-period-pill period-filter-button active" data-expense-period="week">Semana</button>
-                  <button type="button" class="db2-period-pill period-filter-button" data-expense-period="month">Mês</button>
-                </div>
               </article>
               <article class="db2-rhythm-card dashboard-surface" id="ritmo-gastos">
                 <div class="db2-rhythm-header card-header">
@@ -303,7 +278,7 @@
                 <div class="db2-rhythm-periods" role="tablist" aria-label="Filtro do ritmo de gastos">
                   <button type="button" class="db2-period-pill db2-rhythm-period-pill active" data-spending-rhythm-period="day">Dia</button>
                   <button type="button" class="db2-period-pill db2-rhythm-period-pill" data-spending-rhythm-period="week">Semana</button>
-                  <button type="button" class="db2-period-pill db2-rhythm-period-pill" data-spending-rhythm-period="month">M?s</button>
+                  <button type="button" class="db2-period-pill db2-rhythm-period-pill" data-spending-rhythm-period="month">Mês</button>
                 </div>
 
                 <div class="db2-rhythm-chart-shell" id="spending-rhythm-chart"></div>
@@ -314,7 +289,7 @@
                     <strong id="spending-rhythm-total">R$ 0,00</strong>
                   </div>
                   <div class="db2-rhythm-stat">
-                    <span>M?dia</span>
+                    <span>Média</span>
                     <strong id="spending-rhythm-average">R$ 0,00</strong>
                   </div>
                 </div>
@@ -442,60 +417,47 @@
         </section>
 
         <!-- ═══════════════════════════════════════════════════
-             PANEL: INSIGHTS
-        ═══════════════════════════════════════════════════ -->
-        <section class="db2-panel" data-dashboard-panel="insights" id="insights">
-          <div class="dashboard-secondary-grid dashboard-insights-panel-grid">
-            <article class="dashboard-surface dashboard-secondary-surface dashboard-feedback-surface">
-              <div class="card-header">
-                <div>
-                  <div class="card-label">Leitura do momento</div>
-                  <h3>Sinal mais importante do ciclo</h3>
-                </div>
-                <button type="button" class="dashboard-inline-link" data-dashboard-tab-link="overview">Voltar para a visão geral</button>
-              </div>
-              <div id="dashboard-feedback" class="message-box hidden" aria-live="polite"></div>
-            </article>
-
-            <article class="dashboard-surface dashboard-secondary-surface insights-card" id="dashboard-insights">
-              <div class="card-header">
-                <div>
-                  <div class="card-label">Insights inteligentes</div>
-                  <h3>Leitura expandida do seu comportamento financeiro</h3>
-                  <p class="table-caption">Interpretações curtas, contextuais e baseadas no ledger.</p>
-                </div>
-                <div class="status-chip" id="insights-chip">Sem dados</div>
-              </div>
-              <div class="insights-grid insights-grid-expanded" id="insights-list">
-                <article class="insight-item insight-item-muted">
-                  <span class="insight-label">Aguardando dados</span>
-                  <strong>Os insights aparecem conforme os gastos são registrados</strong>
-                  <p>Adicione despesas para transformar os números do dashboard em orientações práticas.</p>
-                </article>
-              </div>
-            </article>
-          </div>
-        </section>
-
-        <!-- ═══════════════════════════════════════════════════
              PANEL: HISTÓRICO
         ═══════════════════════════════════════════════════ -->
-        <section class="db2-panel" data-dashboard-panel="history" id="historico">
+                <section class="db2-panel" data-dashboard-panel="history" id="historico">
           <div class="dashboard-history-grid">
             <article class="dashboard-surface dashboard-secondary-surface drawer-card" id="resumo">
               <div class="card-header">
                 <div>
-                  <div class="card-label">Despesas por dia</div>
-                  <h3>Histórico agrupado por data</h3>
-                  <p class="table-caption">Os lançamentos são agrupados automaticamente por dia dentro do período selecionado.</p>
+                  <div class="card-label">Histórico</div>
+                  <h3>Lançamentos agrupados por data</h3>
+                  <p class="table-caption" id="history-panel-subtitle">Os dias mais recentes aparecem primeiro, com agrupamento compacto por dia.</p>
                 </div>
                 <div class="status-chip" id="daily-summary-chip">Sem lançamentos</div>
+              </div>
+              <div class="history-toolbar">
+                <div class="db2-period-pills history-period-pills" role="tablist" aria-label="Filtro do histórico">
+                  <button type="button" class="db2-period-pill history-period-pill active" data-history-period="today">Hoje</button>
+                  <button type="button" class="db2-period-pill history-period-pill" data-history-period="7d">7 dias</button>
+                  <button type="button" class="db2-period-pill history-period-pill" data-history-period="30d">30 dias</button>
+                  <button type="button" class="db2-period-pill history-period-pill" data-history-period="month">Mês</button>
+                  <button type="button" class="db2-period-pill history-period-pill" data-history-period="custom">Personalizado</button>
+                </div>
+                <div class="history-custom-range">
+                  <label class="history-range-field">
+                    <span>De</span>
+                    <input type="date" id="history-custom-start">
+                  </label>
+                  <label class="history-range-field">
+                    <span>Até</span>
+                    <input type="date" id="history-custom-end">
+                  </label>
+                  <button type="button" class="db2-see-more-btn dashboard-inline-link btn-secondary btn-sm" id="history-custom-apply">Aplicar</button>
+                </div>
               </div>
               <div class="detail-list dashboard-history-list" id="daily-summary-list">
                 <div class="detail-row">
                   <span>Resumo diário indisponível</span>
                   <strong>Adicione ou importe lançamentos</strong>
                 </div>
+              </div>
+              <div class="history-footer">
+                <button type="button" class="db2-see-more-btn dashboard-inline-link btn-secondary btn-sm" id="history-load-more">Carregar mais</button>
               </div>
             </article>
           </div>
@@ -531,12 +493,17 @@
       <small id="expense-total-week-note">Sem gastos nesta semana.</small>
       <strong id="expense-total-month">R$ 0,00</strong>
       <small id="expense-total-month-note">Sem gastos neste mês.</small>
+      <strong id="overview-budget-progress-label">0%</strong>
+      <span id="overview-budget-progress-fill"></span>
+      <div id="dashboard-feedback" class="message-box hidden" aria-live="polite"></div>
+      <span id="insights-chip">Sem dados</span>
+      <div id="insights-list"></div>
     </div>
 
     <!-- Hidden sidebar (kept for app-shell compatibility) -->
     <aside id="app-sidebar" class="dashboard-sidebar dashboard-sidebar-hidden" aria-hidden="true"></aside>
 
-    <script src="/src/pages/dashboard-overview.js"></script>
-    <script src="/src/pages/dashboard.js"></script>
+    <script src="/src/pages/dashboard-overview.js?v=2026-04-10-tabs"></script>
+    <script src="/src/pages/dashboard.js?v=2026-04-10-tabs"></script>
   </body>
 </html>

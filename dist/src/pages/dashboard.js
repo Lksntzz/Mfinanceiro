@@ -1,3 +1,5 @@
+﻿console.log("[Dashboard Scripts] carregado: /src/pages/dashboard.js");
+
 let loadDashboardBanking;
 let loadDashboardVariableAccounts;
 let loadDashboardLedger;
@@ -5,27 +7,33 @@ let loadDashboardPayment;
 let loadDashboardVrVa;
 let loadDashboardData;
 
-let buildSpendingRhythmDataset;
+let buildDashboardSpendingRhythmDataset;
 let calculateCyclePriorities;
-let computeDashboardFinancialIntelligence;
-let calculateDashboardSummary;
-let formatDashboardCurrency;
-let formatDashboardDateLong;
-let getDashboardExpenseOverviewSummary;
-let getDashboardExpensePeriodSummary;
-let getDashboardLedgerExpenseEntries;
-let getDashboardLedgerMovements;
+let computeDashboardFinancialInsights;
+let calculateDashboardFinancialSummary;
+let formatDashboardCurrencyValue;
+let formatDashboardLongDate;
+let getDashboardExpenseOverviewData;
+let getDashboardExpensePeriodData;
+let getDashboardLedgerExpenseData;
+let getDashboardLedgerMovementData;
 let buildDashboardBalanceSeries;
 let buildDashboardDailySeries;
-let normalizeDashboardDate;
+let normalizeDashboardBaseDate;
 
 const dashboardState = {
   selectedExpensePeriod: "week",
   selectedSpendingRhythmPeriod: "day",
+  selectedHistoryPeriod: "7d",
+  historyVisibleGroups: 6,
+  historyCustomStart: "",
+  historyCustomEnd: "",
+  historyIndividualDeleteConfirmedUntil: 0,
 };
 
 let overviewRenderer;
 let dashboardAppInitialized = false;
+let dashboardTabsBound = false;
 
 const elements = {
   dashboardTabButtons: Array.from(document.querySelectorAll("[data-dashboard-tab-link]")),
@@ -78,6 +86,11 @@ const elements = {
   miniStatVr: document.getElementById("mini-stat-vr"),
   miniStatInvestimento: document.getElementById("mini-stat-investimento"),
   expensePeriodChip: document.getElementById("expense-period-chip"),
+  historyPanelSubtitle: document.getElementById("history-panel-subtitle"),
+  historyCustomStart: document.getElementById("history-custom-start"),
+  historyCustomEnd: document.getElementById("history-custom-end"),
+  historyCustomApply: document.getElementById("history-custom-apply"),
+  historyLoadMore: document.getElementById("history-load-more"),
   expenseTotalDay: document.getElementById("expense-total-day"),
   expenseTotalDayNote: document.getElementById("expense-total-day-note"),
   detailsExpenseTotalDay: document.getElementById("details-expense-total-day"),
@@ -108,6 +121,7 @@ const elements = {
   spendingRhythmPeriodButtons: Array.from(
     document.querySelectorAll("[data-spending-rhythm-period]")
   ),
+  historyPeriodButtons: Array.from(document.querySelectorAll("[data-history-period]")),
   insightsChip: document.getElementById("insights-chip"),
   insightsList: document.getElementById("insights-list"),
   expensePeriodButtons: Array.from(document.querySelectorAll("[data-expense-period]")),
@@ -117,10 +131,10 @@ const elements = {
 const overviewHelpers = {
   buildFinancialHealthStatus,
   formatCurrency(value) {
-    return formatDashboardCurrency(value);
+    return formatDashboardCurrencyValue(value);
   },
   formatDateLong(value) {
-    return formatDashboardDateLong(value);
+    return formatDashboardLongDate(value);
   },
   formatPercent,
   getDailyLimitStatus,
@@ -196,16 +210,30 @@ function setSurfaceTone(element, tone) {
 }
 
 function switchDashboardTab(tabId = "overview") {
-  elements.dashboardTabButtons.forEach((button) => {
+  console.log("[Dashboard Tabs] switchDashboardTab recebeu:", tabId);
+
+  const dashboardTabButtons = Array.from(
+    document.querySelectorAll("[data-dashboard-tab-link]")
+  );
+  const dashboardTabPanels = Array.from(
+    document.querySelectorAll("[data-dashboard-panel]")
+  );
+
+  dashboardTabButtons.forEach((button) => {
     const isActive = button.dataset.dashboardTabLink === tabId;
     button.classList.toggle("is-active", isActive);
     button.setAttribute("aria-pressed", String(isActive));
   });
 
-  elements.dashboardTabPanels.forEach((panel) => {
+  dashboardTabPanels.forEach((panel) => {
     const isActive = panel.dataset.dashboardPanel === tabId;
     panel.classList.toggle("is-active", isActive);
   });
+
+  const activePanels = dashboardTabPanels
+    .filter((panel) => panel.classList.contains("is-active"))
+    .map((panel) => panel.dataset.dashboardPanel);
+  console.log("[Dashboard Tabs] painÃ©is ativos:", activePanels);
 }
 
 function setDailyLimitHighlight(color) {
@@ -291,7 +319,7 @@ function getDailyLimitStatus(summary, expenseOverview) {
       ratio,
       percentage,
       progressWidth,
-      detail: `${formatDashboardCurrency(spentToday)} de ${formatDashboardCurrency(limit)} usados hoje.`,
+      detail: `${formatDashboardCurrencyValue(spentToday)} de ${formatDashboardCurrencyValue(limit)} usados hoje.`,
     };
   }
 
@@ -303,7 +331,7 @@ function getDailyLimitStatus(summary, expenseOverview) {
       ratio,
       percentage,
       progressWidth,
-      detail: `${formatDashboardCurrency(spentToday)} de ${formatDashboardCurrency(limit)} usados hoje.`,
+      detail: `${formatDashboardCurrencyValue(spentToday)} de ${formatDashboardCurrencyValue(limit)} usados hoje.`,
     };
   }
 
@@ -314,7 +342,7 @@ function getDailyLimitStatus(summary, expenseOverview) {
     ratio,
     percentage,
     progressWidth,
-    detail: `${formatDashboardCurrency(spentToday)} gastos para um limite diario de ${formatDashboardCurrency(limit)}.`,
+    detail: `${formatDashboardCurrencyValue(spentToday)} gastos para um limite diario de ${formatDashboardCurrencyValue(limit)}.`,
   };
 }
 
@@ -325,8 +353,8 @@ function formatPercent(value) {
 }
 
 function getInclusiveDaySpan(startDate, endDate) {
-  const start = normalizeDashboardDate(startDate);
-  const end = normalizeDashboardDate(endDate);
+  const start = normalizeDashboardBaseDate(startDate);
+  const end = normalizeDashboardBaseDate(endDate);
   const differenceInMs = end.getTime() - start.getTime();
   const oneDay = 1000 * 60 * 60 * 24;
   return Math.max(Math.floor(differenceInMs / oneDay) + 1, 1);
@@ -373,7 +401,7 @@ function getCategoryGlyph(category) {
 function getWeekdayLabel(date) {
   return new Intl.DateTimeFormat("pt-BR", {
     weekday: "long",
-  }).format(normalizeDashboardDate(date));
+  }).format(normalizeDashboardBaseDate(date));
 }
 
 function getToneByType(type) {
@@ -460,13 +488,13 @@ function buildFinancialHealthStatus(summary) {
             type: "warning",
             title: "Limite diario baixo",
             description:
-              `O valor livre por dia caiu para ${formatDashboardCurrency(summary.limiteDiario)}. Vale reduzir gastos ate o proximo pagamento.`,
+              `O valor livre por dia caiu para ${formatDashboardCurrencyValue(summary.limiteDiario)}. Vale reduzir gastos ate o proximo pagamento.`,
           }
           : {
             type: "warning",
             title: "Janela curta ate o pagamento",
             description:
-              `Restam ${summary.diasRestantes} dia(s) para atravessar o ciclo com ${formatDashboardCurrency(summary.saldoDisponivel)} de saldo disponivel.`,
+              `Restam ${summary.diasRestantes} dia(s) para atravessar o ciclo com ${formatDashboardCurrencyValue(summary.saldoDisponivel)} de saldo disponivel.`,
           },
       ],
     };
@@ -484,7 +512,7 @@ function buildFinancialHealthStatus(summary) {
         type: "success",
         title: "Seu ciclo esta saudavel",
         description:
-          `O saldo disponivel esta positivo e o limite diario atual de ${formatDashboardCurrency(summary.limiteDiario)} indica uma margem mais confortavel.`,
+          `O saldo disponivel esta positivo e o limite diario atual de ${formatDashboardCurrencyValue(summary.limiteDiario)} indica uma margem mais confortavel.`,
       },
     ],
   };
@@ -531,14 +559,14 @@ function renderProjection(summary, projection) {
     return;
   }
 
-  const chartWidth = 760;
-  const chartHeight = 248;
-  const padding = { top: 20, right: 112, bottom: 42, left: 62 };
+  const chartWidth = 920;
+  const chartHeight = 320;
+  const padding = { top: 12, right: 22, bottom: 34, left: 76 };
   const balances = projection.map((item) => Number(item.balance || 0));
   const rawMin = Math.min(...balances, 0);
   const rawMax = Math.max(...balances, 0);
   const amplitude = Math.max(rawMax - rawMin, 1);
-  const paddingValue = amplitude * 0.14;
+  const paddingValue = amplitude * 0.1;
   const minValue = rawMin - paddingValue;
   const maxValue = rawMax + paddingValue;
   const innerWidth = chartWidth - padding.left - padding.right;
@@ -575,15 +603,13 @@ function renderProjection(summary, projection) {
     const yPercent = (yPx / chartHeight) * 100;
     return { value, y: yPx, yPercent: yPercent };
   });
-  const lastPoint = points[points.length - 1];
-
   elements.chartBars.innerHTML = `
     <div class="projection-chart">
       <div class="projection-chart-axis projection-chart-axis-y">
         ${yTicks
       .map(
         (tick) => `
-              <span style="top:${tick.yPercent.toFixed(2)}%">${formatDashboardCurrency(tick.value)}</span>
+              <span style="top:${tick.yPercent.toFixed(2)}%">${formatDashboardCurrencyValue(tick.value)}</span>
             `
       )
       .join("")}
@@ -613,7 +639,9 @@ function renderProjection(summary, projection) {
         ${points
       .map(
         (point) => `
-              <circle class="projection-point projection-point-${point.tone}" cx="${point.x.toFixed(2)}" cy="${point.y.toFixed(2)}" r="4.4"></circle>
+              <circle class="projection-point projection-point-${point.tone}" cx="${point.x.toFixed(2)}" cy="${point.y.toFixed(2)}" r="4.4">
+                <title>${point.label} | Saldo projetado ${formatDashboardCurrencyValue(point.balance)}</title>
+              </circle>
             `
       )
       .join("")}
@@ -626,11 +654,6 @@ function renderProjection(summary, projection) {
             `
       )
       .join("")}
-      </div>
-      <div class="projection-chart-callout projection-chart-callout-${lastPoint.tone}">
-        <span>${lastPoint.label}</span>
-        <strong>Saldo projetado</strong>
-        <em>${formatDashboardCurrency(lastPoint.balance)}</em>
       </div>
     </div>
   `;
@@ -656,6 +679,152 @@ function extractDashboardTimeLabel(value) {
 
   const match = value.match(/(\d{2}:\d{2})/);
   return match ? match[1] : "";
+}
+
+function buildDashboardHistoryGroups(entries) {
+  const groups = new Map();
+
+  (Array.isArray(entries) ? entries : []).forEach((entry) => {
+    const date = normalizeDashboardHistoryDate(entry.data || entry.dataHora || entry.dataNormalizada);
+    if (!date) {
+      return;
+    }
+
+    const key = date.toISOString().slice(0, 10);
+    const current = groups.get(key) || {
+      date,
+      dateKey: key,
+      saidas: 0,
+      count: 0,
+      items: [],
+      topCategory: "Sem categoria",
+    };
+
+    const value = Number(entry.valor || 0);
+    current.saidas += value;
+    current.count += 1;
+    current.items.push(entry);
+    groups.set(key, current);
+  });
+
+  return [...groups.values()]
+    .sort((left, right) => right.date.getTime() - left.date.getTime())
+    .map((group) => {
+      const categoryTotals = group.items.reduce((accumulator, item) => {
+        const category = item.categoria || "Sem categoria";
+        accumulator.set(category, (accumulator.get(category) || 0) + Number(item.valor || 0));
+        return accumulator;
+      }, new Map());
+      const topCategory = [...categoryTotals.entries()].sort((a, b) => b[1] - a[1])[0]?.[0] || "Sem categoria";
+      return {
+        ...group,
+        topCategory,
+        items: group.items.slice().sort((left, right) => {
+          const leftTime = normalizeDashboardHistoryDate(left.data || left.dataHora)?.getTime?.() || 0;
+          const rightTime = normalizeDashboardHistoryDate(right.data || right.dataHora)?.getTime?.() || 0;
+          return leftTime - rightTime;
+        }),
+      };
+    });
+}
+
+function normalizeDashboardHistoryDate(value) {
+  if (!value) {
+    return null;
+  }
+
+  const date = normalizeDashboardBaseDate?.(value) || new Date(value);
+  return Number.isNaN(date.getTime()) ? null : date;
+}
+
+function getDashboardHistoryPeriodDescriptor(period, referenceDate = new Date(), customStart, customEnd) {
+  const today = normalizeDashboardBaseDate(referenceDate);
+  const normalizedPeriod = String(period || "7d");
+
+  if (normalizedPeriod === "today") {
+    return { label: "Hoje", startDate: today, endDate: today };
+  }
+
+  if (normalizedPeriod === "7d") {
+    const startDate = new Date(today);
+    startDate.setDate(today.getDate() - 6);
+    return { label: "Ultimos 7 dias", startDate, endDate: today };
+  }
+
+  if (normalizedPeriod === "30d") {
+    const startDate = new Date(today);
+    startDate.setDate(today.getDate() - 29);
+    return { label: "Ultimos 30 dias", startDate, endDate: today };
+  }
+
+  if (normalizedPeriod === "month") {
+    const startDate = new Date(today.getFullYear(), today.getMonth(), 1);
+    return { label: "Mes atual", startDate, endDate: today };
+  }
+
+  const normalizedStart = normalizeDashboardHistoryDate(customStart) || new Date(today.getFullYear(), today.getMonth(), 1);
+  const normalizedEnd = normalizeDashboardHistoryDate(customEnd) || today;
+  return {
+    label: "Periodo personalizado",
+    startDate: normalizedStart,
+    endDate: normalizedEnd,
+  };
+}
+
+function formatDashboardHistorySummaryLabel(periodSummary, period, visibleGroups) {
+  const descriptor = getDashboardHistoryPeriodDescriptor(
+    period,
+    new Date(),
+    dashboardState.historyCustomStart,
+    dashboardState.historyCustomEnd
+  );
+
+  return `${descriptor.label} | ${periodSummary.quantidadeLancamentos || 0} lancamento(s) | ${formatDashboardCurrencyValue(
+    periodSummary.totalGasto || 0
+  )} em saidas | ${visibleGroups} grupo(s) visivel(is)`;
+}
+
+function renderDashboardHistoryEmptyState(title, body) {
+  return `
+    <div class="history-empty-state">
+      <strong>${title}</strong>
+      <span>${body}</span>
+    </div>
+  `;
+}
+
+function renderDashboardHistoryGroups(groups, visibleGroups) {
+  return groups.slice(0, visibleGroups).map((group, index) => `
+    <details class="history-day-card"${index === 0 ? " open" : ""} data-history-date="${group.dateKey || ""}">
+      <summary class="history-day-summary">
+        <div class="history-day-summary-main">
+          <strong class="history-day-date">${formatDashboardLongDate(group.date)}</strong>
+          <span class="history-day-category">Categoria dominante: ${group.topCategory || "Sem categoria"}</span>
+        </div>
+        <div class="history-day-summary-meta">
+          <strong class="history-day-total">${formatDashboardCurrencyValue(group.saidas)}</strong>
+          <span class="history-day-count">${group.count} lancamento(s)</span>
+        </div>
+      </summary>
+      <div class="history-day-content">
+        <div class="history-day-actions">
+          <button type="button" class="history-entry-delete history-day-delete" data-history-action="delete-day" data-history-date="${group.dateKey || ""}" aria-label="Apagar lancamentos do dia ${formatDashboardLongDate(group.date)}">Apagar dia</button>
+        </div>
+        ${(group.items || []).map((entry) => `
+          <div class="history-entry-row" data-history-entry-id="${entry.id || entry.external_id || ""}">
+            <div class="history-entry-main">
+              <strong>${entry.descricao || "Lancamento"}</strong>
+              <span>${entry.categoria || "Sem categoria"} · ${extractDashboardTimeLabel(entry.data) || "--:--"}</span>
+            </div>
+            <div class="history-entry-value">
+              <strong>${formatDashboardCurrencyValue(entry.valor)}</strong>
+              <button type="button" class="history-entry-delete" data-history-action="delete-entry" data-history-entry-id="${entry.id || entry.external_id || ""}" aria-label="Apagar lancamento ${entry.descricao || "Lancamento"}">Apagar</button>
+            </div>
+          </div>
+        `).join("")}
+      </div>
+    </details>
+  `).join("");
 }
 
 function buildSummaryNote(summary, fallbackText) {
@@ -736,7 +905,7 @@ function renderExpenseEvolution(summary) {
   );
 
   elements.expenseEvolutionChip.textContent = `${summary.evolutionSeries.length} ponto(s)`;
-  elements.expenseEvolutionCaption.textContent = `${formatDashboardDateLong(summary.startDate)} ate ${formatDashboardDateLong(summary.endDate)}.`;
+  elements.expenseEvolutionCaption.textContent = `${formatDashboardLongDate(summary.startDate)} ate ${formatDashboardLongDate(summary.endDate)}.`;
   elements.expenseEvolutionBars.innerHTML = summary.evolutionSeries
     .map((item) => {
       const height = Math.max((Math.abs(item.total) / referenceHeight) * 100, 8);
@@ -795,7 +964,7 @@ function renderExpenseCategories(summary) {
                 <strong style="color:var(--db2-text-primary);font-size:12.5px;font-weight:600;">${item.categoria}</strong>
               </div>
               <div style="display:flex;flex-direction:column;gap:2px;align-items:flex-end;">
-                <strong style="color:var(--db2-text-primary);font-size:12px;font-weight:600;">${formatDashboardCurrency(item.total)}</strong>
+                <strong style="color:var(--db2-text-primary);font-size:12px;font-weight:600;">${formatDashboardCurrencyValue(item.total)}</strong>
                 <span style="color:${c};font-size:11px;font-weight:600;">${formatPercent(item.percentual)}%</span>
               </div>
             </div>
@@ -877,13 +1046,13 @@ function renderInsights(summary, selectedSummary, expenseOverview, intelligence)
             forecast.projectedBalanceAtPayment >= 0
               ? "No ritmo atual o saldo chega ao proximo pagamento"
               : "Voce ainda chega ao pagamento, mas com margem curta",
-          body: `O ritmo medio esta em ${formatDashboardCurrency(forecast.averageDailySpend)} por dia. O saldo atual dura cerca de ${formatDayEstimate(forecast.estimatedDaysWithBalance)} e deve ${forecast.projectedBalanceAtPayment >= 0 ? `sobrar ${formatDashboardCurrency(forecast.projectedBalanceAtPayment)}` : `ficar apertado em ${formatDashboardCurrency(Math.abs(forecast.projectedBalanceAtPayment))}`} ate o proximo pagamento.`,
+          body: `O ritmo medio esta em ${formatDashboardCurrencyValue(forecast.averageDailySpend)} por dia. O saldo atual dura cerca de ${formatDayEstimate(forecast.estimatedDaysWithBalance)} e deve ${forecast.projectedBalanceAtPayment >= 0 ? `sobrar ${formatDashboardCurrencyValue(forecast.projectedBalanceAtPayment)}` : `ficar apertado em ${formatDashboardCurrencyValue(Math.abs(forecast.projectedBalanceAtPayment))}`} ate o proximo pagamento.`,
         }
         : {
           label: "Previsao ate o pagamento",
           tone: "red",
           title: "No ritmo atual o saldo nao chega ao proximo pagamento",
-          body: `Mantido o ritmo medio de ${formatDashboardCurrency(forecast.averageDailySpend)} por dia, o saldo acaba cerca de ${formatDayEstimate(forecast.daysBeforeBalanceRunsOut)} antes do pagamento e pode faltar ${formatDashboardCurrency(forecast.estimatedDeficit)}.`,
+          body: `Mantido o ritmo medio de ${formatDashboardCurrencyValue(forecast.averageDailySpend)} por dia, o saldo acaba cerca de ${formatDayEstimate(forecast.daysBeforeBalanceRunsOut)} antes do pagamento e pode faltar ${formatDashboardCurrencyValue(forecast.estimatedDeficit)}.`,
         };
 
   const categoryInsight = dominantCategory
@@ -891,7 +1060,7 @@ function renderInsights(summary, selectedSummary, expenseOverview, intelligence)
       label: "Categoria dominante",
       tone: dominantCategory.percentual >= 45 ? "yellow" : "blue",
       title: `${dominantCategory.categoria} lidera os gastos do periodo`,
-      body: `${formatDashboardCurrency(dominantCategory.total)} representam ${formatPercent(dominantCategory.percentual)}% do total em ${selectedSummary.label.toLowerCase()}.`,
+      body: `${formatDashboardCurrencyValue(dominantCategory.total)} representam ${formatPercent(dominantCategory.percentual)}% do total em ${selectedSummary.label.toLowerCase()}.`,
     }
     : {
       label: "Categoria dominante",
@@ -911,7 +1080,7 @@ function renderInsights(summary, selectedSummary, expenseOverview, intelligence)
           : "Sem base recente para comparar o gasto de hoje",
       body:
         expenseOverview.today.totalGasto > 0
-          ? `Hoje soma ${formatDashboardCurrency(expenseOverview.today.totalGasto)} e ainda nao existe historico semanal suficiente para comparar.`
+          ? `Hoje soma ${formatDashboardCurrencyValue(expenseOverview.today.totalGasto)} e ainda nao existe historico semanal suficiente para comparar.`
           : "Registre alguns dias de gasto para destravar a comparacao com a media diaria recente.",
     };
   } else if (comparison.difference > 0) {
@@ -919,21 +1088,21 @@ function renderInsights(summary, selectedSummary, expenseOverview, intelligence)
       label: "Comparacao com media",
       tone: comparison.difference / comparison.recentAverageDailySpend > 0.35 ? "red" : "yellow",
       title: "Hoje esta acima da media diaria recente",
-      body: `${formatDashboardCurrency(expenseOverview.today.totalGasto)} hoje contra media de ${formatDashboardCurrency(comparison.recentAverageDailySpend)}. Excesso atual: ${formatDashboardCurrency(comparison.difference)}.`,
+      body: `${formatDashboardCurrencyValue(expenseOverview.today.totalGasto)} hoje contra media de ${formatDashboardCurrencyValue(comparison.recentAverageDailySpend)}. Excesso atual: ${formatDashboardCurrencyValue(comparison.difference)}.`,
     };
   } else if (comparison.difference < 0) {
     comparisonInsight = {
       label: "Comparacao com media",
       tone: "green",
       title: "Hoje esta abaixo da media diaria recente",
-      body: `${formatDashboardCurrency(expenseOverview.today.totalGasto)} hoje contra media de ${formatDashboardCurrency(comparison.recentAverageDailySpend)}. Folga atual: ${formatDashboardCurrency(Math.abs(comparison.difference))}.`,
+      body: `${formatDashboardCurrencyValue(expenseOverview.today.totalGasto)} hoje contra media de ${formatDashboardCurrencyValue(comparison.recentAverageDailySpend)}. Folga atual: ${formatDashboardCurrencyValue(Math.abs(comparison.difference))}.`,
     };
   } else {
     comparisonInsight = {
       label: "Comparacao com media",
       tone: "blue",
       title: "Hoje esta alinhado com a media diaria recente",
-      body: `${formatDashboardCurrency(expenseOverview.today.totalGasto)} hoje, praticamente igual a media recente de ${formatDashboardCurrency(comparison.recentAverageDailySpend)}.`,
+      body: `${formatDashboardCurrencyValue(expenseOverview.today.totalGasto)} hoje, praticamente igual a media recente de ${formatDashboardCurrencyValue(comparison.recentAverageDailySpend)}.`,
     };
   }
 
@@ -942,7 +1111,7 @@ function renderInsights(summary, selectedSummary, expenseOverview, intelligence)
       label: "Tendencia semanal",
       tone: weeklyTrend.percentual >= 45 ? "yellow" : "blue",
       title: `${weeklyTrend.weekday} concentra a maior parte do gasto semanal`,
-      body: `${formatDashboardCurrency(weeklyTrend.total)} sairam nesse dia, o que representa ${formatPercent(weeklyTrend.percentual)}% da semana atual.`,
+      body: `${formatDashboardCurrencyValue(weeklyTrend.total)} sairam nesse dia, o que representa ${formatPercent(weeklyTrend.percentual)}% da semana atual.`,
     }
     : {
       label: "Tendencia semanal",
@@ -1054,61 +1223,146 @@ function renderInsights(summary, selectedSummary, expenseOverview, intelligence)
     .join("");
 }
 
-function renderDailySummary(periodSummary) {
+function renderDailySummary(data, periodSummary) {
   if (!elements.dailySummaryList || !elements.dailySummaryChip) {
     return;
   }
 
-  if (!periodSummary.groups.length) {
-    elements.dailySummaryChip.textContent = "Sem lancamentos";
-    elements.dailySummaryList.innerHTML = `
-      <div class="detail-row">
-        <span>Resumo do periodo indisponivel</span>
-        <strong>Adicione ou importe lancamentos</strong>
-      </div>
-    `;
+  const selectedPeriod = dashboardState.selectedHistoryPeriod || "7d";
+  const descriptor = getDashboardHistoryPeriodDescriptor(
+    selectedPeriod,
+    new Date(),
+    dashboardState.historyCustomStart,
+    dashboardState.historyCustomEnd
+  );
+  const visibleGroups = Math.max(1, Number(dashboardState.historyVisibleGroups) || 6);
+  const historyEntries = buildDashboardHistoryGroups(getDashboardLedgerExpenseData(data));
+  const filteredGroups = historyEntries.filter((group) => {
+    const day = normalizeDashboardHistoryDate(group.date);
+    if (!day) {
+      return false;
+    }
+    return day >= descriptor.startDate && day <= descriptor.endDate;
+  });
+  const displayGroups = filteredGroups.slice(0, visibleGroups);
+  const canLoadMore = filteredGroups.length > displayGroups.length;
+
+  if (elements.historyPanelSubtitle) {
+    elements.historyPanelSubtitle.textContent = `${descriptor.label} - ${periodSummary.quantidadeLancamentos || 0} lancamento(s), ${formatDashboardCurrencyValue(periodSummary.totalGasto || 0)} em saidas.`;
+  }
+
+  if (elements.dailySummaryChip) {
+    elements.dailySummaryChip.textContent = descriptor.label;
+  }
+
+  elements.historyPeriodButtons.forEach((button) => {
+    const isActive = button.dataset.historyPeriod === selectedPeriod;
+    button.classList.toggle("active", isActive);
+    button.classList.toggle("is-active", isActive);
+    button.setAttribute("aria-pressed", String(isActive));
+  });
+
+  if (!filteredGroups.length) {
+    elements.dailySummaryList.innerHTML = renderDashboardHistoryEmptyState(
+      "Sem lançamentos nesse período",
+      "Não há despesas reais no intervalo selecionado."
+    );
+    if (elements.historyLoadMore) {
+      elements.historyLoadMore.hidden = true;
+    }
     return;
   }
 
-  elements.dailySummaryChip.textContent = `${periodSummary.groups.length} dia(s)`;
-  elements.dailySummaryList.innerHTML = periodSummary.groups
-    .slice()
-    .reverse()
-    .map(
-      (group, index) => `
-        <details class="day-accordion"${index === 0 ? " open" : ""}>
-          <summary class="day-accordion-summary">
-            <div>
-              <strong>${formatDashboardDateLong(group.date)}</strong>
-              <span class="text-soft">Categoria dominante: ${group.topCategory}</span>
-            </div>
-            <div class="day-accordion-meta">
-              <strong>${formatDashboardCurrency(group.saidas)}</strong>
-              <span class="text-soft">${group.count} lancamento(s)</span>
-            </div>
-          </summary>
-          <div class="day-accordion-content">
-            ${(group.items || [])
-          .map(
-            (entry) => `
-                  <div class="day-entry-row">
-                    <div class="day-entry-main">
-                      <strong>${entry.descricao || "Lancamento"}</strong>
-                      <span class="text-soft">${entry.categoria || "Sem categoria"} | ${extractDashboardTimeLabel(entry.data) || "--:--"
-              } | ${entry.origem || "manual"}</span>
-                    </div>
-                    <div class="day-entry-side">
-                      <strong>${formatDashboardCurrency(entry.valor)}</strong>
-                    </div>
-                  </div>
-                `
-          )
-          .join("")}
-          </div>
-        </details>
-      `
-    )
-    .join("");
+  elements.dailySummaryList.innerHTML = `
+    <div class="history-summary-band">
+      <div class="history-summary-kpi">
+        <span>Período</span>
+        <strong>${descriptor.label}</strong>
+      </div>
+      <div class="history-summary-kpi">
+        <span>Dias exibidos</span>
+        <strong>${displayGroups.length}</strong>
+      </div>
+      <div class="history-summary-kpi">
+        <span>Lançamentos</span>
+        <strong>${periodSummary.quantidadeLancamentos || 0}</strong>
+      </div>
+      <div class="history-summary-kpi">
+        <span>Total gasto</span>
+        <strong>${formatDashboardCurrencyValue(periodSummary.totalGasto || 0)}</strong>
+      </div>
+    </div>
+    <div class="history-group-list">
+      ${renderDashboardHistoryGroups(displayGroups, displayGroups.length)}
+    </div>
+    ${canLoadMore ? '<div class="history-load-more-row"><button type="button" class="db2-see-more-btn dashboard-inline-link btn-secondary btn-sm" id="history-load-more">Carregar mais</button></div>' : ""}
+  `;
+
+  if (elements.historyLoadMore) {
+    elements.historyLoadMore.hidden = !canLoadMore;
+  }
+}
+
+function getDashboardHistoryDeleteSyncApi() {
+  return window.MFinanceiroSupabaseSync || window.FinanceSync || window.FinanceStore || null;
+}
+
+function shouldBypassHistoryDeleteConfirmation() {
+  return Date.now() <= Number(dashboardState.historyIndividualDeleteConfirmedUntil || 0);
+}
+
+function confirmDashboardHistoryDelete(message, { allowBypass = false } = {}) {
+  if (allowBypass && shouldBypassHistoryDeleteConfirmation()) {
+    return true;
+  }
+
+  const confirmed = window.confirm(message);
+
+  if (confirmed && allowBypass) {
+    dashboardState.historyIndividualDeleteConfirmedUntil = Date.now() + 15000;
+  }
+
+  return confirmed;
+}
+
+async function deleteDashboardHistoryEntry(entryId) {
+  const targetId = String(entryId || "").trim();
+  if (!targetId) {
+    return false;
+  }
+
+  const syncApi = getDashboardHistoryDeleteSyncApi();
+  if (typeof syncApi?.deleteExpense !== "function") {
+    throw new Error("Funcao de exclusao nao disponivel.");
+  }
+
+  return syncApi.deleteExpense(targetId);
+}
+
+async function deleteDashboardHistoryGroup(dateKey) {
+  const targetDate = String(dateKey || "").trim();
+  if (!targetDate) {
+    return false;
+  }
+
+  const data = window.FinanceStore?.loadAppData ? window.FinanceStore.loadAppData() : null;
+  const entries = getDashboardLedgerExpenseData(data || {}).filter((entry) => {
+    const entryDate = normalizeDashboardHistoryDate(entry.data || entry.dataHora);
+    return entryDate && entryDate.toISOString().slice(0, 10) === targetDate;
+  });
+
+  if (!entries.length) {
+    return false;
+  }
+
+  for (const entry of entries) {
+    const entryId = entry.id || entry.external_id;
+    if (entryId) {
+      await deleteDashboardHistoryEntry(entryId);
+    }
+  }
+
+  return true;
 }
 
 function renderAlerts(summary, alerts) {
@@ -1170,25 +1424,25 @@ function renderSummaryTable(data, summary, alerts, expenseOverview, intelligence
     },
     {
       label: "Saldo disponivel",
-      value: formatDashboardCurrency(summary.saldoDisponivel),
+      value: formatDashboardCurrencyValue(summary.saldoDisponivel),
       statusClass: summary.saldoDisponivel >= 0 ? "status-positive" : "status-danger",
       note: summary.projectedBenefitsInSaldo > 0
-        ? `Saldo inicial mais ${formatDashboardCurrency(summary.projectedBenefitsInSaldo)} em beneficios contabilizados no saldo, menos o valor comprometido do ciclo.`
+        ? `Saldo inicial mais ${formatDashboardCurrencyValue(summary.projectedBenefitsInSaldo)} em beneficios contabilizados no saldo, menos o valor comprometido do ciclo.`
         : "Saldo inicial menos o valor comprometido ja registrado para o usuario autenticado.",
     },
     {
       label: "Saldo restante (alias)",
-      value: formatDashboardCurrency(summary.saldoRestante),
+      value: formatDashboardCurrencyValue(summary.saldoRestante),
       statusClass: summary.saldoRestante >= 0 ? "status-positive" : "status-danger",
       note: "Mantido como alias de saldo disponivel para preservar compatibilidade com o restante do sistema.",
     },
     {
       label: "Proximo pagamento",
-      value: formatDashboardCurrency(summary.paymentInfo.value),
+      value: formatDashboardCurrencyValue(summary.paymentInfo.value),
       statusClass: summary.paymentInfo.configured ? "status-positive" : "status-warning",
       note:
         summary.paymentInfo.configured && summary.paymentInfo.nextDate
-          ? `${summary.paymentInfo.daysRemaining} dia(s) ate ${formatDashboardDateLong(summary.paymentInfo.nextDate)}.`
+          ? `${summary.paymentInfo.daysRemaining} dia(s) ate ${formatDashboardLongDate(summary.paymentInfo.nextDate)}.`
           : "Configure salario, descontos e dias de pagamento em Base financeira.",
     },
     {
@@ -1199,55 +1453,55 @@ function renderSummaryTable(data, summary, alerts, expenseOverview, intelligence
     },
     {
       label: "Total de despesas",
-      value: formatDashboardCurrency(summary.totalDespesas),
+      value: formatDashboardCurrencyValue(summary.totalDespesas),
       statusClass: summary.totalDespesas > 0 ? "status-warning" : "status-positive",
       note: "Soma das despesas salvas no Supabase para o usuario autenticado.",
     },
     {
       label: "Gasto de hoje",
-      value: formatDashboardCurrency(expenseOverview.today.totalGasto),
+      value: formatDashboardCurrencyValue(expenseOverview.today.totalGasto),
       statusClass: expenseOverview.today.totalGasto > 0 ? "status-warning" : "status-positive",
       note: `${expenseOverview.today.quantidadeLancamentos} lancamento(s) registrados no dia atual.`,
     },
     {
       label: "Resumo de ontem",
-      value: formatDashboardCurrency(expenseOverview.yesterday.totalGasto),
+      value: formatDashboardCurrencyValue(expenseOverview.yesterday.totalGasto),
       statusClass: expenseOverview.yesterday.totalGasto > 0 ? "status-warning" : "status-positive",
       note: `${expenseOverview.yesterday.quantidadeLancamentos} lancamento(s) do dia anterior.`,
     },
     {
       label: "Semana ate agora",
-      value: formatDashboardCurrency(expenseOverview.week.totalGasto),
+      value: formatDashboardCurrencyValue(expenseOverview.week.totalGasto),
       statusClass: expenseOverview.week.totalGasto > 0 ? "status-warning" : "status-positive",
       note: `${expenseOverview.week.quantidadeLancamentos} lancamento(s) de segunda-feira ate hoje.`,
     },
     {
       label: "Mes ate agora",
-      value: formatDashboardCurrency(expenseOverview.month.totalGasto),
+      value: formatDashboardCurrencyValue(expenseOverview.month.totalGasto),
       statusClass: expenseOverview.month.totalGasto > 0 ? "status-warning" : "status-positive",
       note: `${expenseOverview.month.quantidadeLancamentos} lancamento(s) do dia 1 ate hoje.`,
     },
     {
       label: "Contas fixas no ciclo",
-      value: formatDashboardCurrency(summary.accounts.total),
+      value: formatDashboardCurrencyValue(summary.accounts.total),
       statusClass: summary.accounts.total > 0 ? "status-warning" : "status-positive",
       note: `${summary.accounts.items.length} conta(s) pendente(s) entre o ciclo atual e o proximo pagamento.`,
     },
     {
       label: "Fatura do cartao",
-      value: formatDashboardCurrency(summary.cards.total),
+      value: formatDashboardCurrencyValue(summary.cards.total),
       statusClass: summary.cards.total > 0 ? "status-warning" : "status-positive",
       note: `${summary.cards.items.length} cartao(es) afetam o ciclo atual.`,
     },
     {
       label: "Parcelamentos no ciclo",
-      value: formatDashboardCurrency(summary.installments.total),
+      value: formatDashboardCurrencyValue(summary.installments.total),
       statusClass: summary.installments.total > 0 ? "status-warning" : "status-positive",
       note: `${summary.installments.items.length} parcela(s) entram no valor comprometido do ciclo atual.`,
     },
     {
       label: "Saidas variaveis no ledger",
-      value: formatDashboardCurrency(summary.dailyExpenses.total),
+      value: formatDashboardCurrencyValue(summary.dailyExpenses.total),
       statusClass: summary.dailyExpenses.total > 0 ? "status-warning" : "status-positive",
       note: `${summary.dailyExpenses.items.length} movimentacao(oes) de saida no ledger ja afetam a leitura de consumo, os insights e a projecao do saldo.`,
     },
@@ -1260,7 +1514,7 @@ function renderSummaryTable(data, summary, alerts, expenseOverview, intelligence
       note: expenseOverview.month.categorySeries.length
         ? expenseOverview.month.categorySeries
           .slice(0, 3)
-          .map((item) => `${item.categoria}: ${formatDashboardCurrency(item.total)}`)
+          .map((item) => `${item.categoria}: ${formatDashboardCurrencyValue(item.total)}`)
           .join(" | ")
         : "As categorias aparecem aqui conforme os gastos do mes forem sendo registrados.",
     },
@@ -1275,39 +1529,39 @@ function renderSummaryTable(data, summary, alerts, expenseOverview, intelligence
     },
     {
       label: "Beneficios previstos no ciclo",
-      value: formatDashboardCurrency(projectedBenefits),
+      value: formatDashboardCurrencyValue(projectedBenefits),
       statusClass: projectedBenefits > 0 ? "status-positive" : "status-warning",
       note: vrVaBenefit
-        ? `VR/VA ${vrVaBenefit.status === "recebido" ? "recebido" : "pendente"} com previsao de ${formatDashboardCurrency(vrVaBenefit.value)} em ${formatDashboardDateLong(vrVaBenefit.nextDate)}.${summary.projectedBenefitsInSaldo > 0 ? ` ${formatDashboardCurrency(summary.projectedBenefitsInSaldo)} entram no saldo disponivel.` : ""}`
+        ? `VR/VA ${vrVaBenefit.status === "recebido" ? "recebido" : "pendente"} com previsao de ${formatDashboardCurrencyValue(vrVaBenefit.value)} em ${formatDashboardLongDate(vrVaBenefit.nextDate)}.${summary.projectedBenefitsInSaldo > 0 ? ` ${formatDashboardCurrencyValue(summary.projectedBenefitsInSaldo)} entram no saldo disponivel.` : ""}`
         : "Registre o VR/VA em Recebimentos quando esse beneficio fizer parte da sua leitura financeira.",
     },
     {
       label: "Valor comprometido",
-      value: formatDashboardCurrency(summary.valorComprometido),
+      value: formatDashboardCurrencyValue(summary.valorComprometido),
       statusClass: summary.valorComprometido > 0 ? "status-danger" : "status-positive",
-      note: `Hoje soma ${formatDashboardCurrency(summary.committedBreakdown.despesasRegistradas)} em despesas registradas, ${formatDashboardCurrency(summary.committedBreakdown.contasFixas)} em contas fixas, ${formatDashboardCurrency(summary.committedBreakdown.faturasCartao)} em faturas do ciclo e ${formatDashboardCurrency(summary.committedBreakdown.parcelamentos)} na parcela vigente do periodo.`,
+      note: `Hoje soma ${formatDashboardCurrencyValue(summary.committedBreakdown.despesasRegistradas)} em despesas registradas, ${formatDashboardCurrencyValue(summary.committedBreakdown.contasFixas)} em contas fixas, ${formatDashboardCurrencyValue(summary.committedBreakdown.faturasCartao)} em faturas do ciclo e ${formatDashboardCurrencyValue(summary.committedBreakdown.parcelamentos)} na parcela vigente do periodo.`,
     },
     {
       label: "Disponivel por dia",
-      value: formatDashboardCurrency(summary.limiteDiario),
+      value: formatDashboardCurrencyValue(summary.limiteDiario),
       statusClass: summary.limiteDiario > 0 ? "status-positive" : "status-warning",
       note: "Saldo disponivel dividido pelos dias restantes ate o proximo pagamento.",
     },
     {
       label: "Saldo apos gastos variaveis",
-      value: formatDashboardCurrency(summary.saldoAposGastosVariaveis),
+      value: formatDashboardCurrencyValue(summary.saldoAposGastosVariaveis),
       statusClass: summary.saldoAposGastosVariaveis >= 0 ? "status-positive" : "status-danger",
       note: "Neste momento acompanha o mesmo saldo disponivel, preservando compatibilidade para futuras camadas de comprometimento.",
     },
     {
       label: "Sugestao de investimento",
-      value: formatDashboardCurrency(summary.investimento.suggestedValue),
+      value: formatDashboardCurrencyValue(summary.investimento.suggestedValue),
       statusClass: summary.investimento.suggestedValue > 0 ? "status-positive" : "status-warning",
       note: `${summary.investimento.percentage}% do dinheiro livre atual, sem usar o valor comprometido.`,
     },
     {
       label: "Valor reservado para investir",
-      value: formatDashboardCurrency(summary.investimento.reservedValue),
+      value: formatDashboardCurrencyValue(summary.investimento.reservedValue),
       statusClass: summary.investimento.reservedValue > 0 ? "status-positive" : "status-warning",
       note:
         summary.investimento.status === "confirmado"
@@ -1316,7 +1570,7 @@ function renderSummaryTable(data, summary, alerts, expenseOverview, intelligence
     },
     {
       label: "Saldo livre apos investimento",
-      value: formatDashboardCurrency(summary.investimento.freeAfterSuggestion),
+      value: formatDashboardCurrencyValue(summary.investimento.freeAfterSuggestion),
       statusClass: summary.investimento.freeAfterSuggestion > 0 ? "status-positive" : "status-warning",
       note: "Quanto continuaria livre se a sugestao atual de investimento fosse reservada.",
     },
@@ -1405,13 +1659,142 @@ function bindSpendingRhythmPeriodFilters() {
   });
 }
 
-function bindDashboardTabs() {
-  elements.dashboardTabButtons.forEach((button) => {
-    button.addEventListener("click", () => {
-      const nextTab = button.dataset.dashboardTabLink || "overview";
-      switchDashboardTab(nextTab);
-    });
+function bindHistoryFilters() {
+  const handleHistoryChange = (nextPeriod, customStart, customEnd) => {
+    dashboardState.selectedHistoryPeriod = nextPeriod;
+    if (typeof customStart === "string") {
+      dashboardState.historyCustomStart = customStart;
+    }
+    if (typeof customEnd === "string") {
+      dashboardState.historyCustomEnd = customEnd;
+    }
+    dashboardState.historyVisibleGroups = 6;
+    atualizarDashboard();
+  };
+
+  document.addEventListener("click", (event) => {
+    const periodTrigger = event.target.closest("[data-history-period]");
+    if (periodTrigger) {
+      const nextPeriod = periodTrigger.dataset.historyPeriod || "7d";
+      handleHistoryChange(nextPeriod, elements.historyCustomStart?.value || "", elements.historyCustomEnd?.value || "");
+      return;
+    }
+
+    const loadMoreTrigger = event.target.closest("#history-load-more");
+    if (loadMoreTrigger) {
+      dashboardState.historyVisibleGroups += 4;
+      atualizarDashboard();
+      return;
+    }
+
+    const applyTrigger = event.target.closest("#history-custom-apply");
+    if (applyTrigger) {
+      handleHistoryChange(
+        "custom",
+        elements.historyCustomStart?.value || "",
+        elements.historyCustomEnd?.value || ""
+      );
+      return;
+    }
+
+    const deleteAction = event.target.closest("[data-history-action]");
+    if (!deleteAction) {
+      return;
+    }
+
+    const action = deleteAction.dataset.historyAction;
+
+    if (action === "delete-day") {
+      const dateKey = deleteAction.dataset.historyDate || "";
+      if (!dateKey) {
+        return;
+      }
+
+      const confirmed = confirmDashboardHistoryDelete(
+        "Apagar todos os lancamentos deste dia?",
+        { allowBypass: false }
+      );
+
+      if (!confirmed) {
+        return;
+      }
+
+      deleteDashboardHistoryGroup(dateKey)
+        .then((deleted) => {
+          if (deleted) {
+            atualizarDashboard();
+          }
+        })
+        .catch((error) => {
+          console.error("[Dashboard History] Falha ao apagar grupo diario.", error);
+        });
+      return;
+    }
+
+    if (action === "delete-entry") {
+      const entryId = deleteAction.dataset.historyEntryId || "";
+      if (!entryId) {
+        return;
+      }
+
+      const confirmed = confirmDashboardHistoryDelete(
+        "Apagar este lancamento?",
+        { allowBypass: true }
+      );
+
+      if (!confirmed) {
+        return;
+      }
+
+      deleteDashboardHistoryEntry(entryId)
+        .then((deleted) => {
+          if (deleted) {
+            atualizarDashboard();
+          }
+        })
+        .catch((error) => {
+          console.error("[Dashboard History] Falha ao apagar lancamento.", error);
+        });
+    }
   });
+
+  if (elements.historyCustomStart) {
+    elements.historyCustomStart.addEventListener("change", () => {
+      dashboardState.historyCustomStart = elements.historyCustomStart.value;
+    });
+  }
+
+  if (elements.historyCustomEnd) {
+    elements.historyCustomEnd.addEventListener("change", () => {
+      dashboardState.historyCustomEnd = elements.historyCustomEnd.value;
+    });
+  }
+}
+
+function bindDashboardTabs() {
+  if (dashboardTabsBound) {
+    console.log("[Dashboard Tabs] bindDashboardTabs ignorado: jÃ¡ vinculado");
+    return;
+  }
+
+  console.log("[Dashboard Tabs] bindDashboardTabs executado", {
+    buttons: elements.dashboardTabButtons.map((button) => button.dataset.dashboardTabLink || ""),
+  });
+
+  document.addEventListener("click", (event) => {
+    const tabTrigger = event.target.closest("[data-dashboard-tab-link]");
+
+    if (!tabTrigger) {
+      return;
+    }
+
+    const nextTab = tabTrigger.dataset.dashboardTabLink || "overview";
+    console.log("[Dashboard Tabs] clique detectado:", nextTab);
+    console.log("[Dashboard Tabs] chamando switchDashboardTab");
+    switchDashboardTab(nextTab);
+  });
+
+  dashboardTabsBound = true;
 }
 
 function logDashboardIntegrationDebug(data, summary, expenseOverview, selectedSummary, intelligence) {
@@ -1420,8 +1803,8 @@ function logDashboardIntegrationDebug(data, summary, expenseOverview, selectedSu
   }
 
   const rawLedger = Array.isArray(data?.ledgerMovimentacoes) ? data.ledgerMovimentacoes : [];
-  const normalizedLedger = getDashboardLedgerMovements(data);
-  const normalizedExpenses = getDashboardLedgerExpenseEntries(data);
+  const normalizedLedger = getDashboardLedgerMovementData(data);
+  const normalizedExpenses = getDashboardLedgerExpenseData(data);
   const comparisonPayload = {
     ledgerBruto: rawLedger.length,
     ledgerNormalizado: normalizedLedger.length,
@@ -1481,43 +1864,45 @@ function hydrateDashboardData() {
     },
   };
 
-  console.groupCollapsed("[Dashboard] hydrateDashboardData");
-  console.log("loaders", {
-    banking: bankingData ? Object.keys(bankingData).length : 0,
-    contasDiaADia: Array.isArray(variableAccounts) ? variableAccounts.length : 0,
-    ledgerMovimentacoes: Array.isArray(ledgerMovements) ? ledgerMovements.length : 0,
-    recebimentoPagamento: paymentReceipt ? Object.keys(paymentReceipt).length : 0,
-    recebimentoVrVa: vrvaReceipt ? Object.keys(vrvaReceipt).length : 0,
-  });
-  console.log("hydratedData", {
-    keys: Object.keys(data || {}),
-    hasBanking: Boolean(data?.banking),
-    hasRecebimentos: Boolean(data?.recebimentos),
-    ledgerMovimentacoes: Array.isArray(data?.ledgerMovimentacoes)
-      ? data.ledgerMovimentacoes.length
-      : 0,
-    contasDiaADia: Array.isArray(data?.contasDiaADia) ? data.contasDiaADia.length : 0,
-    banking: data?.banking || null,
-    recebimentos: data?.recebimentos || null,
-  });
-  console.groupEnd();
+  if (window.__MFINANCEIRO_DEBUG_INTEGRATION__ === true) {
+    console.groupCollapsed("[Dashboard] hydrateDashboardData");
+    console.log("loaders", {
+      banking: bankingData ? Object.keys(bankingData).length : 0,
+      contasDiaADia: Array.isArray(variableAccounts) ? variableAccounts.length : 0,
+      ledgerMovimentacoes: Array.isArray(ledgerMovements) ? ledgerMovements.length : 0,
+      recebimentoPagamento: paymentReceipt ? Object.keys(paymentReceipt).length : 0,
+      recebimentoVrVa: vrvaReceipt ? Object.keys(vrvaReceipt).length : 0,
+    });
+    console.log("hydratedData", {
+      keys: Object.keys(data || {}),
+      hasBanking: Boolean(data?.banking),
+      hasRecebimentos: Boolean(data?.recebimentos),
+      ledgerMovimentacoes: Array.isArray(data?.ledgerMovimentacoes)
+        ? data.ledgerMovimentacoes.length
+        : 0,
+      contasDiaADia: Array.isArray(data?.contasDiaADia) ? data.contasDiaADia.length : 0,
+      banking: data?.banking || null,
+      recebimentos: data?.recebimentos || null,
+    });
+    console.groupEnd();
+  }
 
   return data;
 }
 
 function atualizarDashboard() {
   const data = hydrateDashboardData();
-  const summary = calculateDashboardSummary(data);
-  const expenseOverview = getDashboardExpenseOverviewSummary(data);
-  const selectedSummary = getDashboardExpensePeriodSummary(
+  const summary = calculateDashboardFinancialSummary(data);
+  const expenseOverview = getDashboardExpenseOverviewData(data);
+  const selectedSummary = getDashboardExpensePeriodData(
     data,
     dashboardState.selectedExpensePeriod
   );
-  const intelligence = computeDashboardFinancialIntelligence(
+  const intelligence = computeDashboardFinancialInsights(
     data,
     dashboardState.selectedExpensePeriod
   );
-  const spendingRhythm = buildSpendingRhythmDataset(
+  const spendingRhythm = buildDashboardSpendingRhythmDataset(
     data,
     dashboardState.selectedSpendingRhythmPeriod
   );
@@ -1542,7 +1927,7 @@ function atualizarDashboard() {
     elements.recentTransactionsSubtitle.textContent = selectedSummary.label || "Periodo atual";
   }
   atualizarGraficoDashboard(summary, projection, dailySeries);
-  renderDailySummary(selectedSummary);
+  renderDailySummary(data, selectedSummary);
   renderAlerts(summary, alerts);
   renderSummaryTable(data, summary, alerts, expenseOverview, intelligence);
 }
@@ -1563,19 +1948,19 @@ function assignDashboardModules() {
   } = financeStore);
 
   ({
-    buildSpendingRhythmDataset,
+    buildSpendingRhythmDataset: buildDashboardSpendingRhythmDataset,
     calcularPrioridadesDoCiclo: calculateCyclePriorities,
-    calculateFinancialIntelligence: computeDashboardFinancialIntelligence,
-    calculateDashboardSummary,
-    formatCurrency: formatDashboardCurrency,
-    formatDateLong: formatDashboardDateLong,
-    getExpenseOverviewSummary: getDashboardExpenseOverviewSummary,
-    getExpensePeriodSummary: getDashboardExpensePeriodSummary,
-    getLedgerExpenseEntries: getDashboardLedgerExpenseEntries,
-    getLedgerMovements: getDashboardLedgerMovements,
+    calculateFinancialIntelligence: computeDashboardFinancialInsights,
+    calculateDashboardSummary: calculateDashboardFinancialSummary,
+    formatCurrency: formatDashboardCurrencyValue,
+    formatDateLong: formatDashboardLongDate,
+    getExpenseOverviewSummary: getDashboardExpenseOverviewData,
+    getExpensePeriodSummary: getDashboardExpensePeriodData,
+    getLedgerExpenseEntries: getDashboardLedgerExpenseData,
+    getLedgerMovements: getDashboardLedgerMovementData,
     montarProjecaoSaldoPorDia: buildDashboardBalanceSeries,
     montarSerieGraficoContasVariaveis: buildDashboardDailySeries,
-    normalizeDate: normalizeDashboardDate,
+    normalizeDate: normalizeDashboardBaseDate,
   } = financeCalculations);
 
   overviewRenderer = window.DashboardOverview;
@@ -1583,14 +1968,53 @@ function assignDashboardModules() {
 
 function validateDashboardDependencies() {
   const dependencies = [
-    ["FinanceStore", window.FinanceStore],
-    ["FinanceCalculations", window.FinanceCalculations],
-    ["AppShell", window.AppShell],
-    ["DashboardOverview", window.DashboardOverview],
+    ["FinanceStore", window.FinanceStore, [
+      "loadAppData",
+      "carregarCadastroBancario",
+      "carregarContasVariaveis",
+      "carregarLedgerMovimentacoes",
+      "carregarRegistroPagamento",
+      "carregarVRVA",
+    ]],
+    ["FinanceCalculations", window.FinanceCalculations, [
+      "calculateDashboardSummary",
+      "buildSpendingRhythmDataset",
+      "calculateFinancialIntelligence",
+      "getExpenseOverviewSummary",
+      "getExpensePeriodSummary",
+      "formatCurrency",
+      "formatDateLong",
+      "montarProjecaoSaldoPorDia",
+      "montarSerieGraficoContasVariaveis",
+      "normalizeDate",
+    ]],
+    ["AppShell", window.AppShell, ["initAppShell"]],
+    ["DashboardOverview", window.DashboardOverview, [
+      "renderMetrics",
+      "renderExpenseOverview",
+      "renderOverviewSpotlights",
+      "renderRecentTransactions",
+      "renderExpensePeriodFilters",
+      "renderSpendingRhythm",
+      "bindExpensePeriodFilters",
+      "bindSpendingRhythmPeriodFilters",
+    ]],
   ];
-  const missingDependencies = dependencies
-    .filter(([, value]) => !value)
-    .map(([name]) => name);
+
+  const missingDependencies = [];
+
+  dependencies.forEach(([name, value, requiredMethods]) => {
+    if (!value) {
+      missingDependencies.push(name);
+      return;
+    }
+
+    requiredMethods.forEach((methodName) => {
+      if (typeof value[methodName] !== "function") {
+        missingDependencies.push(`${name}.${methodName}`);
+      }
+    });
+  });
 
   if (!missingDependencies.length) {
     return true;
@@ -1613,21 +2037,31 @@ function bindDashboardRefreshEvents() {
 }
 
 function initDashboardApp() {
+  console.log("[Dashboard Init] initDashboardApp iniciou");
+
   if (dashboardAppInitialized) {
+    console.log("[Dashboard Init] initDashboardApp ignorado: jÃ¡ inicializado");
     return;
   }
 
-  if (!validateDashboardDependencies()) {
+  const dependenciesAreValid = validateDashboardDependencies();
+  console.log("[Dashboard Init] validateDashboardDependencies:", dependenciesAreValid);
+
+  if (!dependenciesAreValid) {
     return;
   }
 
   assignDashboardModules();
+  console.log("[Dashboard Init] assignDashboardModules executado");
   window.AppShell.initAppShell();
   bindExpensePeriodFilters();
   bindSpendingRhythmPeriodFilters();
+  bindHistoryFilters();
   bindDashboardTabs();
+  console.log("[Dashboard Init] bindDashboardTabs executado");
   bindDashboardRefreshEvents();
   switchDashboardTab("overview");
+  console.log("[Dashboard Init] switchDashboardTab('overview') executado");
   showDashboardFeedback(window.AppShell.consumeDashboardNotice());
   dashboardAppInitialized = true;
   atualizarDashboard();
@@ -1640,3 +2074,4 @@ if (document.readyState === "loading") {
 } else {
   initDashboardApp();
 }
+

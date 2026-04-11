@@ -28,6 +28,7 @@ const dashboardState = {
   historyVisibleGroups: 6,
   historyCustomStart: "",
   historyCustomEnd: "",
+  historyIndividualDeleteConfirmedUntil: 0,
 };
 
 let overviewRenderer;
@@ -602,8 +603,6 @@ function renderProjection(summary, projection) {
     const yPercent = (yPx / chartHeight) * 100;
     return { value, y: yPx, yPercent: yPercent };
   });
-  const lastPoint = points[points.length - 1];
-
   elements.chartBars.innerHTML = `
     <div class="projection-chart">
       <div class="projection-chart-axis projection-chart-axis-y">
@@ -640,7 +639,9 @@ function renderProjection(summary, projection) {
         ${points
       .map(
         (point) => `
-              <circle class="projection-point projection-point-${point.tone}" cx="${point.x.toFixed(2)}" cy="${point.y.toFixed(2)}" r="4.4"></circle>
+              <circle class="projection-point projection-point-${point.tone}" cx="${point.x.toFixed(2)}" cy="${point.y.toFixed(2)}" r="4.4">
+                <title>${point.label} | Saldo projetado ${formatDashboardCurrencyValue(point.balance)}</title>
+              </circle>
             `
       )
       .join("")}
@@ -653,11 +654,6 @@ function renderProjection(summary, projection) {
             `
       )
       .join("")}
-      </div>
-      <div class="projection-chart-callout projection-chart-callout-${lastPoint.tone}">
-        <span>${lastPoint.label}</span>
-        <strong>Saldo projetado</strong>
-        <em>${formatDashboardCurrencyValue(lastPoint.balance)}</em>
       </div>
     </div>
   `;
@@ -697,6 +693,7 @@ function buildDashboardHistoryGroups(entries) {
     const key = date.toISOString().slice(0, 10);
     const current = groups.get(key) || {
       date,
+      dateKey: key,
       saidas: 0,
       count: 0,
       items: [],
@@ -798,7 +795,7 @@ function renderDashboardHistoryEmptyState(title, body) {
 
 function renderDashboardHistoryGroups(groups, visibleGroups) {
   return groups.slice(0, visibleGroups).map((group, index) => `
-    <details class="history-day-card"${index === 0 ? " open" : ""}>
+    <details class="history-day-card"${index === 0 ? " open" : ""} data-history-date="${group.dateKey || ""}">
       <summary class="history-day-summary">
         <div class="history-day-summary-main">
           <strong class="history-day-date">${formatDashboardLongDate(group.date)}</strong>
@@ -810,13 +807,19 @@ function renderDashboardHistoryGroups(groups, visibleGroups) {
         </div>
       </summary>
       <div class="history-day-content">
+        <div class="history-day-actions">
+          <button type="button" class="history-entry-delete history-day-delete" data-history-action="delete-day" data-history-date="${group.dateKey || ""}" aria-label="Apagar lancamentos do dia ${formatDashboardLongDate(group.date)}">Apagar dia</button>
+        </div>
         ${(group.items || []).map((entry) => `
-          <div class="history-entry-row">
+          <div class="history-entry-row" data-history-entry-id="${entry.id || entry.external_id || ""}">
             <div class="history-entry-main">
               <strong>${entry.descricao || "Lancamento"}</strong>
               <span>${entry.categoria || "Sem categoria"} · ${extractDashboardTimeLabel(entry.data) || "--:--"}</span>
             </div>
-            <div class="history-entry-value">${formatDashboardCurrencyValue(entry.valor)}</div>
+            <div class="history-entry-value">
+              <strong>${formatDashboardCurrencyValue(entry.valor)}</strong>
+              <button type="button" class="history-entry-delete" data-history-action="delete-entry" data-history-entry-id="${entry.id || entry.external_id || ""}" aria-label="Apagar lancamento ${entry.descricao || "Lancamento"}">Apagar</button>
+            </div>
           </div>
         `).join("")}
       </div>
@@ -1300,6 +1303,68 @@ function renderDailySummary(data, periodSummary) {
   }
 }
 
+function getDashboardHistoryDeleteSyncApi() {
+  return window.MFinanceiroSupabaseSync || window.FinanceSync || window.FinanceStore || null;
+}
+
+function shouldBypassHistoryDeleteConfirmation() {
+  return Date.now() <= Number(dashboardState.historyIndividualDeleteConfirmedUntil || 0);
+}
+
+function confirmDashboardHistoryDelete(message, { allowBypass = false } = {}) {
+  if (allowBypass && shouldBypassHistoryDeleteConfirmation()) {
+    return true;
+  }
+
+  const confirmed = window.confirm(message);
+
+  if (confirmed && allowBypass) {
+    dashboardState.historyIndividualDeleteConfirmedUntil = Date.now() + 15000;
+  }
+
+  return confirmed;
+}
+
+async function deleteDashboardHistoryEntry(entryId) {
+  const targetId = String(entryId || "").trim();
+  if (!targetId) {
+    return false;
+  }
+
+  const syncApi = getDashboardHistoryDeleteSyncApi();
+  if (typeof syncApi?.deleteExpense !== "function") {
+    throw new Error("Funcao de exclusao nao disponivel.");
+  }
+
+  return syncApi.deleteExpense(targetId);
+}
+
+async function deleteDashboardHistoryGroup(dateKey) {
+  const targetDate = String(dateKey || "").trim();
+  if (!targetDate) {
+    return false;
+  }
+
+  const data = window.FinanceStore?.loadAppData ? window.FinanceStore.loadAppData() : null;
+  const entries = getDashboardLedgerExpenseData(data || {}).filter((entry) => {
+    const entryDate = normalizeDashboardHistoryDate(entry.data || entry.dataHora);
+    return entryDate && entryDate.toISOString().slice(0, 10) === targetDate;
+  });
+
+  if (!entries.length) {
+    return false;
+  }
+
+  for (const entry of entries) {
+    const entryId = entry.id || entry.external_id;
+    if (entryId) {
+      await deleteDashboardHistoryEntry(entryId);
+    }
+  }
+
+  return true;
+}
+
 function renderAlerts(summary, alerts) {
   const healthStatus = buildFinancialHealthStatus(summary);
 
@@ -1629,6 +1694,67 @@ function bindHistoryFilters() {
         elements.historyCustomStart?.value || "",
         elements.historyCustomEnd?.value || ""
       );
+      return;
+    }
+
+    const deleteAction = event.target.closest("[data-history-action]");
+    if (!deleteAction) {
+      return;
+    }
+
+    const action = deleteAction.dataset.historyAction;
+
+    if (action === "delete-day") {
+      const dateKey = deleteAction.dataset.historyDate || "";
+      if (!dateKey) {
+        return;
+      }
+
+      const confirmed = confirmDashboardHistoryDelete(
+        "Apagar todos os lancamentos deste dia?",
+        { allowBypass: false }
+      );
+
+      if (!confirmed) {
+        return;
+      }
+
+      deleteDashboardHistoryGroup(dateKey)
+        .then((deleted) => {
+          if (deleted) {
+            atualizarDashboard();
+          }
+        })
+        .catch((error) => {
+          console.error("[Dashboard History] Falha ao apagar grupo diario.", error);
+        });
+      return;
+    }
+
+    if (action === "delete-entry") {
+      const entryId = deleteAction.dataset.historyEntryId || "";
+      if (!entryId) {
+        return;
+      }
+
+      const confirmed = confirmDashboardHistoryDelete(
+        "Apagar este lancamento?",
+        { allowBypass: true }
+      );
+
+      if (!confirmed) {
+        return;
+      }
+
+      deleteDashboardHistoryEntry(entryId)
+        .then((deleted) => {
+          if (deleted) {
+            atualizarDashboard();
+          }
+        })
+        .catch((error) => {
+          console.error("[Dashboard History] Falha ao apagar lancamento.", error);
+        });
     }
   });
 

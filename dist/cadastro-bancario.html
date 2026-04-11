@@ -3,7 +3,7 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Base financeira — MFinanceiro</title>
+    <title>Base Financeira — MFinanceiro</title>
     <link rel="stylesheet" href="/styles.css" />
     <link rel="stylesheet" href="/dashboard-v2.css" />
     <script src="/src/lib/auth-session.js"></script>
@@ -42,7 +42,7 @@
             Visão Geral
           </a>
           <span class="db2-nav-sep" aria-hidden="true"></span>
-          <a href="/cadastro-bancario.html" class="db2-nav-link is-active" id="link-banco">Banco</a>
+          <a href="/cadastro-bancario.html" class="db2-nav-link is-active" id="link-banco">Base Financeira</a>
           <a href="/contas.html" class="db2-nav-link" id="link-contas">Contas</a>
           <a href="/cartoes.html" class="db2-nav-link" id="link-cartoes">Cartões</a>
           <a href="/recebimentos.html" class="db2-nav-link" id="link-recebimentos">Recebimentos</a>
@@ -66,7 +66,7 @@
                 <article class="dashboard-surface dashboard-secondary-surface banking-page-card">
                   <div class="card-header">
                     <div>
-                      <div class="card-label">Base financeira</div>
+                      <div class="card-label">Base Financeira</div>
                       <h2 class="section-title">Salvar, editar e recalcular a base financeira</h2>
                       <p class="table-caption section-subtitle">
                         O saldo atual representa apenas o dinheiro no banco. O salario
@@ -102,7 +102,7 @@
                                 </select>
                               </div>
                               <div class="field hidden" id="origemSaldoBancoWrapper">
-                                <span>Banco do extrato</span>
+                                <span>Origem do extrato</span>
                                 <select id="origemSaldoBanco" class="app-select">
                                   <option value="mercado-pago">Mercado Pago</option>
                                   <option value="nubank">Nubank</option>
@@ -132,14 +132,14 @@
                                 <h4>Importar extrato</h4>
                                 <p class="section-note">
                                   Escolha o arquivo, revise os lancamentos e confirme a importacao
-                                  sem sair da Base financeira.
+                                  sem sair da Base Financeira.
                                 </p>
                                 <div class="status-chip" id="statement-status-chip">Aguardando arquivo</div>
                               </div>
 
                               <div class="settings-grid compact-grid hidden">
                                 <div class="field">
-                                  <span>Banco</span>
+                                  <span>Banco do extrato</span>
                                   <select id="statementBank" class="app-select">
                                     <option value="mercado-pago">Mercado Pago</option>
                                     <option value="nubank">Nubank</option>
@@ -154,11 +154,11 @@
                                   </select>
                                 </div>
                                 <div class="field">
-                                  <span>Periodo inicial</span>
+                                  <span>Período inicial</span>
                                   <input type="date" id="statementPeriodStart" />
                                 </div>
                                 <div class="field">
-                                  <span>Periodo final</span>
+                                  <span>Período final</span>
                                   <input type="date" id="statementPeriodEnd" />
                                 </div>
                               </div>
@@ -187,7 +187,7 @@
                                   Sim, usar saldo calculado
                                 </button>
                                 <button type="button" id="adjust-balance-manually-button" class="ghost-button">
-                                  Nao, ajustar manualmente
+                                  Não, ajustar manualmente
                                 </button>
                               </div>
 
@@ -228,13 +228,13 @@
                       <section class="form-section accordion-section" data-accordion-section="salario">
                         <button type="button" class="accordion-toggle" data-accordion-toggle="salario" aria-expanded="false">
                           <div class="accordion-heading">
-                            <h4>2. Salario</h4>
+                            <h4>2. Salário</h4>
                             <p class="section-note">
-                              Informe o valor bruto e acompanhe o liquido calculado automaticamente.
+                              Informe o valor bruto e acompanhe o líquido calculado automaticamente.
                             </p>
                           </div>
                           <div class="accordion-summary" id="salary-accordion-summary">
-                            Bruto: R$ 0,00 | Liquido: R$ 0,00
+                            Bruto: R$ 0,00 | Líquido: R$ 0,00
                           </div>
                           <span class="accordion-icon" aria-hidden="true">+</span>
                         </button>
@@ -242,7 +242,7 @@
                           <div class="accordion-content-inner">
                             <div class="inline-fields">
                               <div class="field">
-                                <span>Salario bruto</span>
+                                <span>Salário bruto</span>
                                 <input type="text" inputmode="decimal" id="salarioBruto" name="salarioBruto" placeholder="0,00" />
                               </div>
                               <div class="field salary-meta-field">
@@ -264,10 +264,21 @@
                               </div>
                               <div class="field">
                                 <span class="field-label">
-                                  Salario liquido
-                                  <span class="info-icon" title="O salario liquido ja considera INSS, IRPF e os descontos da folha quando aplicaveis.">i</span>
+                                  Salário líquido estimado
+                                  <span class="info-icon" title="O salário líquido já considera INSS, IRPF e os descontos da folha quando aplicáveis.">i</span>
                                 </span>
                                 <input type="text" id="salarioLiquido" name="salarioLiquido" readonly value="R$ 0,00" />
+                              </div>
+                            </div>
+                            <div class="salary-confirmation-panel">
+                              <strong>Esse valor bate com o que você recebe?</strong>
+                              <div class="salary-confirmation-actions">
+                                <button type="button" class="secondary-button salary-confirmation-button is-active" data-salary-liquido-mode="auto">Sim</button>
+                                <button type="button" class="ghost-button salary-confirmation-button" data-salary-liquido-mode="manual">Não</button>
+                              </div>
+                              <div class="field hidden" id="salarioLiquidoManualField">
+                                <span>Salário líquido real recebido</span>
+                                <input type="text" inputmode="decimal" id="salarioLiquidoManual" placeholder="0,00" />
                               </div>
                             </div>
                           </div>
@@ -399,7 +410,7 @@
                               </div>
                               <div class="field">
                                 <span class="field-label">
-                                  Proximo pagamento calculado
+                                  Próximo pagamento calculado
                                   <span class="info-icon" title="O sistema sempre considera a proxima data futura conforme o ciclo configurado.">i</span>
                                 </span>
                                 <input type="text" id="cycle-next-payment-date" readonly value="--" />
@@ -444,7 +455,7 @@
                                 <div class="card-label">Beneficio</div>
                                 <h3>VR/VA previsto para o ciclo</h3>
                               </div>
-                              <div class="status-chip" id="beneficios-status-chip">Sem beneficios ativos</div>
+                              <div class="status-chip" id="beneficios-status-chip">Sem benefícios ativos</div>
                             </div>
 
                             <article class="subtle-panel">
@@ -477,9 +488,9 @@
                         <div class="card-header">
                           <div>
                             <div class="card-label">Recebimento principal</div>
-                            <h3>Previsao e confirmacao do pagamento</h3>
+                            <h3>Previsão e confirmação do pagamento</h3>
                             <p class="table-caption">
-                              Esse bloco mantem o registro do pagamento principal do ciclo sem sair da Base financeira.
+                              Esse bloco mantem o registro do pagamento principal do ciclo sem sair da Base Financeira.
                             </p>
                           </div>
                           <div class="status-chip" id="receipt-status-chip">Pronto para registrar</div>
@@ -518,7 +529,8 @@
                             </div>
 
                             <div class="button-row align-start">
-                              <button type="button" id="save-pagamento-button" class="primary-button">
+                              <!-- removed save payment button to keep only the main base save -->
+                              <button type="button" id="save-pagamento-button" class="primary-button hidden">
                                 Salvar recebimento
                               </button>
                               <button type="button" id="mark-pagamento-recebido-button" class="secondary-button">
@@ -556,10 +568,10 @@
 
                       <div class="form-actions banking-form-actions">
                         <button type="submit" id="save-banking-button" class="primary-button">
-                          Salvar base financeira
+                          Salvar Base Financeira
                         </button>
                         <button type="button" id="edit-banking-button" class="secondary-button">
-                          Editar base financeira
+                          Editar Base Financeira
                         </button>
                       </div>
                     </div>

@@ -7123,7 +7123,7 @@ p {
 }
 
 */
-/* ===== Premium setup pages: Banco, Contas, Cartoes, Recebimentos ===== */
+/* ===== Premium setup pages: Base Financeira, Contas, Cartoes, Recebimentos ===== */
 @media (min-width: 1180px) {
   body[data-page="banking"],
   body[data-page="contas"],
@@ -7954,6 +7954,40 @@ body[data-page="cartoes"] .cards-page-card,
 body[data-page="recebimentos"] .receipts-page-card {
   overflow: auto;
   padding: 18px 20px;
+}
+
+body[data-page="banking"] .cycle-breakdown-card {
+  overflow: hidden;
+}
+
+body[data-page="banking"] .cycle-breakdown-card .finance-table {
+  width: 100%;
+  table-layout: fixed;
+  border-collapse: separate;
+  border-spacing: 0 8px;
+}
+
+body[data-page="banking"] .cycle-breakdown-card .finance-table th,
+body[data-page="banking"] .cycle-breakdown-card .finance-table td {
+  word-break: break-word;
+  overflow-wrap: anywhere;
+  white-space: normal;
+  vertical-align: top;
+}
+
+body[data-page="banking"] .cycle-breakdown-card .finance-table th:nth-child(1),
+body[data-page="banking"] .cycle-breakdown-card .finance-table td:nth-child(1) {
+  width: 30%;
+}
+
+body[data-page="banking"] .cycle-breakdown-card .finance-table th:nth-child(2),
+body[data-page="banking"] .cycle-breakdown-card .finance-table td:nth-child(2) {
+  width: 22%;
+}
+
+body[data-page="banking"] .cycle-breakdown-card .finance-table th:nth-child(3),
+body[data-page="banking"] .cycle-breakdown-card .finance-table td:nth-child(3) {
+  width: 48%;
 }
 
 body[data-page="banking"] .banking-page-card {

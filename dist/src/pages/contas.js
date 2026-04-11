@@ -18,7 +18,6 @@ const {
   updateAppData: updateAccountsData,
 } = window.FinanceStore;
 const {
-  agruparLancamentosPorDia: groupExpensesByDay,
   formatCurrency: formatAccountsCurrency,
   formatDateLong: formatAccountsDateLong,
   getAccountsInCycle: getAccountsCycleSummary,
@@ -33,7 +32,6 @@ const contaMessage = document.getElementById("conta-message");
 const contasTableBody = document.getElementById("contas-table-body");
 const contasEmptyState = document.getElementById("contas-empty-state");
 const diaADiaForm = document.getElementById("dia-a-dia-form");
-const diaADiaGroupedList = document.getElementById("dia-a-dia-grouped-list");
 const diaADiaEmptyState = document.getElementById("dia-a-dia-empty-state");
 const importMessage = document.getElementById("import-message");
 const importFileInput = document.getElementById("gastosImportFile");
@@ -479,21 +477,21 @@ function renderFixedAccounts() {
   }
 
   const data = loadAccountsData();
-  const cycleAccounts = getAccountsCycleSummary(data);
   const paymentInfo = getNextPaymentInfo(data);
-  const nextDue = [...cycleAccounts.items]
-    .sort((left, right) => left.dueDate.getTime() - right.dueDate.getTime())[0];
   const contas = [...loadSavedFixedAccounts()].sort((left, right) => {
     return new Date(left.dataVencimento).getTime() - new Date(right.dataVencimento).getTime();
   });
+  const fixedSummaryTotal = contas.reduce((sum, conta) => sum + Number(conta.valor || 0), 0);
+  const nextDue = [...contas]
+    .sort((left, right) => new Date(left.dataVencimento).getTime() - new Date(right.dataVencimento).getTime())[0];
 
-  document.getElementById("contas-total-ciclo").textContent = formatAccountsCurrency(cycleAccounts.total);
+  document.getElementById("contas-total-ciclo").textContent = formatAccountsCurrency(fixedSummaryTotal);
   document.getElementById("contas-quantidade").textContent = String(contas.length);
   document.getElementById("contas-proxima-data").textContent = nextDue
-    ? `${nextDue.nome} em ${formatAccountsDateLong(nextDue.dueDate)}`
+    ? `${nextDue.nome} em ${formatAccountsDateLong(nextDue.dataVencimento)}`
     : "--";
-  document.getElementById("contas-status-chip").textContent = cycleAccounts.items.length
-    ? "Compromissos ativos"
+  document.getElementById("contas-status-chip").textContent = contas.length
+    ? "Contas fixas ativas"
     : "Sem contas";
 
   if (!contas.length) {
@@ -542,7 +540,7 @@ function renderFixedAccounts() {
 }
 
 function renderDailyExpenses() {
-  if (!diaADiaGroupedList || !diaADiaEmptyState) {
+  if (!diaADiaEmptyState) {
     return;
   }
 
@@ -551,9 +549,7 @@ function renderDailyExpenses() {
   const items = [...loadSavedDailyAccounts()].sort((left, right) => {
     return new Date(right.data).getTime() - new Date(left.data).getTime();
   });
-  const groupedItems = groupExpensesByDay(items).sort(
-    (left, right) => right.date.getTime() - left.date.getTime()
-  );
+  const latestItem = items[0];
 
   document.getElementById("dia-a-dia-total").textContent = formatAccountsCurrency(summary.total);
   document.getElementById("dia-a-dia-hoje").textContent = formatAccountsCurrency(summary.todayTotal);
@@ -563,7 +559,6 @@ function renderDailyExpenses() {
     : "Sem gastos";
 
   if (!items.length) {
-    diaADiaGroupedList.innerHTML = "";
     diaADiaEmptyState.classList.remove("hidden");
     diaADiaEmptyState.innerHTML = `
       <strong>Nenhum gasto do dia a dia cadastrado</strong>
@@ -575,51 +570,13 @@ function renderDailyExpenses() {
   diaADiaEmptyState.classList.add("hidden");
   diaADiaEmptyState.innerHTML = "";
 
-  diaADiaGroupedList.innerHTML = groupedItems
-    .map(
-      (group) => `
-        <details class="day-accordion" open>
-          <summary class="day-accordion-summary">
-            <div>
-              <strong>${formatAccountsDateLong(group.date)}</strong>
-              <span class="text-soft">Categoria principal: ${group.topCategory || "outros"}</span>
-            </div>
-            <div class="day-accordion-meta">
-              <strong>${formatAccountsCurrency(group.saidas)}</strong>
-              <span class="text-soft">${group.count} lancamento(s)</span>
-            </div>
-          </summary>
-          <div class="day-accordion-content">
-            ${group.items
-              .map(
-                (item) => `
-                  <div class="day-entry-row">
-                    <div class="day-entry-main">
-                      <strong>${item.descricao}</strong>
-                      <span class="text-soft">${item.categoria || "Sem categoria"} | ${
-                        item.horario || extractTimeLabel(item.data) || "--:--"
-                      } | ${item.tipo || "saida"}</span>
-                    </div>
-                    <div class="day-entry-side">
-                      <strong>${formatAccountsCurrency(item.valor)}</strong>
-                      <div class="table-actions">
-                        <button type="button" class="secondary-button small-button" data-action="edit-daily" data-id="${item.id}">
-                          Editar
-                        </button>
-                        <button type="button" class="ghost-button small-button" data-action="delete-daily" data-id="${item.id}">
-                          Excluir
-                        </button>
-                      </div>
-                    </div>
-                  </div>
-                `
-              )
-              .join("")}
-          </div>
-        </details>
-      `
-    )
-    .join("");
+  diaADiaEmptyState.classList.remove("hidden");
+  diaADiaEmptyState.innerHTML = `
+    <strong>Leitura do dia a dia pronta</strong>
+    ${latestItem
+      ? `Ultimo gasto registrado: <strong>${latestItem.descricao || "Lancamento"}</strong> em ${formatAccountsDateLong(latestItem.data)} no valor de <strong>${formatAccountsCurrency(latestItem.valor)}</strong>.`
+      : "Registre despesas variaveis para acompanhar melhor o ritmo do ciclo."}
+  `;
 }
 
 function extractTimeLabel(value) {
@@ -1516,10 +1473,6 @@ if (lancamentoForm) {
 
 if (contasTableBody) {
   contasTableBody.addEventListener("click", handleContasTableClick);
-}
-
-if (diaADiaGroupedList) {
-  diaADiaGroupedList.addEventListener("click", handleDailyTableClick);
 }
 
 if (installmentsTableBody) {

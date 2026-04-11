@@ -482,17 +482,28 @@ function renderSpendingRhythm({
     return;
   }
 
+  const riskBreakpoints = {
+    safe: Math.max(dataset.maxTotal * 0.4, dataset.average * 0.85 || 0),
+    warning: Math.max(dataset.maxTotal * 0.75, dataset.average * 1.1 || 0),
+  };
+
   elements.spendingRhythmChart.innerHTML = `
     <div class="db2-rhythm-bars" role="img" aria-label="Grafico do ritmo de gastos">
       ${dataset.points
         .map((point) => {
           const height = Math.max((Number(point.total || 0) / dataset.maxTotal) * 100, 6);
+          const tone =
+            Number(point.total || 0) <= riskBreakpoints.safe
+              ? "safe"
+              : Number(point.total || 0) <= riskBreakpoints.warning
+                ? "warning"
+                : "danger";
 
           return `
             <div class="db2-rhythm-bar-group">
               <span class="db2-rhythm-bar-value">${formatRhythmValueLabel(point.total, helpers.formatCurrency)}</span>
               <div class="db2-rhythm-bar-track">
-                <div class="db2-rhythm-bar-fill" style="height:${height}%"></div>
+                <div class="db2-rhythm-bar-fill db2-rhythm-bar-fill-${tone}" style="height:${height}%"></div>
               </div>
               <span class="db2-rhythm-bar-label">${point.label}</span>
             </div>
