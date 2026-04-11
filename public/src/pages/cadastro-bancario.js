@@ -305,7 +305,7 @@ function detectStatementFormatByContent(file, fileContent) {
 }
 
 function isUnstructuredStatementFormat(format) {
-  return format === "image" || format === "pdf-image";
+  return format === "image" || format === "pdf-image" || format === "pdf-text" || format === "pdf";
 }
 
 function buildUnstructuredImportSession(file, bank, format) {
@@ -1253,27 +1253,7 @@ function parseOFX(textContent, bank) {
   });
 }
 
-function parsePDFMercadoPago(fileName, fileContent) {
-  const source = `${fileName} ${String(fileContent || "")}`;
-  const value = extractImportAmount(source);
 
-  return {
-    saldoSugerido: value > 0 ? value : 0,
-    lancamentos: [
-      buildImportedStatementItem({
-        prefix: "extrato_mp_pdf",
-        date: extractImportDate(source),
-        description:
-          normalizeImportDescription(fileName) || "Lancamento Mercado Pago",
-        value,
-        balance: value > 0 ? value : 0,
-        bank: "mercado-pago",
-      }),
-    ],
-    validation: null,
-    parserMode: "PDF Mercado Pago / parser heuristico",
-  };
-}
 
 function parseGenerico(fileName, fileContent, bank) {
   const decodedContent = decodeImportedBinaryContent(fileContent);
@@ -2211,8 +2191,6 @@ async function processStatementFile() {
       parserResult = await parseXLSX(fileContent, bank, format);
     } else if (format === "ofx") {
       parserResult = parseOFX(decodeImportedBinaryContent(fileContent), bank);
-    } else if (format === "pdf-text" && bank === "mercado-pago") {
-      parserResult = parsePDFMercadoPago(file.name, decodeImportedBinaryContent(fileContent));
     } else {
       parserResult = parseGenerico(file.name, fileContent, bank);
     }
@@ -2355,15 +2333,31 @@ function confirmImportedExpenses() {
     return;
   }
 
+  // Defesa: Bloquear lancamento unico que parece consolidacao de arquivo
+  if (statementDraftsState.length === 1) {
+    const singleDraft = statementDraftsState[0];
+    const fileName = statementFileInput?.files?.[0]?.name || "";
+    const normalizedFileName = fileName.replace(/\.[^.]+$/, "").replace(/[_-]+/g, " ").replace(/\s+/g, " ").trim().toLowerCase();
+    
+    if (normalizedFileName && singleDraft.descricao.toLowerCase() === normalizedFileName) {
+      showMessage(
+        statementMessage,
+        "error",
+        "A importacao gerou apenas um item consolidado usando o nome do arquivo. Exporte seu extrato como CSV ou OFX para registrar os lancamentos individualmente."
+      );
+      return;
+    }
+  }
+
   const invalidDraft = expenseDrafts.find(
-    (item) => !item.descricao || !item.data || Math.abs(Number(item.valor || 0)) <= 0
+    (item) => !item.descricao || !item.data || Math.abs(Number(item.valor || 0)) <= 0 || isStatementSummaryDescription(item.descricao)
   );
 
   if (invalidDraft) {
     showMessage(
       statementMessage,
       "error",
-      "Revise os lancamentos importados e garanta que descricao, valor e data estejam preenchidos."
+      "Revise os lancamentos importados e garanta que descricao, valor e data estejam preenchidos, sem consolidar os saldos ou totais num unico item."
     );
     return;
   }
