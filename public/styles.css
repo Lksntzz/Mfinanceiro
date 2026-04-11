@@ -2003,7 +2003,10 @@ p {
     top: auto;
     left: auto;
     width: auto;
-    height: auto;
+    height: 100%;
+    min-height: 0;
+    align-content: start;
+    grid-auto-rows: min-content;
     overflow: visible;
   }
 
@@ -4521,6 +4524,7 @@ p {
 
   .dashboard-layout-premium {
     min-height: 100%;
+    height: 100%;
     height: 100%;
   }
 
@@ -7236,6 +7240,18 @@ p {
     overflow: hidden;
     background: transparent;
     box-shadow: none;
+  }
+
+  body[data-page="contas"] .db2-panels {
+    min-height: 0;
+    height: 100%;
+    display: grid;
+  }
+
+  body[data-page="contas"] .db2-panel {
+    min-height: 0;
+    height: 100%;
+    overflow: hidden;
   }
 
   body[data-page="banking"] .dashboard-premium-header.nav-bar,
