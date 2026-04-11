@@ -1,3 +1,5 @@
+console.log("[Dashboard Scripts] carregado: /src/pages/dashboard.js");
+
 let loadDashboardBanking;
 let loadDashboardVariableAccounts;
 let loadDashboardLedger;
@@ -196,6 +198,8 @@ function setSurfaceTone(element, tone) {
 }
 
 function switchDashboardTab(tabId = "overview") {
+  console.log("[Dashboard Tabs] switchDashboardTab recebeu:", tabId);
+
   elements.dashboardTabButtons.forEach((button) => {
     const isActive = button.dataset.dashboardTabLink === tabId;
     button.classList.toggle("is-active", isActive);
@@ -206,6 +210,11 @@ function switchDashboardTab(tabId = "overview") {
     const isActive = panel.dataset.dashboardPanel === tabId;
     panel.classList.toggle("is-active", isActive);
   });
+
+  const activePanels = elements.dashboardTabPanels
+    .filter((panel) => panel.classList.contains("is-active"))
+    .map((panel) => panel.dataset.dashboardPanel);
+  console.log("[Dashboard Tabs] painéis ativos:", activePanels);
 }
 
 function setDailyLimitHighlight(color) {
@@ -1406,9 +1415,15 @@ function bindSpendingRhythmPeriodFilters() {
 }
 
 function bindDashboardTabs() {
+  console.log("[Dashboard Tabs] bindDashboardTabs executado", {
+    buttons: elements.dashboardTabButtons.map((button) => button.dataset.dashboardTabLink || ""),
+  });
+
   elements.dashboardTabButtons.forEach((button) => {
     button.addEventListener("click", () => {
       const nextTab = button.dataset.dashboardTabLink || "overview";
+      console.log("[Dashboard Tabs] clique detectado:", nextTab);
+      console.log("[Dashboard Tabs] chamando switchDashboardTab");
       switchDashboardTab(nextTab);
     });
   });
@@ -1654,21 +1669,30 @@ function bindDashboardRefreshEvents() {
 }
 
 function initDashboardApp() {
+  console.log("[Dashboard Init] initDashboardApp iniciou");
+
   if (dashboardAppInitialized) {
+    console.log("[Dashboard Init] initDashboardApp ignorado: já inicializado");
     return;
   }
 
-  if (!validateDashboardDependencies()) {
+  const dependenciesAreValid = validateDashboardDependencies();
+  console.log("[Dashboard Init] validateDashboardDependencies:", dependenciesAreValid);
+
+  if (!dependenciesAreValid) {
     return;
   }
 
   assignDashboardModules();
+  console.log("[Dashboard Init] assignDashboardModules executado");
   window.AppShell.initAppShell();
   bindExpensePeriodFilters();
   bindSpendingRhythmPeriodFilters();
   bindDashboardTabs();
+  console.log("[Dashboard Init] bindDashboardTabs executado");
   bindDashboardRefreshEvents();
   switchDashboardTab("overview");
+  console.log("[Dashboard Init] switchDashboardTab('overview') executado");
   showDashboardFeedback(window.AppShell.consumeDashboardNotice());
   dashboardAppInitialized = true;
   atualizarDashboard();

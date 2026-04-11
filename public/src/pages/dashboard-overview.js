@@ -1,3 +1,5 @@
+console.log("[Dashboard Scripts] carregado: /src/pages/dashboard-overview.js");
+
 function getProjectedBenefitsTotal(summary) {
   if (!summary.paymentInfo.nextDate) {
     return 0;
