@@ -70,6 +70,7 @@ const accordionSections = Array.from(
 let outrosDescontosState = [];
 let statementDraftsState = [];
 let statementBalanceSuggestion = 0;
+let statementValidationState = null;
 let salarioLiquidoModoState = "auto";
 let salarioLiquidoManualState = 0;
 
@@ -186,6 +187,13 @@ function normalizeImportDescription(fileName) {
   return fileName
     .replace(/\.[^.]+$/, "")
     .replace(/[_-]+/g, " ")
+    .replace(/\s+/g, " ")
+    .trim();
+}
+
+function normalizeStatementDescription(value) {
+  return String(value || "")
+    .replace(/\uFEFF/g, "")
     .replace(/\s+/g, " ")
     .trim();
 }
@@ -307,21 +315,50 @@ function buildImportedStatementItem({
   value,
   balance,
   bank,
+  externalId,
 }) {
   const normalizedValue = Number(value || 0);
+  const normalizedDescription =
+    normalizeStatementDescription(description) || "Movimentacao importada";
 
   return {
     id: createId(prefix),
     data: normalizeStatementDate(date),
-    descricao: String(description || "").trim() || "Movimentacao importada",
+    descricao: normalizedDescription,
     valor: normalizedValue,
     saldo: Number.isFinite(Number(balance)) ? Number(balance) : 0,
     tipo: normalizedValue < 0 ? "saida" : "entrada",
-    categoria: suggestImportCategory(description),
-    categoriaSugerida: suggestImportCategory(description),
+    categoria: suggestImportCategory(normalizedDescription),
+    categoriaSugerida: suggestImportCategory(normalizedDescription),
     origem: "importado",
     banco: bank,
+    externalId: String(externalId || "").trim(),
   };
+}
+
+function isStatementSummaryDescription(value) {
+  const normalized = normalizeHeaderName(normalizeStatementDescription(value));
+  const summaryTerms = [
+    "SALDO INICIAL",
+    "SALDO FINAL",
+    "TOTAL",
+    "TOTAIS",
+    "RESUMO",
+    "RESUMO DO PERIODO",
+    "RESUMO PERIODO",
+    "TOTAL DE ENTRADAS",
+    "TOTAL DE SAIDAS",
+    "BLOCO DE RESUMO",
+  ];
+
+  return summaryTerms.some(
+    (term) => normalized === term || normalized.startsWith(`${term} `)
+  );
+}
+
+function isValidTransactionDate(value) {
+  const normalized = normalizeStatementDate(value);
+  return /^\d{4}-\d{2}-\d{2}$/.test(normalized);
 }
 
 function validateStatementBalance(lancamentos) {
@@ -329,12 +366,22 @@ function validateStatementBalance(lancamentos) {
     return null;
   }
 
-  const primeiroSaldo = Number(lancamentos[0].saldo || 0);
-  const primeiroValor = Number(lancamentos[0].valor || 0);
+  const lancamentosComSaldo = lancamentos.filter((item) =>
+    Number.isFinite(Number(item?.saldo))
+  );
+
+  if (!lancamentosComSaldo.length) {
+    return null;
+  }
+
+  const primeiroSaldo = Number(lancamentosComSaldo[0].saldo || 0);
+  const primeiroValor = Number(lancamentosComSaldo[0].valor || 0);
   const saldoInicialEstimado = primeiroSaldo - primeiroValor;
   const saldoFinalCalculado = saldoInicialEstimado
-    + lancamentos.reduce((total, item) => total + Number(item.valor || 0), 0);
-  const saldoFinalArquivo = Number(lancamentos[lancamentos.length - 1].saldo || 0);
+    + lancamentosComSaldo.reduce((total, item) => total + Number(item.valor || 0), 0);
+  const saldoFinalArquivo = Number(
+    lancamentosComSaldo[lancamentosComSaldo.length - 1].saldo || 0
+  );
   const diferenca = Math.abs(saldoFinalCalculado - saldoFinalArquivo);
 
   return {
@@ -344,6 +391,10 @@ function validateStatementBalance(lancamentos) {
     consistente: diferenca < 0.01,
     diferenca,
   };
+}
+
+function recalculateStatementValidation() {
+  statementValidationState = validateStatementBalance(statementDraftsState);
 }
 
 function parseCSV(textContent, bank) {
@@ -385,15 +436,44 @@ function parseMercadoPagoCSV(textContent) {
       continue;
     }
 
+    const releaseDate = row[0];
+    const transactionType = normalizeStatementDescription(row[1]);
+    const referenceId = String(row[2] || "").trim();
+    const transactionNetAmount = parseBrazilianAmount(row[3]);
+    const partialBalance = parseBrazilianAmount(row[4]);
+
+    if (!isValidTransactionDate(releaseDate)) {
+      continue;
+    }
+
+    if (isStatementSummaryDescription(transactionType)) {
+      continue;
+    }
+
+    if (!referenceId) {
+      continue;
+    }
+
+    if (!transactionType || Number.isNaN(transactionNetAmount)) {
+      continue;
+    }
+
     lancamentos.push(
       buildImportedStatementItem({
         prefix: "extrato_mp_csv",
-        date: row[0],
-        description: row[1],
-        value: parseBrazilianAmount(row[3]),
-        balance: parseBrazilianAmount(row[4]),
+        date: releaseDate,
+        description: transactionType,
+        externalId: referenceId,
+        value: transactionNetAmount,
+        balance: partialBalance,
         bank: "mercado-pago",
       })
+    );
+  }
+
+  if (!lancamentos.length) {
+    throw new Error(
+      "O CSV nao trouxe movimentacoes reais validas para importar."
     );
   }
 
@@ -459,6 +539,9 @@ function parseGenericCSV(textContent, bank) {
     saldo: header.findIndex((cell) =>
       ["SALDO", "BALANCE", "PARTIAL_BALANCE"].includes(cell)
     ),
+    referencia: header.findIndex((cell) =>
+      ["REFERENCE_ID", "ID_EXTERNO", "EXTERNAL_ID", "ID"].includes(cell)
+    ),
   };
 
   const lancamentos = [];
@@ -470,8 +553,17 @@ function parseGenericCSV(textContent, bank) {
       continue;
     }
 
-    const description = row[indexes.descricao];
+    const description = normalizeStatementDescription(row[indexes.descricao]);
     const value = parseBrazilianAmount(row[indexes.valor]);
+    const externalId = indexes.referencia >= 0 ? row[indexes.referencia] : "";
+
+    if (!isValidTransactionDate(row[indexes.data])) {
+      continue;
+    }
+
+    if (isStatementSummaryDescription(description)) {
+      continue;
+    }
 
     if (!description && !value) {
       continue;
@@ -484,9 +576,14 @@ function parseGenericCSV(textContent, bank) {
         description,
         value,
         balance: indexes.saldo >= 0 ? parseBrazilianAmount(row[indexes.saldo]) : 0,
+        externalId,
         bank,
       })
     );
+  }
+
+  if (!lancamentos.length) {
+    throw new Error("O CSV nao trouxe movimentacoes reais validas para importar.");
   }
 
   return {
@@ -589,6 +686,8 @@ function renderStatementPreview() {
       statementBalanceActions.classList.add("hidden");
     }
 
+    statementValidationState = null;
+
     return;
   }
 
@@ -597,6 +696,11 @@ function renderStatementPreview() {
     statementBalanceSuggestion
   );
   getElement("confirm-imported-expenses-button").classList.remove("hidden");
+
+  if (statementValidationState && !statementValidationState.consistente) {
+    getElement("statement-status-chip").textContent = "Revisao com divergencia";
+    getElement("confirm-imported-expenses-button").classList.add("hidden");
+  }
 
   statementPreviewList.innerHTML = montarRevisaoLancamentos(statementDraftsState);
 }
@@ -687,6 +791,7 @@ function syncBalanceMode() {
 function resetStatementWorkflow() {
   statementDraftsState = [];
   statementBalanceSuggestion = 0;
+  statementValidationState = null;
 
   if (statementFileInput) {
     statementFileInput.value = "";
@@ -1347,6 +1452,7 @@ async function processStatementFile() {
       data: item.data || getTodayInputValue(),
     }));
     statementBalanceSuggestion = parserResult.saldoSugerido || 0;
+    statementValidationState = parserResult.validation || null;
 
     renderStatementPreview();
 
@@ -1369,6 +1475,7 @@ async function processStatementFile() {
   } catch (error) {
     statementDraftsState = [];
     statementBalanceSuggestion = 0;
+    statementValidationState = null;
     renderStatementPreview();
     showMessage(
       statementMessage,
@@ -1401,9 +1508,13 @@ function updateStatementDraft(event) {
       ...item,
       [field]: nextValue,
       tipo: resolvedValue < 0 ? "saida" : "entrada",
-      categoriaSugerida: suggestImportCategory(nextDescription),
+      descricao:
+        field === "descricao" ? normalizeStatementDescription(event.target.value) : item.descricao,
+      categoriaSugerida: suggestImportCategory(normalizeStatementDescription(nextDescription)),
     };
   });
+
+  recalculateStatementValidation();
 
   if (event.type === "change") {
     renderStatementPreview();
@@ -1418,12 +1529,24 @@ function handleStatementPreviewClick(event) {
   }
 
   statementDraftsState = statementDraftsState.filter((item) => item.id !== button.dataset.id);
+  recalculateStatementValidation();
   renderStatementPreview();
 }
 
 function confirmImportedExpenses() {
   if (!statementDraftsState.length) {
     showMessage(statementMessage, "error", "Nao ha lancamentos revisados para importar.");
+    return;
+  }
+
+  if (statementValidationState && !statementValidationState.consistente) {
+    showMessage(
+      statementMessage,
+      "error",
+      `Importacao bloqueada: saldo inconsistente com diferenca de ${formatBankingCurrency(
+        statementValidationState.diferenca
+      )}.`
+    );
     return;
   }
 
