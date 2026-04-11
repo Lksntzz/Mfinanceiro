@@ -58,10 +58,6 @@
             <svg class="db2-tab-icon" width="14" height="14" viewBox="0 0 24 24" fill="none"><path d="M9 5H7a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2h-2M9 5a2 2 0 0 0 2 2h2a2 2 0 0 0 2-2M9 5a2 2 0 0 1 2-2h2a2 2 0 0 1 2 2" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
             Detalhes
           </button>
-          <button type="button" class="db2-nav-tab" data-dashboard-tab-link="insights" id="tab-insights">
-            <svg class="db2-tab-icon" width="14" height="14" viewBox="0 0 24 24" fill="none"><path d="M12 2a7 7 0 0 1 7 7c0 3.1-2 5.7-4.8 6.6V17a2 2 0 0 1-2 2H11a2 2 0 0 1-2-2v-1.4A7 7 0 0 1 12 2z" stroke="currentColor" stroke-width="2"/><path d="M9 21h6" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
-            Insights
-          </button>
           <button type="button" class="db2-nav-tab" data-dashboard-tab-link="history" id="tab-history">
             <svg class="db2-tab-icon" width="14" height="14" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="9" stroke="currentColor" stroke-width="2"/><path d="M12 7v5l3 3" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
             Histórico
@@ -210,9 +206,6 @@
                     <span class="db2-insight-label card-label">Insight do dia</span>
                     <span class="db2-chip db2-chip--muted" id="overview-insight-chip">Leitura inicial</span>
                   </div>
-                  <button type="button" class="db2-see-all-btn dashboard-inline-link dashboard-inline-link-button" data-dashboard-tab-link="insights">
-                    Ver todos insights <svg width="12" height="12" viewBox="0 0 24 24" fill="none"><path d="M9 18l6-6-6-6" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
-                  </button>
                 </div>
                 <strong class="db2-insight-title" id="overview-daily-insight-title">O insight mais importante do dia aparece aqui</strong>
                 <p class="db2-insight-text" id="overview-daily-insight-body">O sistema destaca a melhor orientação prática do momento.</p>
@@ -424,42 +417,6 @@
         </section>
 
         <!-- ═══════════════════════════════════════════════════
-             PANEL: INSIGHTS
-        ═══════════════════════════════════════════════════ -->
-        <section class="db2-panel" data-dashboard-panel="insights" id="insights">
-          <div class="dashboard-secondary-grid dashboard-insights-panel-grid">
-            <article class="dashboard-surface dashboard-secondary-surface dashboard-feedback-surface">
-              <div class="card-header">
-                <div>
-                  <div class="card-label">Leitura do momento</div>
-                  <h3>Sinal mais importante do ciclo</h3>
-                </div>
-                <button type="button" class="dashboard-inline-link" data-dashboard-tab-link="overview">Voltar para a visão geral</button>
-              </div>
-              <div id="dashboard-feedback" class="message-box hidden" aria-live="polite"></div>
-            </article>
-
-            <article class="dashboard-surface dashboard-secondary-surface insights-card" id="dashboard-insights">
-              <div class="card-header">
-                <div>
-                  <div class="card-label">Insights inteligentes</div>
-                  <h3>Leitura expandida do seu comportamento financeiro</h3>
-                  <p class="table-caption">Interpretações curtas, contextuais e baseadas no ledger.</p>
-                </div>
-                <div class="status-chip" id="insights-chip">Sem dados</div>
-              </div>
-              <div class="insights-grid insights-grid-expanded" id="insights-list">
-                <article class="insight-item insight-item-muted">
-                  <span class="insight-label">Aguardando dados</span>
-                  <strong>Os insights aparecem conforme os gastos são registrados</strong>
-                  <p>Adicione despesas para transformar os números do dashboard em orientações práticas.</p>
-                </article>
-              </div>
-            </article>
-          </div>
-        </section>
-
-        <!-- ═══════════════════════════════════════════════════
              PANEL: HISTÓRICO
         ═══════════════════════════════════════════════════ -->
         <section class="db2-panel" data-dashboard-panel="history" id="historico">
@@ -515,6 +472,9 @@
       <small id="expense-total-month-note">Sem gastos neste mês.</small>
       <strong id="overview-budget-progress-label">0%</strong>
       <span id="overview-budget-progress-fill"></span>
+      <div id="dashboard-feedback" class="message-box hidden" aria-live="polite"></div>
+      <span id="insights-chip">Sem dados</span>
+      <div id="insights-list"></div>
     </div>
 
     <!-- Hidden sidebar (kept for app-shell compatibility) -->

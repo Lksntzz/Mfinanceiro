@@ -548,14 +548,14 @@ function renderProjection(summary, projection) {
     return;
   }
 
-  const chartWidth = 760;
-  const chartHeight = 248;
-  const padding = { top: 20, right: 112, bottom: 42, left: 62 };
+  const chartWidth = 920;
+  const chartHeight = 320;
+  const padding = { top: 12, right: 22, bottom: 34, left: 76 };
   const balances = projection.map((item) => Number(item.balance || 0));
   const rawMin = Math.min(...balances, 0);
   const rawMax = Math.max(...balances, 0);
   const amplitude = Math.max(rawMax - rawMin, 1);
-  const paddingValue = amplitude * 0.14;
+  const paddingValue = amplitude * 0.1;
   const minValue = rawMin - paddingValue;
   const maxValue = rawMax + paddingValue;
   const innerWidth = chartWidth - padding.left - padding.right;

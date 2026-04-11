@@ -1147,6 +1147,7 @@
   height: 100%;
   display: flex;
   flex-direction: column;
+  padding: 0.15rem 0 0;
 }
 
 .db2-chart-area .chart-shell,
@@ -1315,6 +1316,46 @@
   align-content: start;
 }
 
+.db2-panel[data-dashboard-panel="details"] .dashboard-secondary-grid {
+  grid-template-rows: minmax(0, 0.62fr) minmax(0, 1.08fr);
+  overflow: hidden;
+}
+
+.db2-panel[data-dashboard-panel="details"] .dashboard-secondary-surface:not(.cycle-breakdown-card) {
+  min-height: 0;
+  overflow: hidden;
+}
+
+.db2-panel[data-dashboard-panel="details"] .dashboard-secondary-surface:not(.cycle-breakdown-card) .card-header {
+  margin-bottom: 0.45rem;
+}
+
+.db2-panel[data-dashboard-panel="details"] .analytics-summary-grid {
+  gap: 0.45rem;
+  margin-top: 0;
+}
+
+.db2-panel[data-dashboard-panel="details"] .analytics-card {
+  min-height: 0;
+  padding: 0.7rem 0.75rem;
+}
+
+.db2-panel[data-dashboard-panel="details"] .analytics-card strong {
+  margin-top: 0.3rem;
+  margin-bottom: 0;
+}
+
+.db2-panel[data-dashboard-panel="details"] .chart-shell-secondary {
+  min-height: 0;
+  padding: 0.7rem 0.75rem;
+  overflow: hidden;
+}
+
+.db2-panel[data-dashboard-panel="details"] #expense-evolution-bars {
+  min-height: 0;
+  height: 100%;
+}
+
 /* ═══════════════ DAILY LIMIT PROGRESS (JS compat) ═══════════════ */
 .daily-limit-progress-track {
   height: 3px !important;
@@ -1355,6 +1396,7 @@
   display: flex;
   flex-direction: column;
   position: relative;
+  padding: 0 0.25rem 0.15rem 0.1rem;
 }
 
 .projection-chart-svg {
@@ -1366,13 +1408,14 @@
 .projection-chart-axis-x {
   display: flex;
   position: relative;
-  height: 22px;
+  height: 18px;
   flex-shrink: 0;
+  margin-top: 0.1rem;
 }
 
 .projection-chart-axis-x span {
   position: absolute;
-  font-size: 9px;
+  font-size: 8px;
   color: var(--db2-text-muted);
   transform: translateX(-50%);
   white-space: nowrap;
@@ -1381,48 +1424,51 @@
 .projection-chart-axis-y {
   position: absolute;
   left: 0;
-  top: 0;
+  top: 2px;
   display: flex;
   flex-direction: column;
-  height: calc(100% - 22px);
+  height: calc(100% - 18px);
+  width: 0;
+  pointer-events: none;
 }
 
 .projection-chart-axis-y span {
   position: absolute;
-  font-size: 9px;
+  font-size: 8px;
   color: var(--db2-text-muted);
-  right: calc(100% + 4px);
+  right: calc(100% + 6px);
   transform: translateY(-50%);
   white-space: nowrap;
 }
 
 .projection-chart-callout {
   position: absolute;
-  right: 4px;
-  top: 50%;
-  transform: translateY(-50%);
+  right: 0.35rem;
+  top: 0.35rem;
+  transform: none;
   background: rgba(10,10,40,0.85);
   border: 1px solid var(--db2-border);
   border-radius: 8px;
-  padding: 5px 9px;
-  font-size: 10px;
+  padding: 0.38rem 0.55rem;
+  font-size: 9px;
   display: flex;
   flex-direction: column;
   gap: 1px;
   backdrop-filter: blur(8px);
+  max-width: 8.5rem;
 }
 
-.projection-chart-callout span { color: var(--db2-text-muted); font-size: 9px; }
-.projection-chart-callout strong { color: var(--db2-text-primary); font-size: 10px; font-weight: 600; }
-.projection-chart-callout em { font-style: normal; font-weight: 700; font-size: 11px; }
+.projection-chart-callout span { color: var(--db2-text-muted); font-size: 8px; }
+.projection-chart-callout strong { color: var(--db2-text-primary); font-size: 9px; font-weight: 600; }
+.projection-chart-callout em { font-style: normal; font-weight: 700; font-size: 10px; }
 .projection-chart-callout-safe   em { color: var(--db2-green); }
 .projection-chart-callout-warning em { color: var(--db2-gold); }
 .projection-chart-callout-danger  em { color: var(--db2-red); }
 
 .projection-grid-line { stroke: rgba(255,255,255,0.05); stroke-width: 1; }
-.projection-zero-line { stroke: rgba(255,255,255,0.12); stroke-width: 1.5; stroke-dasharray: 4 4; }
+.projection-zero-line { stroke: rgba(255,255,255,0.14); stroke-width: 1.25; stroke-dasharray: 4 4; }
 .projection-area-path { fill: url(#projection-area-gradient); opacity: 0.15; }
-.projection-line-path { fill: none; stroke: url(#projection-line-gradient); stroke-width: 2.5; stroke-linecap: round; stroke-linejoin: round; }
+.projection-line-path { fill: none; stroke: url(#projection-line-gradient); stroke-width: 2.75; stroke-linecap: round; stroke-linejoin: round; }
 
 .projection-point { stroke: rgba(7,7,26,0.8); stroke-width: 2; }
 .projection-point-safe    { fill: var(--db2-green); }
