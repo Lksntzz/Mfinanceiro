@@ -1665,6 +1665,10 @@ p {
   display: grid;
 }
 
+[data-page="contas"] .section-stack[hidden] {
+  display: none !important;
+}
+
 .info-icon {
   width: 18px;
   height: 18px;

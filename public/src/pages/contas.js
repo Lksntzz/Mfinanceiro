@@ -216,6 +216,8 @@ function activateAccountsTab(tabId, { replaceHash = false } = {}) {
     panel.classList.toggle("hidden", !isActive);
     panel.classList.toggle("is-active", isActive);
     panel.setAttribute("aria-hidden", String(!isActive));
+    panel.hidden = !isActive;
+    panel.style.display = isActive ? "grid" : "none";
   });
 
   accountTabLinks.forEach((link) => {
