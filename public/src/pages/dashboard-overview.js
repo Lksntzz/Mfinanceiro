@@ -325,9 +325,15 @@ function renderExpenseOverview({
   }
 
   if (elements.cardsSummaryCount) {
-    elements.cardsSummaryCount.textContent = cardsSummary?.items?.length
+    const hasCards = Boolean(cardsSummary?.items?.length);
+
+    elements.cardsSummaryCount.textContent = hasCards
       ? `${cardsSummary.items.length} cartao(oes) no ciclo`
       : "Sem cartoes no ciclo";
+
+    if (elements.cardsSummaryCard) {
+      elements.cardsSummaryCard.classList.toggle("is-empty", !hasCards);
+    }
   }
 }
 

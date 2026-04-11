@@ -59,6 +59,7 @@ const elements = {
   overviewBudgetProgressFill: document.getElementById("overview-budget-progress-fill"),
   overviewQuickTipTitle: document.getElementById("overview-quick-tip-title"),
   overviewQuickTipBody: document.getElementById("overview-quick-tip-body"),
+  cardsSummaryCard: document.querySelector('[data-page="dashboard"] .cards-summary-card'),
   recentTransactionsList: document.getElementById("recent-transactions-list"),
   dailySummaryChip: document.getElementById("daily-summary-chip"),
   dailySummaryList: document.getElementById("daily-summary-list"),

@@ -2163,6 +2163,19 @@ body[data-page="dashboard"] .cards-summary-card.dashboard-surface {
   flex: 0 0 auto !important;
 }
 
+body[data-page="dashboard"] .cards-summary-card.dashboard-surface.is-empty {
+  align-self: start !important;
+  min-height: 0 !important;
+}
+
+body[data-page="dashboard"] .cards-summary-card.dashboard-surface.is-empty .dashboard-card-summary-list {
+  display: none !important;
+}
+
+body[data-page="dashboard"] .cards-summary-card.dashboard-surface.is-empty .db2-bottom-card-footer {
+  margin-top: 4px;
+}
+
 body[data-page="dashboard"] .cards-summary-card.dashboard-surface .dashboard-card-summary-list,
 body[data-page="dashboard"] .cards-summary-card.dashboard-surface .detail-list {
   overflow: hidden !important;
