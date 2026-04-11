@@ -272,24 +272,6 @@
                     <small class="db2-stat-note" id="overview-top-category-note">—</small>
                   </div>
                 </div>
-
-                <!-- Budget progress -->
-                <div class="db2-budget-wrap">
-                  <div class="db2-budget-track dashboard-budget-progress-track" style="height: 8px; background: rgba(255,255,255,0.06); border-radius: 10px; margin-bottom: 8px; overflow: visible;">
-                    <div class="db2-budget-fill dashboard-budget-progress-fill" id="overview-budget-progress-fill" style="height: 100%; border-radius: 10px; background: linear-gradient(90deg, #a78bfa, #c084fc); box-shadow: 0 0 10px rgba(167,139,250,0.5);"></div>
-                  </div>
-                  <div class="db2-budget-header dashboard-budget-progress-top" style="justify-content: flex-start; gap: 4px; margin-bottom: 5px;">
-                    <strong class="db2-budget-pct" id="overview-budget-progress-label" style="color: #c084fc;">0%</strong>
-                    <span class="db2-budget-label" style="font-size: 11px;">do orçamento utilizado</span>
-                  </div>
-                </div>
-
-                <!-- Period filter pills -->
-                <div class="db2-period-pills dashboard-period-tabs" role="tablist" aria-label="Filtro de período">
-                  <button type="button" class="db2-period-pill period-filter-button" data-expense-period="day">Dia</button>
-                  <button type="button" class="db2-period-pill period-filter-button active" data-expense-period="week">Semana</button>
-                  <button type="button" class="db2-period-pill period-filter-button" data-expense-period="month">Mês</button>
-                </div>
               </article>
               <article class="db2-rhythm-card dashboard-surface" id="ritmo-gastos">
                 <div class="db2-rhythm-header card-header">
@@ -531,6 +513,8 @@
       <small id="expense-total-week-note">Sem gastos nesta semana.</small>
       <strong id="expense-total-month">R$ 0,00</strong>
       <small id="expense-total-month-note">Sem gastos neste mês.</small>
+      <strong id="overview-budget-progress-label">0%</strong>
+      <span id="overview-budget-progress-fill"></span>
     </div>
 
     <!-- Hidden sidebar (kept for app-shell compatibility) -->
