@@ -24,6 +24,10 @@ let normalizeDashboardBaseDate;
 const dashboardState = {
   selectedExpensePeriod: "week",
   selectedSpendingRhythmPeriod: "day",
+  selectedHistoryPeriod: "7d",
+  historyVisibleGroups: 6,
+  historyCustomStart: "",
+  historyCustomEnd: "",
 };
 
 let overviewRenderer;
@@ -81,6 +85,11 @@ const elements = {
   miniStatVr: document.getElementById("mini-stat-vr"),
   miniStatInvestimento: document.getElementById("mini-stat-investimento"),
   expensePeriodChip: document.getElementById("expense-period-chip"),
+  historyPanelSubtitle: document.getElementById("history-panel-subtitle"),
+  historyCustomStart: document.getElementById("history-custom-start"),
+  historyCustomEnd: document.getElementById("history-custom-end"),
+  historyCustomApply: document.getElementById("history-custom-apply"),
+  historyLoadMore: document.getElementById("history-load-more"),
   expenseTotalDay: document.getElementById("expense-total-day"),
   expenseTotalDayNote: document.getElementById("expense-total-day-note"),
   detailsExpenseTotalDay: document.getElementById("details-expense-total-day"),
@@ -111,6 +120,7 @@ const elements = {
   spendingRhythmPeriodButtons: Array.from(
     document.querySelectorAll("[data-spending-rhythm-period]")
   ),
+  historyPeriodButtons: Array.from(document.querySelectorAll("[data-history-period]")),
   insightsChip: document.getElementById("insights-chip"),
   insightsList: document.getElementById("insights-list"),
   expensePeriodButtons: Array.from(document.querySelectorAll("[data-expense-period]")),

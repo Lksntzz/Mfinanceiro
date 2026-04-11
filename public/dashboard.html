@@ -419,22 +419,45 @@
         <!-- ═══════════════════════════════════════════════════
              PANEL: HISTÓRICO
         ═══════════════════════════════════════════════════ -->
-        <section class="db2-panel" data-dashboard-panel="history" id="historico">
+                <section class="db2-panel" data-dashboard-panel="history" id="historico">
           <div class="dashboard-history-grid">
             <article class="dashboard-surface dashboard-secondary-surface drawer-card" id="resumo">
               <div class="card-header">
                 <div>
-                  <div class="card-label">Despesas por dia</div>
-                  <h3>Histórico agrupado por data</h3>
-                  <p class="table-caption">Os lançamentos são agrupados automaticamente por dia dentro do período selecionado.</p>
+                  <div class="card-label">Histórico</div>
+                  <h3>Lançamentos agrupados por data</h3>
+                  <p class="table-caption" id="history-panel-subtitle">Os dias mais recentes aparecem primeiro, com agrupamento compacto por dia.</p>
                 </div>
                 <div class="status-chip" id="daily-summary-chip">Sem lançamentos</div>
+              </div>
+              <div class="history-toolbar">
+                <div class="db2-period-pills history-period-pills" role="tablist" aria-label="Filtro do histórico">
+                  <button type="button" class="db2-period-pill history-period-pill active" data-history-period="today">Hoje</button>
+                  <button type="button" class="db2-period-pill history-period-pill" data-history-period="7d">7 dias</button>
+                  <button type="button" class="db2-period-pill history-period-pill" data-history-period="30d">30 dias</button>
+                  <button type="button" class="db2-period-pill history-period-pill" data-history-period="month">Mês</button>
+                  <button type="button" class="db2-period-pill history-period-pill" data-history-period="custom">Personalizado</button>
+                </div>
+                <div class="history-custom-range">
+                  <label class="history-range-field">
+                    <span>De</span>
+                    <input type="date" id="history-custom-start">
+                  </label>
+                  <label class="history-range-field">
+                    <span>Até</span>
+                    <input type="date" id="history-custom-end">
+                  </label>
+                  <button type="button" class="db2-see-more-btn dashboard-inline-link btn-secondary btn-sm" id="history-custom-apply">Aplicar</button>
+                </div>
               </div>
               <div class="detail-list dashboard-history-list" id="daily-summary-list">
                 <div class="detail-row">
                   <span>Resumo diário indisponível</span>
                   <strong>Adicione ou importe lançamentos</strong>
                 </div>
+              </div>
+              <div class="history-footer">
+                <button type="button" class="db2-see-more-btn dashboard-inline-link btn-secondary btn-sm" id="history-load-more">Carregar mais</button>
               </div>
             </article>
           </div>
