@@ -1523,16 +1523,16 @@ function buildSpendingRhythmDataset(data, period = "day", referenceDate = new Da
 }
 
 const CATEGORY_AUTOMATION_RULES = [
-  { categoria: "alimentacao", subcategoria: "mercado", keywords: ["mercado", "supermercado", "atacadao", "carrefour", "assai", "extra", "hortifruti"] },
+  { categoria: "alimentacao", subcategoria: "mercado", keywords: ["mercado", "supermercado", "atacadao", "carrefour", "assai", "extra", "hortifruti", "oba hortifruti", "dia supermercado"] },
   { categoria: "alimentacao", subcategoria: "padaria", keywords: ["padaria", "pao", "confeitaria"] },
-  { categoria: "alimentacao", subcategoria: "restaurante", keywords: ["restaurante", "almoco", "janta", "churrascaria", "lanchonete"] },
-  { categoria: "alimentacao", subcategoria: "delivery", keywords: ["ifood", "delivery", "pizza", "burger", "lanche", "sushi"] },
-  { categoria: "transporte", subcategoria: "app", keywords: ["uber", "99", "inDrive", "cabify", "taxi"] },
-  { categoria: "transporte", subcategoria: "combustivel", keywords: ["combustivel", "gasolina", "etanol", "diesel", "posto"] },
+  { categoria: "alimentacao", subcategoria: "restaurante", keywords: ["restaurante", "almoco", "janta", "churrascaria", "lanchonete", "refeicao"] },
+  { categoria: "alimentacao", subcategoria: "delivery", keywords: ["ifood", "delivery", "pizza", "burger", "lanche", "sushi", "cafeteria", "acai"] },
+  { categoria: "transporte", subcategoria: "app", keywords: ["uber", "99", "indrive", "cabify", "taxi", "99app"] },
+  { categoria: "transporte", subcategoria: "combustivel", keywords: ["combustivel", "gasolina", "etanol", "diesel", "posto", "shell box"] },
   { categoria: "transporte", subcategoria: "onibus", keywords: ["onibus", "metro", "trem", "bilhete unico", "transporte publico"] },
-  { categoria: "transporte", subcategoria: "estacionamento", keywords: ["estacionamento", "zona azul", "parking", "pedagio"] },
-  { categoria: "saude", subcategoria: "farmacia", keywords: ["farmacia", "droga", "medicamento", "remedio"] },
-  { categoria: "saude", subcategoria: "consulta", keywords: ["consulta", "medico", "clinica", "odonto", "terapia"] },
+  { categoria: "transporte", subcategoria: "estacionamento", keywords: ["estacionamento", "zona azul", "parking", "pedagio", "sem parar"] },
+  { categoria: "saude", subcategoria: "farmacia", keywords: ["farmacia", "droga", "medicamento", "remedio", "drogasil", "ultrafarma", "drogaria sao paulo"] },
+  { categoria: "saude", subcategoria: "consulta", keywords: ["consulta", "medico", "clinica", "odonto", "terapia", "hospital"] },
   { categoria: "saude", subcategoria: "exame", keywords: ["exame", "laboratorio", "raio x", "ultrassom", "tomografia"] },
   { categoria: "lazer", subcategoria: "bar", keywords: ["bar", "cervejaria", "happy hour", "pub"] },
   { categoria: "lazer", subcategoria: "viagem", keywords: ["viagem", "hotel", "airbnb", "pousada", "passagem"] },
@@ -1554,9 +1554,11 @@ const CATEGORY_AUTOMATION_RULES = [
   { categoria: "trabalho", subcategoria: "equipamentos", keywords: ["equipamento", "teclado", "mouse", "monitor", "escritorio"] },
   { categoria: "trabalho", subcategoria: "deslocamento", keywords: ["estacionamento trabalho", "combustivel trabalho", "deslocamento trabalho"] },
   { categoria: "imprevistos", subcategoria: "manutencao", keywords: ["manutencao", "reparo", "conserto", "quebra"] },
-  { categoria: "imprevistos", subcategoria: "multa", keywords: ["multa", "juros mora", "encargo"] },
+  { categoria: "imprevistos", subcategoria: "multa", keywords: ["multa", "juros mora", "encargo", "tarifa bancaria", "cesta de servicos", "iof"] },
   { categoria: "imprevistos", subcategoria: "emergencia", keywords: ["emergencia", "urgencia", "socorro"] },
   { categoria: "rendimento", subcategoria: "rendimento", keywords: ["rendimento", "juros", "invest", "aplicacao", "resgate"] },
+  { categoria: "compras", subcategoria: "pagamentos", keywords: ["pagamento", "pag tit", "boleto", "qr pix", "pix qr", "maquininha"] },
+  { categoria: "outros", subcategoria: "transferencias", keywords: ["pix enviado", "transferencia enviada", "ted enviada", "doc enviado"] },
   { categoria: "entrada", subcategoria: "recebimento", keywords: ["pix recebido", "salario", "pagamento recebido", "deposito", "ted recebida", "transferencia recebida"] },
 ];
 

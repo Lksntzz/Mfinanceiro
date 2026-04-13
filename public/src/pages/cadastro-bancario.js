@@ -122,7 +122,7 @@ function suggestImportCategory(text) {
     .normalize("NFD")
     .replace(/[\u0300-\u036f]/g, ""); // Remove acentos
 
-  if (/(pix recebido|entrada|estorno|reembolso|credito|resgate)/.test(normalizedText) && !normalizedText.includes("cartao")) {
+  if (/(pix recebido|entrada|estorno|reembolso|credito|resgate|ted recebida|transferencia recebida|deposito recebido|pagamento recebido)/.test(normalizedText) && !normalizedText.includes("cartao")) {
     return "entrada";
   }
 
@@ -130,23 +130,23 @@ function suggestImportCategory(text) {
     return "rendimento";
   }
 
-  if (/(pagamento|qr pix|maquininha|boleto|compra|pag tit|debito|cartao|fatura|pag\/|mensalidade)/.test(normalizedText)) {
+  if (/(pagamento|qr pix|pix qr|maquininha|boleto|compra|pag tit|debito|cartao|fatura|pag\/|mensalidade|pagamento boleto|pagamento conta)/.test(normalizedText)) {
     return "compras";
   }
 
-  if (/(uber|99|metro|onibus|transporte|combustivel|gasolina|posto |estacionamento|pedagio|99app|cabify)/.test(normalizedText)) {
+  if (/(uber|99|metro|onibus|transporte|combustivel|gasolina|posto |estacionamento|pedagio|99app|cabify|bilhete unico|shell box|sem parar)/.test(normalizedText)) {
     return "transporte";
   }
 
-  if (/(mercado|supermercado|atacadao|atacadista|hortifruti|padaria|acougue|sonda|carrefour|extra|pao de acucar)/.test(normalizedText)) {
+  if (/(mercado|supermercado|atacadao|atacadista|hortifruti|padaria|acougue|sonda|carrefour|extra|pao de acucar|assai|oba hortifruti|dia supermercado)/.test(normalizedText)) {
     return "mercado";
   }
 
-  if (/(restaurante|ifood|lanche|almoco|janta|mcdonalds|burger king|pizza|sorvete|bar|cafe)/.test(normalizedText)) {
+  if (/(restaurante|ifood|lanche|almoco|janta|mcdonalds|burger king|pizza|sorvete|bar|cafe|cafeteria|acai|pastelaria)/.test(normalizedText)) {
     return "alimentacao";
   }
 
-  if (/(farmacia|medico|hospital|saude|drogaria|remedio|exame|consulta|clinica)/.test(normalizedText)) {
+  if (/(farmacia|medico|hospital|saude|drogaria|remedio|exame|consulta|clinica|odonto|laboratorio|ultrafarma|drogasil|drogaria sao paulo)/.test(normalizedText)) {
     return "saude";
   }
 
@@ -159,7 +159,7 @@ function suggestImportCategory(text) {
   }
 
   // Tarifas bancárias, transações de envio de valores (TED, DOC, PIX ENVIADO) e impostos
-  if (/(tarifa|taxa|juros|iof|manutencao|mensalidade|encargo|anuidade|pix enviado|transferencia|ted|doc|imposto|tributo)/.test(normalizedText)) {
+  if (/(tarifa|taxa|juros|iof|manutencao|mensalidade|encargo|anuidade|pix enviado|transferencia enviada|ted|doc|imposto|tributo|tarifa bancaria|cesta de servicos)/.test(normalizedText)) {
     return "outros";
   }
 
@@ -208,6 +208,30 @@ function normalizeStatementDescription(value) {
     .trim();
 }
 
+function isMeaningfulStatementDescription(value) {
+  const normalizedDescription = normalizeStatementDescription(value);
+  const normalizedKey = normalizeHeaderName(normalizedDescription);
+
+  if (!normalizedDescription) {
+    return false;
+  }
+
+  if (
+    [
+      "UNDEFINED",
+      "NULL",
+      "NAN",
+      "MOVIMENTACAO IMPORTADA",
+      "LANCAMENTO",
+      "SEM DESCRICAO",
+    ].includes(normalizedKey)
+  ) {
+    return false;
+  }
+
+  return true;
+}
+
 function decodeImportedBinaryContent(content) {
   if (typeof content === "string") {
     return content;
@@ -252,6 +276,28 @@ function parseBrazilianAmount(value) {
 
   const parsedValue = Number.parseFloat(normalizedValue);
   return Number.isFinite(parsedValue) ? parsedValue : 0;
+}
+
+function parseBrazilianAmountStrict(value) {
+  const rawValue = String(value ?? "")
+    .replace(/\uFEFF/g, "")
+    .trim();
+
+  if (!rawValue) {
+    return null;
+  }
+
+  const parsedValue = parseBrazilianAmount(rawValue);
+  const normalizedDigits = rawValue
+    .replace(/\s+/g, "")
+    .replace(/R\$/gi, "")
+    .replace(/[^0-9,.-]/g, "");
+
+  if (!normalizedDigits || !Number.isFinite(parsedValue)) {
+    return null;
+  }
+
+  return parsedValue;
 }
 
 // ============================================
@@ -408,10 +454,11 @@ function buildImportedStatementItem({
   balance,
   bank,
   externalId,
+  lineNumber,
 }) {
   const normalizedValue = Number(value || 0);
-  const normalizedDescription =
-    normalizeStatementDescription(description) || "Movimentacao importada";
+  const normalizedDescription = normalizeStatementDescription(description);
+  const normalizedExternalId = String(externalId || "").trim();
 
   return {
     id: createId(prefix),
@@ -430,7 +477,9 @@ function buildImportedStatementItem({
     categoriaSugerida: suggestImportCategory(normalizedDescription),
     origem: "importado",
     banco: bank,
-    externalId: String(externalId || "").trim(),
+    externalId: normalizedExternalId,
+    external_id: normalizedExternalId || null,
+    linha_origem: Number.isFinite(Number(lineNumber)) ? Number(lineNumber) : null,
   };
 }
 
@@ -662,14 +711,17 @@ function parseMercadoPagoCSV(textContent) {
     const releaseDate = row[0];
     const transactionType = normalizeStatementDescription(row[1]);
     const referenceId = String(row[2] || "").trim();
-    const transactionNetAmount = parseBrazilianAmount(row[3]);
-    const partialBalance = parseBrazilianAmount(row[4]);
+    const transactionNetAmount = parseBrazilianAmountStrict(row[3]);
+    const partialBalance = parseBrazilianAmountStrict(row[4]);
 
     if (!isValidTransactionDate(releaseDate)) {
       continue;
     }
 
-    if (isStatementSummaryDescription(transactionType)) {
+    if (
+      isStatementSummaryDescription(transactionType) ||
+      !isMeaningfulStatementDescription(transactionType)
+    ) {
       continue;
     }
 
@@ -677,7 +729,7 @@ function parseMercadoPagoCSV(textContent) {
       continue;
     }
 
-    if (!transactionType || Number.isNaN(transactionNetAmount)) {
+    if (!Number.isFinite(transactionNetAmount) || transactionNetAmount === 0) {
       continue;
     }
 
@@ -690,6 +742,7 @@ function parseMercadoPagoCSV(textContent) {
         value: transactionNetAmount,
         balance: partialBalance,
         bank: "mercado-pago",
+        lineNumber: index + 1,
       })
     );
   }
@@ -779,18 +832,22 @@ function parseGenericCSV(textContent, bank) {
     }
 
     const description = normalizeStatementDescription(row[indexes.descricao]);
-    const value = parseBrazilianAmount(row[indexes.valor]);
-    const externalId = indexes.referencia >= 0 ? row[indexes.referencia] : "";
+    const value = parseBrazilianAmountStrict(row[indexes.valor]);
+    const externalId = indexes.referencia >= 0 ? String(row[indexes.referencia] || "").trim() : "";
+    const balance = indexes.saldo >= 0 ? parseBrazilianAmountStrict(row[indexes.saldo]) : null;
 
     if (!isValidTransactionDate(row[indexes.data])) {
       continue;
     }
 
-    if (isStatementSummaryDescription(description)) {
+    if (
+      isStatementSummaryDescription(description) ||
+      !isMeaningfulStatementDescription(description)
+    ) {
       continue;
     }
 
-    if (!description && !value) {
+    if (!Number.isFinite(value) || value === 0) {
       continue;
     }
 
@@ -800,9 +857,10 @@ function parseGenericCSV(textContent, bank) {
         date: row[indexes.data],
         description,
         value,
-        balance: indexes.saldo >= 0 ? parseBrazilianAmount(row[indexes.saldo]) : 0,
+        balance,
         externalId,
         bank: detectedBank,
+        lineNumber: index + 1,
       })
     );
   }
@@ -934,19 +992,22 @@ function parseRowsAsStructuredTable(rows, bank, parserMode, prefix) {
         ? excelSerialToDate(rawDateValue)
         : rawDateValue;
     const description = indexes.descricao >= 0 ? normalizeStatementDescription(row[indexes.descricao]) : "";
-    const externalId = indexes.referencia >= 0 ? row[indexes.referencia] : "";
+    const externalId = indexes.referencia >= 0 ? String(row[indexes.referencia] || "").trim() : "";
     const value = extractStructuredValueFromRow(row, indexes);
-    const balance = indexes.saldo >= 0 ? parseBrazilianAmount(row[indexes.saldo]) : null;
+    const balance = indexes.saldo >= 0 ? parseBrazilianAmountStrict(row[indexes.saldo]) : null;
 
     if (!isValidTransactionDate(rawDate)) {
       continue;
     }
 
-    if (isStatementSummaryDescription(description)) {
+    if (
+      isStatementSummaryDescription(description) ||
+      !isMeaningfulStatementDescription(description)
+    ) {
       continue;
     }
 
-    if (!description && !value) {
+    if (!Number.isFinite(value) || value === 0) {
       continue;
     }
 
@@ -959,6 +1020,7 @@ function parseRowsAsStructuredTable(rows, bank, parserMode, prefix) {
         value,
         balance,
         bank: detectedBank,
+        lineNumber: index + 1,
       })
     );
   }
@@ -2366,15 +2428,15 @@ function confirmImportedExpenses() {
     return;
   }
 
-  const expenseDrafts = statementDraftsState.filter(
-    (item) => item.tipo === "saida" && Math.abs(Number(item.valor || 0)) > 0
+  const reviewedDrafts = statementDraftsState.filter(
+    (item) => Math.abs(Number(item.valor || 0)) > 0
   );
 
-  if (!expenseDrafts.length) {
+  if (!reviewedDrafts.length) {
     showMessage(
       statementMessage,
       "error",
-      "O arquivo nao trouxe saidas validas para importar como gastos do dia a dia."
+      "O arquivo nao trouxe movimentacoes validas para importar no ledger."
     );
     return;
   }
@@ -2395,8 +2457,12 @@ function confirmImportedExpenses() {
     }
   }
 
-  const invalidDraft = expenseDrafts.find(
-    (item) => !item.descricao || !item.data || Math.abs(Number(item.valor || 0)) <= 0 || isStatementSummaryDescription(item.descricao)
+  const invalidDraft = reviewedDrafts.find(
+    (item) =>
+      !item.data ||
+      !isMeaningfulStatementDescription(item.descricao) ||
+      Math.abs(Number(item.valor || 0)) <= 0 ||
+      isStatementSummaryDescription(item.descricao)
   );
 
   if (invalidDraft) {
@@ -2409,21 +2475,24 @@ function confirmImportedExpenses() {
   }
 
   saveImportedExpensesFromStatement(
-    expenseDrafts.map((item) => ({
+    reviewedDrafts.map((item) => ({
       ...item,
       valor: Math.abs(Number(item.valor || 0)),
       categoria: item.categoria || item.categoriaSugerida || "outros",
-      tipo: "saida",
+      tipo: item.tipo === "entrada" ? "entrada" : "saida",
+      external_id: item.external_id || item.externalId || item.id,
     }))
   );
   if (statementBalanceActions) {
     statementBalanceActions.classList.remove("hidden");
   }
 
+  const expenseDrafts = reviewedDrafts.filter((item) => item.tipo === "saida");
+
   showMessage(
     statementMessage,
     "success",
-    `${expenseDrafts.length} lancamento(s) salvo(s) em Contas do dia a dia.`
+    `${reviewedDrafts.length} movimentacao(oes) salva(s) no ledger. ${expenseDrafts.length} saida(s) refletida(s) em Contas do dia a dia.`
   );
 }
 

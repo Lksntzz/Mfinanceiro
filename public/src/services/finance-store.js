@@ -211,7 +211,7 @@ function normalizeLedgerItem(item) {
 
   return {
     ...item,
-    id: item.id || item.external_id || createId("ledger"),
+    id: item.id || item.external_id || item.externalId || createId("ledger"),
     user_id: item.user_id || "",
     data: item.data || "",
     descricao: item.descricao || "Movimentacao",
@@ -219,7 +219,7 @@ function normalizeLedgerItem(item) {
     categoria: item.categoria || "outros",
     tipo: item.tipo || "saida",
     origem: item.origem || "manual",
-    external_id: item.external_id || item.id || null,
+    external_id: item.external_id || item.externalId || item.id || null,
     arquivo_origem: item.arquivo_origem || null,
     linha_origem:
       item.linha_origem !== null && item.linha_origem !== undefined
