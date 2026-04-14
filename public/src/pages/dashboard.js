@@ -23,9 +23,9 @@ let buildDashboardDailySeries;
 let normalizeDashboardBaseDate;
 
 const dashboardState = {
-  selectedExpensePeriod: "week",
-  selectedSpendingRhythmPeriod: "day",
-  selectedHistoryPeriod: "7d",
+  selectedExpensePeriod: "month",
+  selectedSpendingRhythmPeriod: "month",
+  selectedHistoryPeriod: "30d",
   historyVisibleGroups: 6,
   historyCustomStart: "",
   historyCustomEnd: "",
@@ -219,8 +219,6 @@ function setSurfaceTone(element, tone) {
 }
 
 function switchDashboardTab(tabId = "overview") {
-  console.log("[Dashboard Tabs] switchDashboardTab recebeu:", tabId);
-
   const dashboardTabButtons = Array.from(
     document.querySelectorAll("[data-dashboard-tab-link]")
   );
@@ -239,10 +237,6 @@ function switchDashboardTab(tabId = "overview") {
     panel.classList.toggle("is-active", isActive);
   });
 
-  const activePanels = dashboardTabPanels
-    .filter((panel) => panel.classList.contains("is-active"))
-    .map((panel) => panel.dataset.dashboardPanel);
-  console.log("[Dashboard Tabs] painÃ©is ativos:", activePanels);
 }
 
 function setDailyLimitHighlight(color) {
@@ -695,7 +689,9 @@ function buildDashboardHistoryGroups(entries) {
   const groups = new Map();
 
   (Array.isArray(entries) ? entries : []).forEach((entry) => {
-    const date = normalizeDashboardHistoryDate(entry.data || entry.dataHora || entry.dataNormalizada);
+    const date = normalizeDashboardHistoryDate(
+      entry.dataNormalizada || entry.data || entry.dataHora
+    );
     if (!date) {
       return;
     }
@@ -729,9 +725,67 @@ function buildDashboardHistoryGroups(entries) {
       return {
         ...group,
         topCategory,
+      items: group.items.slice().sort((left, right) => {
+          const leftTime = normalizeDashboardHistoryDate(
+            left.dataNormalizada || left.data || left.dataHora
+          )?.getTime?.() || 0;
+          const rightTime = normalizeDashboardHistoryDate(
+            right.dataNormalizada || right.data || right.dataHora
+          )?.getTime?.() || 0;
+          return leftTime - rightTime;
+        }),
+      };
+    });
+}
+
+function buildDashboardHistoryMonthGroups(entries) {
+  const groups = new Map();
+
+  (Array.isArray(entries) ? entries : []).forEach((entry) => {
+    const date = normalizeDashboardHistoryDate(
+      entry.dataNormalizada || entry.data || entry.dataHora
+    );
+    if (!date) {
+      return;
+    }
+
+    const key = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}`;
+    const monthDate = new Date(date.getFullYear(), date.getMonth(), 1);
+    const current = groups.get(key) || {
+      date: monthDate,
+      dateKey: key,
+      saidas: 0,
+      count: 0,
+      items: [],
+      topCategory: "Sem categoria",
+    };
+
+    const value = Number(entry.valor || 0);
+    current.saidas += value;
+    current.count += 1;
+    current.items.push(entry);
+    groups.set(key, current);
+  });
+
+  return [...groups.values()]
+    .sort((left, right) => right.date.getTime() - left.date.getTime())
+    .map((group) => {
+      const categoryTotals = group.items.reduce((accumulator, item) => {
+        const category = item.categoria || "Sem categoria";
+        accumulator.set(category, (accumulator.get(category) || 0) + Number(item.valor || 0));
+        return accumulator;
+      }, new Map());
+      const topCategory = [...categoryTotals.entries()].sort((a, b) => b[1] - a[1])[0]?.[0] || "Sem categoria";
+      return {
+        ...group,
+        topCategory,
         items: group.items.slice().sort((left, right) => {
-          const leftTime = normalizeDashboardHistoryDate(left.data || left.dataHora)?.getTime?.() || 0;
-          const rightTime = normalizeDashboardHistoryDate(right.data || right.dataHora)?.getTime?.() || 0;
+          const leftTime = normalizeDashboardHistoryDate(
+            left.dataNormalizada || left.data || left.dataHora
+          )?.getTime?.() || 0;
+          const rightTime = normalizeDashboardHistoryDate(
+            right.dataNormalizada || right.data || right.dataHora
+          )?.getTime?.() || 0;
           return leftTime - rightTime;
         }),
       };
@@ -743,37 +797,76 @@ function normalizeDashboardHistoryDate(value) {
     return null;
   }
 
-  const date = normalizeDashboardBaseDate?.(value) || new Date(value);
+  let date = normalizeDashboardBaseDate?.(value) || null;
+
+  if (!date && typeof value === "string") {
+    const match = value.trim().match(/^(\d{4})-(\d{2})-(\d{2})$/);
+    if (match) {
+      const year = Number(match[1]);
+      const month = Number(match[2]);
+      const day = Number(match[3]);
+      date = new Date(year, month - 1, day);
+    }
+  }
+
+  if (!date) {
+    date = new Date(value);
+  }
+
   return Number.isNaN(date.getTime()) ? null : date;
 }
 
+function normalizeDashboardHistoryDateKey(value) {
+  const date = normalizeDashboardHistoryDate(value);
+  if (!date) {
+    return "";
+  }
+
+  const year = String(date.getFullYear()).padStart(4, "0");
+  const month = String(date.getMonth() + 1).padStart(2, "0");
+  const day = String(date.getDate()).padStart(2, "0");
+  return `${year}-${month}-${day}`;
+}
+
+function getDashboardHistoryDayBounds(value) {
+  const date = normalizeDashboardHistoryDate(value);
+  if (!date) {
+    return null;
+  }
+
+  const start = new Date(date.getFullYear(), date.getMonth(), date.getDate());
+  const end = new Date(date.getFullYear(), date.getMonth(), date.getDate(), 23, 59, 59, 999);
+  return { start, end };
+}
+
 function getDashboardHistoryPeriodDescriptor(period, referenceDate = new Date(), customStart, customEnd) {
-  const today = normalizeDashboardBaseDate(referenceDate);
+  const todayBounds = getDashboardHistoryDayBounds(referenceDate);
+  const today = todayBounds?.start || normalizeDashboardBaseDate(referenceDate);
   const normalizedPeriod = String(period || "7d");
 
   if (normalizedPeriod === "today") {
-    return { label: "Hoje", startDate: today, endDate: today };
+    return { label: "Hoje", startDate: todayBounds?.start || today, endDate: todayBounds?.end || today };
   }
 
   if (normalizedPeriod === "7d") {
     const startDate = new Date(today);
     startDate.setDate(today.getDate() - 6);
-    return { label: "Ultimos 7 dias", startDate, endDate: today };
+    return { label: "Ultimos 7 dias", startDate, endDate: todayBounds?.end || today };
   }
 
   if (normalizedPeriod === "30d") {
     const startDate = new Date(today);
     startDate.setDate(today.getDate() - 29);
-    return { label: "Ultimos 30 dias", startDate, endDate: today };
+    return { label: "Ultimos 30 dias", startDate, endDate: todayBounds?.end || today };
   }
 
   if (normalizedPeriod === "month") {
     const startDate = new Date(today.getFullYear(), today.getMonth(), 1);
-    return { label: "Mes atual", startDate, endDate: today };
+    return { label: "Mes atual", startDate, endDate: todayBounds?.end || today };
   }
 
-  const normalizedStart = normalizeDashboardHistoryDate(customStart) || new Date(today.getFullYear(), today.getMonth(), 1);
-  const normalizedEnd = normalizeDashboardHistoryDate(customEnd) || today;
+  const normalizedStart = getDashboardHistoryDayBounds(customStart)?.start || new Date(today.getFullYear(), today.getMonth(), 1);
+  const normalizedEnd = getDashboardHistoryDayBounds(customEnd)?.end || (todayBounds?.end || today);
   return {
     label: "Periodo personalizado",
     startDate: normalizedStart,
@@ -825,6 +918,58 @@ function renderDashboardHistoryGroups(groups, visibleGroups) {
             <div class="history-entry-main">
               <strong>${entry.descricao || "Lancamento"}</strong>
               <span>${entry.categoria || "Sem categoria"} · ${extractDashboardTimeLabel(entry.data) || "--:--"}</span>
+              <details class="history-entry-details">
+                <summary>Detalhes</summary>
+                <div class="history-entry-details-body">
+                  <span>Tipo: ${entry.detalhesLancamento?.tipoMovimento === "entrada" ? "Entrada" : "Saída"}</span>
+                  <span>Meio: ${entry.detalhesLancamento?.meioPagamento || "N/D"}</span>
+                  <span>Empresa: ${entry.detalhesLancamento?.contraparte || "N/D"}</span>
+                  <span>Banco: ${entry.detalhesLancamento?.instituicao || "N/D"}</span>
+                </div>
+              </details>
+            </div>
+            <div class="history-entry-value">
+              <strong>${formatDashboardCurrencyValue(entry.valor)}</strong>
+              <button type="button" class="history-entry-delete" data-history-action="delete-entry" data-history-entry-id="${entry.id || entry.external_id || ""}" aria-label="Apagar lancamento ${entry.descricao || "Lancamento"}">Apagar</button>
+            </div>
+          </div>
+        `).join("")}
+      </div>
+    </details>
+  `).join("");
+}
+
+function renderDashboardHistoryMonthGroups(groups, visibleGroups) {
+  return groups.slice(0, visibleGroups).map((group, index) => `
+    <details class="history-day-card"${index === 0 ? " open" : ""} data-history-month="${group.dateKey || ""}">
+      <summary class="history-day-summary">
+        <div class="history-day-summary-main">
+          <strong class="history-day-date">${formatDashboardLongDate(group.date)}</strong>
+          <span class="history-day-category">Categoria dominante: ${group.topCategory || "Sem categoria"}</span>
+        </div>
+        <div class="history-day-summary-meta">
+          <strong class="history-day-total">${formatDashboardCurrencyValue(group.saidas)}</strong>
+          <span class="history-day-count">${group.count} lancamento(s)</span>
+        </div>
+      </summary>
+      <div class="history-day-content">
+        <div class="history-day-actions">
+          <button type="button" class="history-entry-delete history-day-delete" data-history-action="delete-month" data-history-month="${group.dateKey || ""}" data-history-label="${formatDashboardLongDate(group.date)}" aria-label="Apagar lancamentos do mes ${formatDashboardLongDate(group.date)}">Apagar mês</button>
+        </div>
+        ${(group.items || []).map((entry) => `
+          <div class="history-entry-row" data-history-entry-id="${entry.id || entry.external_id || ""}">
+            <div class="history-entry-main">
+              <strong>${entry.descricao || "Lancamento"}</strong>
+              <span>${entry.categoria || "Sem categoria"} · ${extractDashboardTimeLabel(entry.data) || "--:--"}</span>
+              <details class="history-entry-details">
+                <summary>Detalhes</summary>
+                <div class="history-entry-details-body">
+                  <span>Tipo: ${entry.detalhesLancamento?.tipoMovimento === "entrada" ? "Entrada" : "Saída"}</span>
+                  <span>Meio: ${entry.detalhesLancamento?.meioPagamento || "N/D"}</span>
+                  <span>Empresa: ${entry.detalhesLancamento?.contraparte || "N/D"}</span>
+                  <span>Banco: ${entry.detalhesLancamento?.instituicao || "N/D"}</span>
+                </div>
+              </details>
             </div>
             <div class="history-entry-value">
               <strong>${formatDashboardCurrencyValue(entry.valor)}</strong>
@@ -1013,24 +1158,35 @@ async function deleteDashboardHistoryGroup(dateKey) {
     return false;
   }
 
-  const data = window.FinanceStore?.loadAppData ? window.FinanceStore.loadAppData() : null;
-  const entries = getDashboardLedgerExpenseData(data || {}).filter((entry) => {
-    const entryDate = normalizeDashboardHistoryDate(entry.data || entry.dataHora);
-    return entryDate && entryDate.toISOString().slice(0, 10) === targetDate;
-  });
+  const syncApi = getDashboardHistoryDeleteSyncApi();
+  if (typeof syncApi?.excluirLançamentosImportadosPorFiltro === "function") {
+    return syncApi.excluirLançamentosImportadosPorFiltro({ dateKey: targetDate });
+  }
 
-  if (!entries.length) {
+  return false;
+}
+
+async function deleteDashboardHistoryEntriesByRange(startDate, endDate) {
+  const syncApi = getDashboardHistoryDeleteSyncApi();
+  if (typeof syncApi?.excluirLançamentosImportadosPorFiltro !== "function") {
     return false;
   }
 
-  for (const entry of entries) {
-    const entryId = entry.id || entry.external_id;
-    if (entryId) {
-      await deleteDashboardHistoryEntry(entryId);
-    }
+  return syncApi.excluirLançamentosImportadosPorFiltro({ startDate, endDate });
+}
+
+async function deleteDashboardHistoryEntriesByMonth(monthKey) {
+  const syncApi = getDashboardHistoryDeleteSyncApi();
+  if (typeof syncApi?.excluirLançamentosImportadosPorFiltro === "function") {
+    return syncApi.excluirLançamentosImportadosPorFiltro({ monthKey });
   }
 
-  return true;
+  const storeApi = window.FinanceStore || null;
+  if (typeof storeApi?.excluirLançamentosImportadosPorFiltro === "function") {
+    return storeApi.excluirLançamentosImportadosPorFiltro({ monthKey });
+  }
+
+  return false;
 }
 
 function renderAlerts(summary, alerts) {
@@ -1341,13 +1497,8 @@ function bindHistoryFilters() {
 
 function bindDashboardTabs() {
   if (dashboardTabsBound) {
-    console.log("[Dashboard Tabs] bindDashboardTabs ignorado: jÃ¡ vinculado");
     return;
   }
-
-  console.log("[Dashboard Tabs] bindDashboardTabs executado", {
-    buttons: elements.dashboardTabButtons.map((button) => button.dataset.dashboardTabLink || ""),
-  });
 
   document.addEventListener("click", (event) => {
     const tabTrigger = event.target.closest("[data-dashboard-tab-link]");
@@ -1357,8 +1508,6 @@ function bindDashboardTabs() {
     }
 
     const nextTab = tabTrigger.dataset.dashboardTabLink || "overview";
-    console.log("[Dashboard Tabs] clique detectado:", nextTab);
-    console.log("[Dashboard Tabs] chamando switchDashboardTab");
     switchDashboardTab(nextTab);
   });
 
@@ -1431,6 +1580,8 @@ function hydrateDashboardData() {
       },
     },
   };
+
+  window.__DATA__ = data;
 
   if (window.__MFINANCEIRO_DEBUG_INTEGRATION__ === true) {
     console.groupCollapsed("[Dashboard] hydrateDashboardData");
@@ -1525,6 +1676,7 @@ function assignDashboardModules() {
     formatDateLong: formatDashboardLongDate,
     getExpenseOverviewSummary: getDashboardExpenseOverviewData,
     getExpensePeriodSummary: getDashboardExpensePeriodData,
+    getFinancialEntries: getDashboardFinancialEntries,
     getLedgerExpenseEntries: getDashboardLedgerExpenseData,
     getLedgerMovements: getDashboardLedgerMovementData,
     montarProjecaoSaldoPorDia: buildDashboardBalanceSeries,
@@ -1550,6 +1702,7 @@ function assignDashboardModules() {
     ["FinanceCalculations.formatDateLong", formatDashboardLongDate],
     ["FinanceCalculations.getExpenseOverviewSummary", getDashboardExpenseOverviewData],
     ["FinanceCalculations.getExpensePeriodSummary", getDashboardExpensePeriodData],
+    ["FinanceCalculations.getFinancialEntries", getDashboardFinancialEntries],
     ["FinanceCalculations.getLedgerExpenseEntries", getDashboardLedgerExpenseData],
     ["FinanceCalculations.getLedgerMovements", getDashboardLedgerMovementData],
     ["FinanceCalculations.montarProjecaoSaldoPorDia", buildDashboardBalanceSeries],
@@ -1697,37 +1850,33 @@ function bindDashboardRefreshEvents() {
 }
 
 async function initDashboardApp() {
-  console.log("[Dashboard Init] initDashboardApp iniciou");
-
   if (dashboardAppInitialized) {
-    console.log("[Dashboard Init] initDashboardApp ignorado: jÃ¡ inicializado");
     return;
   }
 
   if (dashboardInitInFlight) {
-    console.log("[Dashboard Init] initDashboardApp aguardando bootstrap ja em andamento");
     return dashboardInitInFlight;
   }
 
   dashboardInitInFlight = (async () => {
     const dependenciesAreValid = validateDashboardDependencies();
-    console.log("[Dashboard Init] validateDashboardDependencies:", dependenciesAreValid);
 
     if (!dependenciesAreValid) {
       await waitForDashboardDependencies();
     }
 
     assignDashboardModules();
-    console.log("[Dashboard Init] assignDashboardModules executado");
+    const hydratedDashboardData = loadDashboardData ? loadDashboardData() : null;
+    if (hydratedDashboardData) {
+      window.__DATA__ = hydratedDashboardData;
+    }
     window.AppShell.initAppShell();
     bindExpensePeriodFilters();
     bindSpendingRhythmPeriodFilters();
     bindHistoryFilters();
     bindDashboardTabs();
-    console.log("[Dashboard Init] bindDashboardTabs executado");
     bindDashboardRefreshEvents();
     switchDashboardTab("overview");
-    console.log("[Dashboard Init] switchDashboardTab('overview') executado");
     showDashboardFeedback(window.AppShell.consumeDashboardNotice());
     dashboardAppInitialized = true;
     atualizarDashboard();
@@ -1753,4 +1902,3 @@ if (document.readyState === "loading") {
 } else {
   initDashboardApp();
 }
-

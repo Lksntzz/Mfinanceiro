@@ -63,18 +63,40 @@
         <section class="db2-panel is-active" style="overflow: visible; overflow-x: hidden;">
           <div class="dashboard-secondary-grid banking-page-grid" style="padding: var(--db2-gap); height: 100%;">
 
-                <article class="dashboard-surface dashboard-secondary-surface banking-page-card">
-                  <div class="card-header">
-                    <div>
+                <article class="dashboard-surface dashboard-secondary-surface banking-page-card banking-shell-card">
+                  <div class="banking-hero">
+                    <div class="banking-hero-copy">
                       <div class="card-label">Base Financeira</div>
-                      <h2 class="section-title">Salvar, editar e recalcular a base financeira</h2>
+                      <h1 class="banking-hero-title">Base Financeira</h1>
                       <p class="table-caption section-subtitle">
-                        O saldo atual representa apenas o dinheiro no banco. O salario
-                        liquido e calculado automaticamente e nao se mistura com o saldo.
+                        Centralize saldo, salario, beneficios, descontos e ciclo de pagamento em uma unica visao.
                       </p>
                     </div>
                     <div class="status-chip" id="banking-status-chip">Aguardando configuracao</div>
                   </div>
+
+                  <section class="banking-overview-strip" aria-label="Resumo rapido da base financeira">
+                    <article class="banking-overview-card">
+                      <span class="banking-overview-label">Saldo atual</span>
+                      <strong id="banking-strip-saldo">R$ 0,00</strong>
+                      <span id="banking-strip-saldo-meta" class="banking-overview-meta">Base manual</span>
+                    </article>
+                    <article class="banking-overview-card">
+                      <span class="banking-overview-label">Salario liquido</span>
+                      <strong id="banking-strip-salario">R$ 0,00</strong>
+                      <span id="banking-strip-salario-meta" class="banking-overview-meta">Estimativa atual</span>
+                    </article>
+                    <article class="banking-overview-card">
+                      <span class="banking-overview-label">Proximo pagamento</span>
+                      <strong id="banking-strip-pagamento">--</strong>
+                      <span id="banking-strip-pagamento-meta" class="banking-overview-meta">Sem previsao</span>
+                    </article>
+                    <article class="banking-overview-card">
+                      <span class="banking-overview-label">Ciclo ativo</span>
+                      <strong id="banking-strip-ciclo">0 dia(s)</strong>
+                      <span id="banking-strip-ciclo-meta" class="banking-overview-meta">Aguardando configuracao</span>
+                    </article>
+                  </section>
 
                   <form id="banking-form" class="settings-grid base-finance-form">
                     <div class="dual-grid base-finance-grid">
@@ -529,8 +551,7 @@
                             </div>
 
                             <div class="button-row align-start">
-                              <!-- removed save payment button to keep only the main base save -->
-                              <button type="button" id="save-pagamento-button" class="primary-button hidden">
+                              <button type="button" id="save-pagamento-button" class="primary-button">
                                 Salvar recebimento
                               </button>
                               <button type="button" id="mark-pagamento-recebido-button" class="secondary-button">
@@ -573,11 +594,12 @@
                       </div>
                     </div>
 
-                    <section class="form-section summary-preview-section hidden">
+                    <section class="form-section summary-preview-section banking-impact-section">
                       <div class="form-section-heading">
-                        <h4>Resumo final</h4>
+                        <div class="card-label">Impacto no sistema</div>
+                        <h4>Como a Base Financeira afeta o aplicativo</h4>
                         <p class="section-note">
-                          Veja o impacto da sua base financeira nos indicadores principais antes de abrir o dashboard.
+                          Esses indicadores alimentam saldo, limite diario, previsoes e alertas da Visao Geral.
                         </p>
                       </div>
                       <div class="summary-preview-grid">

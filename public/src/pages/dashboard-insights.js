@@ -1,5 +1,3 @@
-console.log("[Dashboard Scripts] carregado: /src/pages/dashboard-insights.js");
-
 function renderInsights(summary, selectedSummary, expenseOverview, intelligence) {
   if (!elements.insightsList || !elements.insightsChip) {
     return;

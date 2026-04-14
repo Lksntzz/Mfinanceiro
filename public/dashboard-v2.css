@@ -1232,6 +1232,410 @@ html:has(body.db2-body) {
 .db2-kpi.dashboard-card-highlight-red     { background: rgba(248,113,113,0.05); border-color: rgba(248,113,113,0.25); }
 .db2-kpi.dashboard-card-highlight-muted   { background: rgba(255,255,255,0.03);  border-color: var(--db2-border); }
 
+/* ================================
+   BASE FINANCEIRA LAYOUT
+   ================================ */
+body[data-page="banking"] .banking-shell-card {
+  gap: 24px;
+  padding: 28px 30px 30px;
+  background:
+    radial-gradient(circle at top center, rgba(129, 140, 248, 0.16), transparent 38%),
+    radial-gradient(circle at 15% 25%, rgba(56, 189, 248, 0.08), transparent 24%),
+    linear-gradient(180deg, rgba(20, 28, 51, 0.96) 0%, rgba(12, 19, 36, 0.98) 100%);
+}
+
+body[data-page="banking"] .banking-hero {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+}
+
+body[data-page="banking"] .banking-hero-copy {
+  display: grid;
+  gap: 6px;
+  justify-items: center;
+  width: 100%;
+}
+
+body[data-page="banking"] .banking-hero-title {
+  margin: 0;
+  font-size: clamp(2rem, 2.2vw, 2.75rem);
+  line-height: 1.05;
+  letter-spacing: -0.03em;
+  text-align: center;
+}
+
+body[data-page="banking"] .banking-hero .section-subtitle {
+  max-width: 62ch;
+  text-align: center;
+}
+
+body[data-page="banking"] .banking-overview-strip {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 14px;
+}
+
+body[data-page="banking"] .banking-overview-card {
+  display: grid;
+  gap: 6px;
+  min-height: 108px;
+  padding: 18px 20px;
+  border-radius: 20px;
+  border: 1px solid rgba(136, 148, 185, 0.2);
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.06), rgba(255, 255, 255, 0.02)),
+    rgba(18, 24, 45, 0.82);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.04);
+}
+
+body[data-page="banking"] .banking-overview-label {
+  color: var(--db2-text-sec);
+  font-size: 0.78rem;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+}
+
+body[data-page="banking"] .banking-overview-card strong {
+  font-size: clamp(1.15rem, 1.4vw, 1.8rem);
+  line-height: 1.1;
+}
+
+body[data-page="banking"] .banking-overview-meta {
+  color: var(--db2-text-muted);
+  font-size: 0.86rem;
+}
+
+.base-finance-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1.15fr) minmax(0, 0.85fr);
+  gap: 16px;
+  align-items: start;
+}
+
+.base-finance-grid .form-section {
+  height: 100%;
+}
+
+.base-finance-grid > .form-section[data-accordion-section="saldo"] { order: 1; }
+.base-finance-grid > .form-section[data-accordion-section="salario"] { order: 2; }
+.base-finance-grid > .form-section[data-accordion-section="descontos"] { order: 3; }
+.base-finance-grid > .form-section[data-accordion-section="ciclo"] { order: 4; }
+.base-finance-grid > .form-section[data-accordion-section="beneficios"] { order: 5; }
+.receipt-inline-section { order: 6; }
+
+.base-finance-grid .accordion-toggle {
+  padding: 14px 16px;
+}
+
+.base-finance-grid .accordion-heading h4 {
+  font-size: 16px;
+  margin-bottom: 6px;
+}
+
+.base-finance-grid .section-note {
+  max-width: 60ch;
+}
+
+.base-finance-grid .accordion-content-inner {
+  padding: 16px;
+  display: grid;
+  gap: 14px;
+}
+
+.receipt-inline-section {
+  display: grid;
+  gap: 16px;
+  padding: 0;
+  background: transparent;
+  border: none;
+}
+
+.receipt-inline-section .card-header {
+  padding: 0 2px;
+  margin-bottom: 0;
+}
+
+.receipt-inline-section .dual-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1.1fr) minmax(0, 0.9fr);
+  gap: 16px;
+}
+
+.receipt-inline-section .dashboard-card,
+.receipt-support-card,
+.salary-confirmation-panel,
+.summary-preview-section {
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(120, 133, 173, 0.12);
+  border-radius: 16px;
+  padding: 16px;
+}
+
+.receipt-inline-section .dashboard-card {
+  display: grid;
+  gap: 14px;
+}
+
+.salary-confirmation-panel {
+  display: grid;
+  gap: 14px;
+  align-content: start;
+}
+
+.salary-confirmation-actions {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.salary-confirmation-button {
+  min-width: 120px;
+}
+
+.summary-preview-section {
+  margin-top: 4px;
+}
+
+.summary-preview-grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.summary-preview-grid .detail-row {
+  margin: 0;
+  min-height: 72px;
+}
+
+.banking-form-actions {
+  display: flex;
+  gap: 12px;
+  justify-content: flex-end;
+  align-items: center;
+  position: sticky;
+  bottom: 12px;
+  z-index: 5;
+  padding: 12px 14px;
+  margin-top: 6px;
+  background: rgba(8, 10, 30, 0.92);
+  border: 1px solid rgba(120, 133, 173, 0.14);
+  border-radius: 16px;
+  backdrop-filter: blur(16px);
+}
+
+.banking-form-actions .primary-button,
+.banking-form-actions .secondary-button {
+  min-width: 190px;
+}
+
+.field-hint {
+  color: var(--db2-text-sec);
+  font-size: 12px;
+  line-height: 1.4;
+}
+
+.receipt-form-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+}
+
+body[data-page="banking"] .base-finance-form {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  grid-template-areas:
+    "saldo salario ciclo"
+    "recebimento beneficios ciclo"
+    "descontos impacto impacto"
+    "actions actions actions"
+    "message message message";
+  gap: 18px;
+  align-items: start;
+}
+
+body[data-page="banking"] .base-finance-form > .base-finance-grid {
+  display: contents;
+}
+
+body[data-page="banking"] .base-finance-form [data-accordion-section="saldo"] {
+  grid-area: saldo;
+}
+
+body[data-page="banking"] .base-finance-form [data-accordion-section="salario"] {
+  grid-area: salario;
+}
+
+body[data-page="banking"] .base-finance-form [data-accordion-section="ciclo"] {
+  grid-area: ciclo;
+}
+
+body[data-page="banking"] .base-finance-form [data-accordion-section="beneficios"] {
+  grid-area: beneficios;
+}
+
+body[data-page="banking"] .base-finance-form [data-accordion-section="descontos"] {
+  grid-area: descontos;
+}
+
+body[data-page="banking"] .base-finance-form .receipt-inline-section {
+  grid-area: recebimento;
+}
+
+body[data-page="banking"] .base-finance-form .summary-preview-section {
+  grid-area: impacto;
+}
+
+body[data-page="banking"] .base-finance-form .banking-form-actions {
+  grid-area: actions;
+}
+
+body[data-page="banking"] .base-finance-form > #banking-message {
+  grid-area: message;
+}
+
+body[data-page="banking"] .base-finance-form .form-section,
+body[data-page="banking"] .base-finance-form .summary-preview-section,
+body[data-page="banking"] .base-finance-form .receipt-inline-section {
+  min-height: 100%;
+  border-radius: 22px;
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.06), rgba(255, 255, 255, 0.025)),
+    rgba(14, 20, 38, 0.9);
+  border: 1px solid rgba(136, 148, 185, 0.16);
+  box-shadow:
+    0 20px 32px rgba(3, 8, 20, 0.16),
+    inset 0 1px 0 rgba(255, 255, 255, 0.04);
+}
+
+body[data-page="banking"] .base-finance-form .accordion-toggle {
+  padding: 18px 20px;
+}
+
+body[data-page="banking"] .base-finance-form .accordion-heading h4,
+body[data-page="banking"] .receipt-inline-section h3,
+body[data-page="banking"] .summary-preview-section h4 {
+  font-size: 1.04rem;
+}
+
+body[data-page="banking"] .base-finance-form .accordion-summary {
+  color: var(--db2-text);
+  font-weight: 600;
+}
+
+body[data-page="banking"] .base-finance-form .accordion-content-inner {
+  gap: 16px;
+  padding: 0 20px 20px !important;
+}
+
+body[data-page="banking"] .receipt-inline-section {
+  padding: 20px;
+  gap: 18px;
+}
+
+body[data-page="banking"] .receipt-inline-section .dual-grid {
+  grid-template-columns: 1fr;
+  gap: 16px;
+}
+
+body[data-page="banking"] .receipt-inline-section .dashboard-card,
+body[data-page="banking"] .receipt-support-card,
+body[data-page="banking"] .salary-confirmation-panel,
+body[data-page="banking"] .summary-preview-section .detail-row,
+body[data-page="banking"] .form-subsection,
+body[data-page="banking"] #statement-preview-list > .subtle-panel,
+body[data-page="banking"] #outros-descontos-list > .subtle-panel,
+body[data-page="banking"] .list-row {
+  border-radius: 16px;
+  border: 1px solid rgba(136, 148, 185, 0.12);
+  background: rgba(255, 255, 255, 0.03);
+}
+
+body[data-page="banking"] .summary-preview-section {
+  display: grid;
+  gap: 18px;
+  padding: 20px;
+}
+
+body[data-page="banking"] .summary-preview-grid {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+}
+
+body[data-page="banking"] .summary-preview-grid .detail-row {
+  display: grid;
+  gap: 8px;
+  align-content: start;
+  min-height: 112px;
+  padding: 16px;
+}
+
+body[data-page="banking"] .summary-preview-grid .detail-row span {
+  color: var(--db2-text-sec);
+  font-size: 0.82rem;
+}
+
+body[data-page="banking"] .summary-preview-grid .detail-row strong {
+  font-size: 1.15rem;
+}
+
+body[data-page="banking"] .banking-form-actions {
+  justify-content: stretch;
+  position: static;
+  bottom: auto;
+  padding: 0;
+  margin-top: 0;
+  background: transparent;
+  border: none;
+  backdrop-filter: none;
+}
+
+body[data-page="banking"] .banking-form-actions .primary-button,
+body[data-page="banking"] .banking-form-actions .secondary-button {
+  min-height: 54px;
+  min-width: 0;
+  flex: 1 1 0;
+}
+
+@media (max-width: 1100px) {
+  .base-finance-grid,
+  .receipt-inline-section .dual-grid,
+  .summary-preview-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .banking-form-actions {
+    position: static;
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .banking-form-actions .primary-button,
+  .banking-form-actions .secondary-button {
+    min-width: 0;
+    width: 100%;
+  }
+
+  body[data-page="banking"] .banking-overview-strip,
+  body[data-page="banking"] .base-finance-form {
+    grid-template-columns: 1fr;
+  }
+
+  body[data-page="banking"] .base-finance-form {
+    grid-template-areas:
+      "saldo"
+      "salario"
+      "ciclo"
+      "recebimento"
+      "beneficios"
+      "descontos"
+      "impacto"
+      "actions"
+      "message";
+  }
+}
+
 /* Alert card tones */
 .db2-alert-card.dashboard-surface-green  { background: rgba(52,211,153,0.05);  border-color: rgba(52,211,153,0.2); }
 .db2-alert-card.dashboard-surface-yellow { background: rgba(251,191,36,0.05);  border-color: rgba(251,191,36,0.2); }
@@ -1712,6 +2116,37 @@ html:has(body.db2-body) {
   font-size: 0.72rem;
 }
 
+.db2-panel[data-dashboard-panel="history"] .history-entry-details {
+  margin-top: 4px;
+}
+
+.db2-panel[data-dashboard-panel="history"] .history-entry-details summary,
+.recent-transaction-item details summary {
+  cursor: pointer;
+  color: var(--db2-text-secondary);
+  font-size: 0.72rem;
+  font-weight: 700;
+  list-style: none;
+}
+
+.db2-panel[data-dashboard-panel="history"] .history-entry-details summary::-webkit-details-marker,
+.recent-transaction-item details summary::-webkit-details-marker {
+  display: none;
+}
+
+.db2-panel[data-dashboard-panel="history"] .history-entry-details-body,
+.recent-transaction-item details .history-entry-details-body {
+  display: grid;
+  gap: 3px;
+  margin-top: 6px;
+  padding: 8px 10px;
+  border-radius: 10px;
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(120, 133, 173, 0.08);
+  color: var(--db2-text-secondary);
+  font-size: 0.72rem;
+}
+
 .db2-panel[data-dashboard-panel="history"] .history-entry-value {
   display: flex;
   flex-direction: column;
@@ -2121,15 +2556,15 @@ html:has(body.db2-body) {
 
 /* ═══════════════ LEGACY V1 OVERRIDES TO DB2 ═══════════════ */
 
-/* Remove default scrollbar to enforce the strict no-scroll (in body) requirement */
-.base-finance-form { gap: 10px; margin: 0; display: flex; flex-direction: column; flex: 1; min-height: 0; overflow: hidden; }
+/* Keep action buttons visible while preserving the existing card structure. */
+.base-finance-form { gap: 10px; margin: 0; display: flex; flex-direction: column; flex: 1; min-height: 0; overflow: visible; }
 .banking-page-grid, .accounts-page-grid, .cards-page-grid, .receipts-page-grid {
   display: flex !important;
   flex-direction: column !important;
   gap: var(--db2-gap) !important;
   height: 100% !important;
   width: 100% !important;
-  overflow: hidden !important;
+  overflow: visible !important;
 }
 .dashboard-surface, .dashboard-card, .form-section, .subtle-panel {
   background: var(--db2-surface) !important;
@@ -2305,4 +2740,116 @@ body[data-page="dashboard"] .cards-summary-card.dashboard-surface .detail-list {
 #contas-table-body, #cartoes-table-body, #lancamentos-table-body, #parcelamentos-table-body, #dia-a-dia-grouped-list {
   scrollbar-width: thin;
   scrollbar-color: var(--db2-border) transparent;
+}
+
+/* Final banking overrides: keep the Base Financeira layout stable against legacy compact rules */
+body[data-page="banking"] .banking-page-grid {
+  display: block !important;
+  height: auto !important;
+  overflow: visible !important;
+}
+
+body[data-page="banking"] .banking-page-card.banking-shell-card {
+  display: grid !important;
+  grid-template-rows: auto auto auto !important;
+  overflow: visible !important;
+  padding: 28px 30px 30px !important;
+}
+
+body[data-page="banking"] .banking-shell-card .dashboard-surface,
+body[data-page="banking"] .banking-shell-card .dashboard-card,
+body[data-page="banking"] .banking-shell-card .form-section,
+body[data-page="banking"] .banking-shell-card .subtle-panel {
+  overflow: visible !important;
+}
+
+body[data-page="banking"] .base-finance-form {
+  display: grid !important;
+  grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
+  grid-template-areas:
+    "saldo salario ciclo"
+    "recebimento beneficios ciclo"
+    "descontos impacto impacto"
+    "actions actions actions"
+    "message message message" !important;
+  gap: 18px !important;
+  margin: 0 !important;
+  flex: initial !important;
+  min-height: auto !important;
+  height: auto !important;
+  overflow: visible !important;
+  align-items: start !important;
+}
+
+body[data-page="banking"] .base-finance-form > .base-finance-grid {
+  display: contents !important;
+  min-width: 0 !important;
+  height: auto !important;
+  gap: 0 !important;
+}
+
+body[data-page="banking"] .base-finance-form > .base-finance-grid:nth-of-type(1),
+body[data-page="banking"] .base-finance-form > .base-finance-grid:nth-of-type(2) {
+  grid-template-columns: none !important;
+  grid-auto-rows: auto !important;
+}
+
+body[data-page="banking"] .base-finance-form > .banking-form-actions,
+body[data-page="banking"] .base-finance-form > .summary-preview-section,
+body[data-page="banking"] .base-finance-form > #banking-message {
+  grid-column: auto !important;
+}
+
+body[data-page="banking"] .base-finance-form .form-section,
+body[data-page="banking"] .base-finance-form .summary-preview-section,
+body[data-page="banking"] .base-finance-form .receipt-inline-section {
+  min-height: 0 !important;
+  height: auto !important;
+  align-self: start !important;
+}
+
+body[data-page="banking"] .base-finance-form .banking-form-actions {
+  display: flex !important;
+  grid-area: actions !important;
+  position: static !important;
+  padding: 0 !important;
+  background: transparent !important;
+  border: none !important;
+  backdrop-filter: none !important;
+}
+
+body[data-page="banking"] .summary-preview-section.banking-impact-section {
+  grid-area: impacto !important;
+  display: grid !important;
+  margin-top: 0 !important;
+}
+
+body[data-page="banking"] .summary-preview-section.banking-impact-section .summary-preview-grid {
+  grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+}
+
+body[data-page="banking"] .banking-overview-strip {
+  display: grid !important;
+  grid-template-columns: repeat(4, minmax(0, 1fr)) !important;
+}
+
+@media (max-width: 1100px) {
+  body[data-page="banking"] .base-finance-form {
+    grid-template-columns: 1fr !important;
+    grid-template-areas:
+      "saldo"
+      "salario"
+      "ciclo"
+      "recebimento"
+      "beneficios"
+      "descontos"
+      "impacto"
+      "actions"
+      "message" !important;
+  }
+
+  body[data-page="banking"] .banking-overview-strip,
+  body[data-page="banking"] .summary-preview-section.banking-impact-section .summary-preview-grid {
+    grid-template-columns: 1fr !important;
+  }
 }

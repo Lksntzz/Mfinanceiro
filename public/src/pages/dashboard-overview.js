@@ -1,5 +1,3 @@
-console.log("[Dashboard Scripts] carregado: /src/pages/dashboard-overview.js");
-
 function getProjectedBenefitsTotal(summary) {
   if (!summary.paymentInfo.nextDate) {
     return 0;
@@ -422,9 +420,15 @@ function renderRecentTransactions({
     .flatMap((group) => group.items || [])
     .slice()
     .sort((left, right) => {
-      const leftTime = (left.dataHora || left.dataNormalizada)?.getTime?.() || 0;
-      const rightTime = (right.dataHora || right.dataNormalizada)?.getTime?.() || 0;
-      return rightTime - leftTime;
+      const leftTime = new Date(left.dataHora || left.dataNormalizada || left.data || 0).getTime() || 0;
+      const rightTime = new Date(right.dataHora || right.dataNormalizada || right.data || 0).getTime() || 0;
+      const leftLine = Number(left.linha_origem || left.line || 0);
+      const rightLine = Number(right.linha_origem || right.line || 0);
+      if (leftTime !== rightTime) {
+        return rightTime - leftTime;
+      }
+
+      return rightLine - leftLine;
     })
     .slice(0, 3);
 
@@ -465,6 +469,15 @@ function renderRecentTransactions({
           <div style="display:flex;flex-direction:column;gap:3px;min-width:0;">
             <strong style="color:var(--db2-text-primary);font-size:12px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${entry.descricao || "Lancamento"}</strong>
             <span style="color:var(--db2-text-sec);font-size:11px;">${entry.categoria || "Sem categoria"}</span>
+            <details style="margin-top:2px;">
+              <summary style="cursor:pointer;color:var(--db2-text-sec);font-size:11px;">Detalhes</summary>
+              <div style="display:flex;flex-direction:column;gap:2px;margin-top:6px;color:var(--db2-text-sec);font-size:11px;">
+                <span>Tipo: ${entry.detalhesLancamento?.tipoMovimento === "entrada" ? "Entrada" : "Saída"}</span>
+                <span>Meio: ${entry.detalhesLancamento?.meioPagamento || entry.tipo || "N/D"}</span>
+                <span>Empresa: ${entry.detalhesLancamento?.contraparte || "N/D"}</span>
+                <span>Banco: ${entry.detalhesLancamento?.instituicao || "N/D"}</span>
+              </div>
+            </details>
           </div>
           <div style="display:flex;flex-direction:column;gap:3px;align-items:flex-end;">
             <strong style="color:var(--db2-text-primary);font-size:12.5px;font-weight:700;">${helpers.formatCurrency(entry.valor)}</strong>

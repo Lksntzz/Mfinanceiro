@@ -1,25 +1,45 @@
-console.log("[Dashboard Scripts] carregado: /src/pages/dashboard-history.js");
-
 function renderDailySummary(data, periodSummary) {
   if (!elements.dailySummaryList || !elements.dailySummaryChip) {
     return;
   }
 
   const selectedPeriod = dashboardState.selectedHistoryPeriod || "7d";
+  const historySourceEntries = typeof getDashboardFinancialEntries === "function"
+    ? getDashboardFinancialEntries(data)
+    : getDashboardLedgerExpenseData(data);
+  const latestEntryDate = historySourceEntries.reduce((latest, entry) => {
+    const candidate = normalizeDashboardHistoryDate(entry.dataNormalizada || entry.data || entry.dataHora);
+    if (!candidate) {
+      return latest;
+    }
+    return !latest || candidate.getTime() > latest.getTime() ? candidate : latest;
+  }, null);
+  const today = normalizeDashboardHistoryDate(new Date()) || new Date();
+  const historyReferenceDate = latestEntryDate && latestEntryDate.getTime() > today.getTime()
+    ? latestEntryDate
+    : today;
   const descriptor = getDashboardHistoryPeriodDescriptor(
     selectedPeriod,
-    new Date(),
+    historyReferenceDate,
     dashboardState.historyCustomStart,
     dashboardState.historyCustomEnd
   );
   const visibleGroups = Math.max(1, Number(dashboardState.historyVisibleGroups) || 6);
-  const historyEntries = buildDashboardHistoryGroups(getDashboardLedgerExpenseData(data));
+  const historyEntries =
+    selectedPeriod === "month"
+      ? buildDashboardHistoryMonthGroups(historySourceEntries)
+      : buildDashboardHistoryGroups(historySourceEntries);
   const filteredGroups = historyEntries.filter((group) => {
-    const day = normalizeDashboardHistoryDate(group.date);
-    if (!day) {
+    const dayKey = normalizeDashboardHistoryDateKey(group.date || group.dateKey);
+    if (!dayKey) {
       return false;
     }
-    return day >= descriptor.startDate && day <= descriptor.endDate;
+    const startKey = normalizeDashboardHistoryDateKey(descriptor.startDate);
+    const endKey = normalizeDashboardHistoryDateKey(descriptor.endDate);
+    if (selectedPeriod === "month") {
+      return true;
+    }
+    return dayKey >= startKey && dayKey <= endKey;
   });
   const displayGroups = filteredGroups.slice(0, visibleGroups);
   const canLoadMore = filteredGroups.length > displayGroups.length;
@@ -69,8 +89,13 @@ function renderDailySummary(data, periodSummary) {
         <strong>${formatDashboardCurrencyValue(periodSummary.totalGasto || 0)}</strong>
       </div>
     </div>
+    <div class="history-period-actions">
+      <button type="button" class="db2-see-more-btn dashboard-inline-link btn-secondary btn-sm" id="history-delete-period">Apagar período</button>
+    </div>
     <div class="history-group-list">
-      ${renderDashboardHistoryGroups(displayGroups, displayGroups.length)}
+      ${selectedPeriod === "month"
+        ? renderDashboardHistoryMonthGroups(displayGroups, displayGroups.length)
+        : renderDashboardHistoryGroups(displayGroups, displayGroups.length)}
     </div>
     ${canLoadMore ? '<div class="history-load-more-row"><button type="button" class="db2-see-more-btn dashboard-inline-link btn-secondary btn-sm" id="history-load-more">Carregar mais</button></div>' : ""}
   `;
@@ -78,6 +103,33 @@ function renderDailySummary(data, periodSummary) {
   if (elements.historyLoadMore) {
     elements.historyLoadMore.hidden = !canLoadMore;
   }
+}
+
+function getCurrentHistoryContext() {
+  const data = window.__DATA__ || (window.FinanceStore?.loadAppData ? window.FinanceStore.loadAppData() : null);
+  const selectedPeriod = dashboardState.selectedHistoryPeriod || "7d";
+  const historySourceEntries = typeof getDashboardFinancialEntries === "function"
+    ? getDashboardFinancialEntries(data || {})
+    : getDashboardLedgerExpenseData(data || {});
+  const latestEntryDate = historySourceEntries.reduce((latest, entry) => {
+    const candidate = normalizeDashboardHistoryDate(entry.dataNormalizada || entry.data || entry.dataHora);
+    if (!candidate) {
+      return latest;
+    }
+    return !latest || candidate.getTime() > latest.getTime() ? candidate : latest;
+  }, null);
+  const today = normalizeDashboardHistoryDate(new Date()) || new Date();
+  const historyReferenceDate = latestEntryDate && latestEntryDate.getTime() > today.getTime()
+    ? latestEntryDate
+    : today;
+  const descriptor = getDashboardHistoryPeriodDescriptor(
+    selectedPeriod,
+    historyReferenceDate,
+    dashboardState.historyCustomStart,
+    dashboardState.historyCustomEnd
+  );
+
+  return { selectedPeriod, historySourceEntries, descriptor };
 }
 
 function bindHistoryFilters() {
@@ -108,6 +160,65 @@ function bindHistoryFilters() {
       return;
     }
 
+    const deletePeriodTrigger = event.target.closest("#history-delete-period");
+    if (deletePeriodTrigger) {
+      const { selectedPeriod, historySourceEntries, descriptor } = getCurrentHistoryContext();
+      const isMonth = selectedPeriod === "month";
+      const confirmed = confirmDashboardHistoryDelete(
+        isMonth
+          ? `Apagar todos os lançamentos de ${descriptor.label}?`
+          : `Apagar todos os lançamentos do período ${descriptor.label}?`,
+        { allowBypass: false }
+      );
+      if (!confirmed) {
+        return;
+      }
+
+      const actionPromise = isMonth
+        ? deleteDashboardHistoryEntriesByMonth(
+            `${descriptor.startDate.getFullYear()}-${String(descriptor.startDate.getMonth() + 1).padStart(2, "0")}`
+          )
+        : deleteDashboardHistoryEntriesByRange(descriptor.startDate, descriptor.endDate);
+
+      actionPromise
+        .then((deleted) => {
+          if (deleted || (isMonth && Array.isArray(historySourceEntries) && historySourceEntries.length)) {
+            atualizarDashboard();
+          }
+        })
+        .catch((error) => {
+          console.error("[Dashboard History] Falha ao apagar periodo.", error);
+        });
+      return;
+    }
+
+    const deleteMonthTrigger = event.target.closest("[data-history-action='delete-month']");
+    if (deleteMonthTrigger) {
+      const monthKey = deleteMonthTrigger.dataset.historyMonth || "";
+      if (!monthKey) {
+        return;
+      }
+
+      const confirmed = confirmDashboardHistoryDelete(
+        `Apagar todos os lançamentos de ${deleteMonthTrigger.dataset.historyLabel || "este mês"}?`,
+        { allowBypass: false }
+      );
+      if (!confirmed) {
+        return;
+      }
+
+      deleteDashboardHistoryEntriesByMonth(monthKey)
+        .then((deleted) => {
+          if (deleted) {
+            atualizarDashboard();
+          }
+        })
+        .catch((error) => {
+          console.error("[Dashboard History] Falha ao apagar mes.", error);
+        });
+      return;
+    }
+
     const applyTrigger = event.target.closest("#history-custom-apply");
     if (applyTrigger) {
       handleHistoryChange(
@@ -131,16 +242,13 @@ function bindHistoryFilters() {
         return;
       }
 
-      const confirmed = confirmDashboardHistoryDelete(
-        "Apagar todos os lancamentos deste dia?",
-        { allowBypass: false }
-      );
+      const confirmed = confirmDashboardHistoryDelete("Apagar todos os lancamentos deste dia?", { allowBypass: false });
 
       if (!confirmed) {
         return;
       }
 
-      deleteDashboardHistoryGroup(dateKey)
+      deleteDashboardHistoryEntriesByRange(dateKey, dateKey)
         .then((deleted) => {
           if (deleted) {
             atualizarDashboard();

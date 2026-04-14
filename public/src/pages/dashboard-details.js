@@ -1,5 +1,3 @@
-console.log("[Dashboard Scripts] carregado: /src/pages/dashboard-details.js");
-
 function renderExpenseEvolution(summary) {
   if (!summary.evolutionSeries.length) {
     elements.expenseEvolutionChip.textContent = "Sem dados";

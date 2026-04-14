@@ -69,6 +69,27 @@ function normalizeNumericValue(value) {
   return Number.isFinite(parsed) ? parsed : 0;
 }
 
+function isBalanceSummaryDescription(value) {
+  const normalized = normalizeCategoryDescription(value);
+  return (
+    normalized.includes("initial_balance") ||
+    normalized.includes("final_balance") ||
+    normalized.includes("partial_balance") ||
+    normalized === "saldo inicial" ||
+    normalized === "saldo final" ||
+    normalized === "saldo parcial"
+  );
+}
+
+function isUnrealisticDate(value) {
+  return Boolean(value && value.getFullYear() < 2000);
+}
+
+function safeNormalizeRealisticDate(value) {
+  const normalizedDate = safeNormalizeDate(value);
+  return normalizedDate && !isUnrealisticDate(normalizedDate) ? normalizedDate : null;
+}
+
 function formatCurrency(value) {
   return new Intl.NumberFormat("pt-BR", {
     style: "currency",
@@ -170,7 +191,7 @@ function normalizeMovementType(tipo, rawValue = 0) {
     return "saida";
   }
 
-  return normalizeNumericValue(rawValue) < 0 ? "entrada" : "saida";
+  return normalizeNumericValue(rawValue) < 0 ? "saida" : "entrada";
 }
 
 function areSameDay(leftDate, rightDate) {
@@ -245,9 +266,9 @@ function getTotalDiscounts(banking) {
       : 0) +
     (Array.isArray(banking.descontosDetalhados?.outrosDescontos)
       ? banking.descontosDetalhados.outrosDescontos.reduce(
-          (total, item) => total + Number(item.valor || 0),
-          0
-        )
+        (total, item) => total + Number(item.valor || 0),
+        0
+      )
       : 0);
 
   return baseDiscounts;
@@ -334,7 +355,7 @@ function getIncomeEntries(data) {
 
   return sourceItems
     .map((entry, index) => {
-      const normalizedDate = safeNormalizeDate(entry?.dataPrevista || entry?.data_prevista);
+      const normalizedDate = safeNormalizeRealisticDate(entry?.dataPrevista || entry?.data_prevista);
       const expectedValue = normalizeNumericValue(entry?.valorPrevisto || entry?.valor_previsto);
       const receivedValue = normalizeNumericValue(entry?.valorRecebido || entry?.valor_recebido);
 
@@ -347,7 +368,7 @@ function getIncomeEntries(data) {
         id: entry?.id || entry?.sourceId || `recebimento_${index + 1}`,
         tipo: entry?.tipo || "pagamento",
         descricao: entry?.descricao || "Recebimento",
-        dataPrevista: normalizeDate(entry?.dataPrevista || entry?.data_prevista),
+        dataPrevista: normalizedDate,
         valorPrevisto: expectedValue || receivedValue,
         valorRecebido: receivedValue,
         status: String(entry?.status || "pendente").trim().toLowerCase(),
@@ -370,19 +391,19 @@ function getBenefitEntries(data, benefitKey) {
   const sourceItems = Array.isArray(data?.recebimentos?.beneficios?.lista)
     ? data.recebimentos.beneficios.lista
     : Object.entries(data?.recebimentos?.beneficios || {})
-        .filter(([key, value]) => key !== "lista" && value && typeof value === "object")
-        .map(([key, value]) => ({
-          ...value,
-          tipo: value.tipo || key,
-          dataRecebimento: value.dataRecebimento || value.dataPrevista,
-          valor: value.valor || value.valorPrevisto || value.valorRecebido,
-          ativo: value.ativo !== false,
-          contabilizarNoSaldo: Boolean(value.contabilizarNoSaldo),
-        }));
+      .filter(([key, value]) => key !== "lista" && value && typeof value === "object")
+      .map(([key, value]) => ({
+        ...value,
+        tipo: value.tipo || key,
+        dataRecebimento: value.dataRecebimento || value.dataPrevista,
+        valor: value.valor || value.valorPrevisto || value.valorRecebido,
+        ativo: value.ativo !== false,
+        contabilizarNoSaldo: Boolean(value.contabilizarNoSaldo),
+      }));
 
   return sourceItems
     .map((entry, index) => {
-      const normalizedDate = safeNormalizeDate(entry?.dataRecebimento || entry?.data_recebimento || entry?.dataPrevista);
+      const normalizedDate = safeNormalizeRealisticDate(entry?.dataRecebimento || entry?.data_recebimento || entry?.dataPrevista);
       const normalizedKey = normalizeReceiptTypeKey(entry?.tipo);
       const normalizedValue = normalizeNumericValue(entry?.valor);
 
@@ -396,7 +417,7 @@ function getBenefitEntries(data, benefitKey) {
         tipo: entry?.tipo || normalizedKey || "beneficio",
         benefitKey: normalizedKey,
         valor: normalizedValue,
-        dataRecebimento: normalizeDate(entry?.dataRecebimento || entry?.data_recebimento || entry?.dataPrevista),
+        dataRecebimento: normalizedDate,
         ativo: normalizeBooleanValue(entry?.ativo, true),
         contabilizarNoSaldo: normalizeBooleanValue(entry?.contabilizarNoSaldo, false),
         status: String(entry?.status || (normalizeBooleanValue(entry?.ativo, true) ? "pendente" : "inativo"))
@@ -472,7 +493,7 @@ function calcularProximoPagamento(data, referenceDate = new Date()) {
   const paymentDays = getSortedPaymentDays(banking);
   const paymentPercentages = getPaymentPercentages(banking);
   const currentReceipt = data.recebimentos?.pagamento || {};
-  const overrideDate = safeNormalizeDate(currentReceipt.dataPrevista);
+  const overrideDate = safeNormalizeRealisticDate(currentReceipt.dataPrevista);
   const overrideValue = Number(
     currentReceipt.valorRecebido || currentReceipt.valorPrevisto || 0
   );
@@ -578,7 +599,7 @@ function getNextBenefitInfo(data, key, referenceDate = new Date()) {
 
   const benefit = data.banking?.beneficios?.[key];
   const receipt = data.recebimentos?.beneficios?.[key] || {};
-  const receiptDate = safeNormalizeDate(receipt.dataPrevista);
+  const receiptDate = safeNormalizeRealisticDate(receipt.dataPrevista);
   const receiptValue = Number(receipt.valorRecebido || receipt.valorPrevisto || 0);
 
   if (receiptDate && receiptValue > 0 && receipt.status) {
@@ -960,11 +981,17 @@ function normalizeLedgerMovement(movement, index = 0) {
     .trim()
     .toLowerCase();
 
-  if (!normalizedDate || normalizedValue <= 0 || statusImportacao === "rejeitada") {
+  if (
+    !normalizedDate ||
+    normalizedValue <= 0 ||
+    statusImportacao === "rejeitada" ||
+    isBalanceSummaryDescription(movement?.descricao || movement?.nome || "")
+  ) {
     return null;
   }
 
   const classification = resolveMovementClassification(movement);
+  const movementDetails = inferMovementDetails(movement);
 
   return {
     ...movement,
@@ -980,8 +1007,11 @@ function normalizeLedgerMovement(movement, index = 0) {
     dataHora,
     descricao: movement?.descricao || movement?.nome || "Movimentacao",
     descricaoNormalizada: classification.descricaoNormalizada,
-    categoria: movement?.categoria || classification.categoriaPrincipal || "outros",
-    categoriaPrincipal: classification.categoriaPrincipal,
+    categoria:
+      movement?.categoria && movement.categoria !== "outros"
+        ? movement.categoria
+        : classification.categoriaPrincipal || movement?.categoria || "outros",
+    categoriaPrincipal: classification.categoriaPrincipal || movement?.categoria || "outros",
     subcategoria: movement?.subcategoria || classification.subcategoria || "",
     valor: normalizedValue,
     valorOriginal: rawValue,
@@ -989,6 +1019,7 @@ function normalizeLedgerMovement(movement, index = 0) {
     origem: movement?.origem || "manual",
     status_importacao: statusImportacao,
     classificacaoAutomatica: classification.classificacaoAutomatica,
+    detalhesLancamento: movementDetails,
   };
 }
 
@@ -1060,16 +1091,50 @@ function getDailyExpensesSummary(data, referenceDate = new Date()) {
 }
 
 function getFinancialEntries(data) {
-  return getLedgerExpenseEntries(data).map((entry) => ({
-    ...entry,
-    fonteLancamento:
-      entry.origem === "importado" ||
-      entry.origem === "extrato_importado" ||
-      entry.origem === "extrato_importado_excel"
-        ? "extrato"
-        : "manual",
-    tipo: "saida",
-  }));
+  const ledgerEntries = getLedgerExpenseEntries(data);
+  const dailyEntries = getLedgerExpenseEntries(Array.isArray(data?.contasDiaADia) ? data.contasDiaADia : []);
+  const mergedEntries = [...ledgerEntries, ...dailyEntries].filter(Boolean);
+  const seen = new Set();
+
+  return mergedEntries
+    .filter((entry) => {
+      const externalId = String(entry.external_id || entry.externalId || "").trim();
+      const isImported =
+        entry.origem === "importado" ||
+        entry.origem === "extrato_importado" ||
+        entry.origem === "extrato_importado_excel";
+      const dataKey = normalizeDashboardHistoryDateKey(entry.dataNormalizada || entry.data || entry.dataHora)
+        || String(entry.dataNormalizada || entry.data || "").slice(0, 10);
+      const descriptionKey = normalizeCategoryDescription(entry.descricao || entry.nome || "");
+      const baseKey = externalId || [
+        dataKey,
+        Number(entry.valor || 0).toFixed(2),
+        descriptionKey,
+        String(entry.tipo || ""),
+      ].join("|");
+      const key = [
+        isImported ? String(entry.arquivo_origem || "") : "",
+        isImported ? String(entry.linha_origem ?? "") : "",
+        baseKey,
+      ].join("|");
+
+      if (seen.has(key)) {
+        return false;
+      }
+
+      seen.add(key);
+      return true;
+    })
+    .map((entry) => ({
+      ...entry,
+      fonteLancamento:
+        entry.origem === "importado" ||
+          entry.origem === "extrato_importado" ||
+          entry.origem === "extrato_importado_excel"
+          ? "extrato"
+          : "manual",
+      tipo: "saida",
+    }));
 }
 
 function getStartOfWeek(referenceDate) {
@@ -1115,6 +1180,17 @@ function getEntriesWithinRange(entries, startDate, endDate) {
   );
 }
 
+function getLatestAvailableEntryDate(entries) {
+  return (Array.isArray(entries) ? entries : []).reduce((latest, entry) => {
+    const candidate = safeNormalizeDate(entry?.dataNormalizada || entry?.data || entry?.dataHora);
+    if (!candidate) {
+      return latest;
+    }
+
+    return !latest || candidate.getTime() > latest.getTime() ? candidate : latest;
+  }, null);
+}
+
 function getDashboardExpenseItems(source) {
   return getLedgerMovementItems(source);
 }
@@ -1126,7 +1202,12 @@ function normalizeDashboardExpenseItem(expense, index = 0) {
   const normalizedValue = Math.abs(rawValue);
   const normalizedType = normalizeMovementType(expense?.tipo, rawValue);
 
-  if (!normalizedDate || normalizedValue <= 0 || normalizedType === "entrada") {
+  if (
+    !normalizedDate ||
+    normalizedValue <= 0 ||
+    normalizedType === "entrada" ||
+    isBalanceSummaryDescription(expense?.descricao || expense?.nome || "")
+  ) {
     return null;
   }
 
@@ -1139,8 +1220,12 @@ function normalizeDashboardExpenseItem(expense, index = 0) {
     valor: normalizedValue,
     descricao: expense?.descricao || "Lancamento",
     descricaoNormalizada: classification.descricaoNormalizada,
-    categoria: expense?.categoria || classification.categoriaPrincipal || "Sem categoria",
-    categoriaPrincipal: classification.categoriaPrincipal || expense?.categoria || "Sem categoria",
+    categoria:
+      expense?.categoria && expense.categoria !== "outros"
+        ? expense.categoria
+        : classification.categoriaPrincipal || expense?.categoria || "Sem categoria",
+    categoriaPrincipal:
+      classification.categoriaPrincipal || expense?.categoria || "Sem categoria",
     subcategoria: expense?.subcategoria || classification.subcategoria || "",
     data: expense?.data || expense?.dataNormalizada || "",
     dataNormalizada: normalizedDate,
@@ -1278,10 +1363,10 @@ function prepareSummaryData(despesas, periodo = "week", dataAtual = new Date()) 
     quantidadeLancamentos: periodExpenses.length,
     categoriaMaiorGasto: categoriaMaiorGasto
       ? {
-          categoria: categoriaMaiorGasto.categoria,
-          valor: Number(categoriaMaiorGasto.total || 0),
-          percentual: percentualCategoriaMaiorGasto,
-        }
+        categoria: categoriaMaiorGasto.categoria,
+        valor: Number(categoriaMaiorGasto.total || 0),
+        percentual: percentualCategoriaMaiorGasto,
+      }
       : null,
   };
 }
@@ -1449,7 +1534,11 @@ function formatWeekRangeLabel(startDate, endDate) {
 }
 
 function groupExpensesByWeek(entries, referenceDate = new Date(), weeks = 6) {
-  const currentWeekStart = getStartOfSundayWeek(referenceDate);
+  const latestEntryDate = getLatestAvailableEntryDate(entries) || normalizeDate(referenceDate);
+  const endReference = latestEntryDate.getTime() < normalizeDate(referenceDate).getTime()
+    ? latestEntryDate
+    : normalizeDate(referenceDate);
+  const currentWeekStart = getStartOfSundayWeek(endReference);
 
   return Array.from({ length: weeks }, (_, index) => {
     const weekStart = addDays(currentWeekStart, (index - (weeks - 1)) * 7);
@@ -1473,7 +1562,11 @@ function formatMonthShort(referenceDate) {
 }
 
 function groupExpensesByMonth(entries, referenceDate = new Date(), months = 6) {
-  const currentMonthStart = getStartOfMonthRange(referenceDate);
+  const latestEntryDate = getLatestAvailableEntryDate(entries) || normalizeDate(referenceDate);
+  const endReference = latestEntryDate.getTime() < normalizeDate(referenceDate).getTime()
+    ? latestEntryDate
+    : normalizeDate(referenceDate);
+  const currentMonthStart = getStartOfMonthRange(endReference);
 
   return Array.from({ length: months }, (_, index) => {
     const monthStart = addMonths(currentMonthStart, index - (months - 1));
@@ -1489,14 +1582,19 @@ function groupExpensesByMonth(entries, referenceDate = new Date(), months = 6) {
 }
 
 function buildSpendingRhythmDataset(data, period = "day", referenceDate = new Date()) {
-  const entries = getLedgerExpenseEntries(data);
+  const entries = getFinancialEntries(data);
   const normalizedPeriod = String(period || "day").toLowerCase();
+  const latestEntryDate = getLatestAvailableEntryDate(entries);
+  const cappedReferenceDate =
+    latestEntryDate && latestEntryDate.getTime() < normalizeDate(referenceDate).getTime()
+      ? latestEntryDate
+      : referenceDate;
   const points =
     normalizedPeriod === "week"
-      ? groupExpensesByWeek(entries, referenceDate)
+      ? groupExpensesByWeek(entries, cappedReferenceDate)
       : normalizedPeriod === "month"
-        ? groupExpensesByMonth(entries, referenceDate)
-        : groupExpensesByDay(entries, referenceDate);
+        ? groupExpensesByMonth(entries, cappedReferenceDate)
+        : groupExpensesByDay(entries, cappedReferenceDate);
   const total = points.reduce((sum, point) => sum + Number(point.total || 0), 0);
   const maxTotal = Math.max(...points.map((point) => Number(point.total || 0)), 0);
   const average = points.length ? total / points.length : 0;
@@ -1532,14 +1630,15 @@ const CATEGORY_AUTOMATION_RULES = [
   { categoria: "transporte", subcategoria: "onibus", keywords: ["onibus", "metro", "trem", "bilhete unico", "transporte publico"] },
   { categoria: "transporte", subcategoria: "estacionamento", keywords: ["estacionamento", "zona azul", "parking", "pedagio", "sem parar"] },
   { categoria: "saude", subcategoria: "farmacia", keywords: ["farmacia", "droga", "medicamento", "remedio", "drogasil", "ultrafarma", "drogaria sao paulo"] },
-  { categoria: "saude", subcategoria: "consulta", keywords: ["consulta", "medico", "clinica", "odonto", "terapia", "hospital"] },
+  { categoria: "saude", subcategoria: "consulta", keywords: ["consulta", "medico", "clinica", "odonto", "terapia", "hospital", "consultorio", "psicologo", "fisioterapia"] },
   { categoria: "saude", subcategoria: "exame", keywords: ["exame", "laboratorio", "raio x", "ultrassom", "tomografia"] },
+  { categoria: "saude", subcategoria: "farmacia", keywords: ["drogaria", "farmacia", "droga", "remedio", "medicamento"] },
   { categoria: "lazer", subcategoria: "bar", keywords: ["bar", "cervejaria", "happy hour", "pub"] },
   { categoria: "lazer", subcategoria: "viagem", keywords: ["viagem", "hotel", "airbnb", "pousada", "passagem"] },
   { categoria: "lazer", subcategoria: "evento", keywords: ["cinema", "show", "teatro", "evento", "ingresso"] },
   { categoria: "moradia", subcategoria: "aluguel", keywords: ["aluguel", "locacao", "imobiliaria"] },
   { categoria: "moradia", subcategoria: "condominio", keywords: ["condominio"] },
-  { categoria: "moradia", subcategoria: "contas da casa", keywords: ["energia", "luz", "agua", "gas", "internet", "telefone", "saneamento"] },
+  { categoria: "moradia", subcategoria: "contas da casa", keywords: ["energia", "luz", "agua", "gas", "internet", "telefone", "saneamento", "sabesp", "enel", "cemig", "coelba", "cpfl"] },
   { categoria: "educacao", subcategoria: "curso", keywords: ["curso", "aula", "treinamento", "certificacao"] },
   { categoria: "educacao", subcategoria: "faculdade", keywords: ["faculdade", "universidade", "mensalidade", "colegio", "escola"] },
   { categoria: "educacao", subcategoria: "livros", keywords: ["livro", "apostila", "material escolar"] },
@@ -1557,8 +1656,8 @@ const CATEGORY_AUTOMATION_RULES = [
   { categoria: "imprevistos", subcategoria: "multa", keywords: ["multa", "juros mora", "encargo", "tarifa bancaria", "cesta de servicos", "iof"] },
   { categoria: "imprevistos", subcategoria: "emergencia", keywords: ["emergencia", "urgencia", "socorro"] },
   { categoria: "rendimento", subcategoria: "rendimento", keywords: ["rendimento", "juros", "invest", "aplicacao", "resgate"] },
-  { categoria: "compras", subcategoria: "pagamentos", keywords: ["pagamento", "pag tit", "boleto", "qr pix", "pix qr", "maquininha"] },
-  { categoria: "outros", subcategoria: "transferencias", keywords: ["pix enviado", "transferencia enviada", "ted enviada", "doc enviado"] },
+  { categoria: "compras", subcategoria: "pagamentos", keywords: ["pagamento", "pag tit", "boleto", "qr pix", "pix qr", "maquininha", "boleto pago"] },
+  { categoria: "outros", subcategoria: "transferencias", keywords: ["pix enviado", "pix transferido", "transferencia enviada", "ted enviada", "doc enviado", "pix para", "pix p/", "transferido para"] },
   { categoria: "entrada", subcategoria: "recebimento", keywords: ["pix recebido", "salario", "pagamento recebido", "deposito", "ted recebida", "transferencia recebida"] },
 ];
 
@@ -1632,8 +1731,12 @@ function resolveMovementClassification(movement) {
   const automaticClassification = classifyCategoryFromDescription(description);
   let categoriaPrincipal = "";
   let subcategoria = "";
+  const isGenericCategory = (value) =>
+    ["outros", "outro", "sem categoria", "sem_categoria", "geral"].includes(
+      normalizeCategoryDescription(value)
+    );
 
-  if (explicitCategoryKey) {
+  if (explicitCategoryKey && !isGenericCategory(explicitCategoryRaw)) {
     if (CATEGORY_AUTOMATION_INDEX.byCategory.has(explicitCategoryKey)) {
       categoriaPrincipal = CATEGORY_AUTOMATION_INDEX.byCategory.get(explicitCategoryKey) || "";
     } else if (CATEGORY_AUTOMATION_INDEX.bySubcategory.has(explicitCategoryKey)) {
@@ -1645,7 +1748,7 @@ function resolveMovementClassification(movement) {
     }
   }
 
-  if (explicitSubcategoryKey) {
+  if (explicitSubcategoryKey && !isGenericCategory(explicitSubcategoryRaw)) {
     if (CATEGORY_AUTOMATION_INDEX.bySubcategory.has(explicitSubcategoryKey)) {
       const mappedRule = CATEGORY_AUTOMATION_INDEX.bySubcategory.get(explicitSubcategoryKey);
       categoriaPrincipal = categoriaPrincipal || mappedRule?.categoria || "";
@@ -1673,13 +1776,60 @@ function resolveMovementClassification(movement) {
     descricaoNormalizada: normalizeCategoryDescription(description),
     classificacaoAutomatica: automaticClassification
       ? {
-          categoria: automaticClassification.categoria,
-          subcategoria: automaticClassification.subcategoria || "",
-          matchedKeyword: automaticClassification.matchedKeyword || "",
-          confidence: automaticClassification.confidence || "rule_match",
-        }
+        categoria: automaticClassification.categoria,
+        subcategoria: automaticClassification.subcategoria || "",
+        matchedKeyword: automaticClassification.matchedKeyword || "",
+        confidence: automaticClassification.confidence || "rule_match",
+      }
       : null,
   };
+}
+
+function inferMovementDetails(movement) {
+  const description = normalizeCategoryDescription(movement?.descricao || movement?.nome || "");
+  const type = String(movement?.tipo || "").toLowerCase();
+  const details = {
+    tipoMovimento: type || (movement?.valor < 0 ? "saida" : "entrada"),
+    meioPagamento: "",
+    contraparte: "",
+    instituicao: "",
+  };
+
+  if (description.includes("pix recebido") || description.includes("receb")) {
+    details.meioPagamento = "Pix";
+    details.tipoMovimento = "entrada";
+  } else if (
+    description.includes("pix enviado") ||
+    description.includes("transferencia enviada") ||
+    description.includes("ted enviada")
+  ) {
+    details.meioPagamento = "Pix";
+    details.tipoMovimento = "saida";
+  } else if (description.includes("boleto")) {
+    details.meioPagamento = "Boleto";
+  } else if (description.includes("cartao") || description.includes("debito")) {
+    details.meioPagamento = "Cartão/Débito";
+  }
+
+  if (description.includes("ifood")) {
+    details.contraparte = "iFood";
+  } else if (description.includes("uber")) {
+    details.contraparte = "Uber";
+  } else if (description.includes("sabesp")) {
+    details.contraparte = "Sabesp";
+  } else if (description.includes("enel")) {
+    details.contraparte = "Enel";
+  }
+
+  if (description.includes("nubank")) {
+    details.instituicao = "Nubank";
+  } else if (description.includes("inter")) {
+    details.instituicao = "Banco Inter";
+  } else if (description.includes("bradesco")) {
+    details.instituicao = "Bradesco";
+  }
+
+  return details;
 }
 
 function getCategoryAutomationRules() {
@@ -1820,8 +1970,8 @@ function buildBehaviorPatternSignals(selectedSummary, recentWindow, referenceDat
   }
   const leadingSpend = leadingDays
     ? (selectedSummary?.groups || [])
-        .filter((group) => group?.date && group.date.getTime() <= leadingPeriodEnd.getTime())
-        .reduce((sum, group) => sum + Number(group.saidas || 0), 0)
+      .filter((group) => group?.date && group.date.getTime() <= leadingPeriodEnd.getTime())
+      .reduce((sum, group) => sum + Number(group.saidas || 0), 0)
     : 0;
   const leadingShare =
     selectedSummary?.totalGasto > 0 ? leadingSpend / Number(selectedSummary.totalGasto || 0) : 0;
@@ -2032,14 +2182,14 @@ function buildCategoryAnalytics(entries, selectedSummary, referenceDate = new Da
       item.topGrowingSubcategory
         && item.topGrowingSubcategory.variacaoPeriodoAnterior.hasBaseline
         ? {
-            categoria: item.label,
-            subcategoria: item.topGrowingSubcategory.label,
-            total: item.topGrowingSubcategory.total,
-            delta: Number(item.topGrowingSubcategory.variacaoPeriodoAnterior.delta || 0),
-            percentChange: Number(
-              item.topGrowingSubcategory.variacaoPeriodoAnterior.percentChange || 0
-            ),
-          }
+          categoria: item.label,
+          subcategoria: item.topGrowingSubcategory.label,
+          total: item.topGrowingSubcategory.total,
+          delta: Number(item.topGrowingSubcategory.variacaoPeriodoAnterior.delta || 0),
+          percentChange: Number(
+            item.topGrowingSubcategory.variacaoPeriodoAnterior.percentChange || 0
+          ),
+        }
         : null
     )
     .filter(Boolean)
@@ -2156,237 +2306,237 @@ function buildFinancialInsightMessages(intelligence) {
   const forecastInsight =
     forecast.averageDailySpend <= 0
       ? {
-          label: "Previsao ate o pagamento",
-          tone: "muted",
-          title: "Ainda nao existe ritmo suficiente para prever o fim do ciclo",
-          body: "O ledger ainda nao tem gasto recente suficiente para estimar quanto o saldo dura.",
-        }
+        label: "Previsao ate o pagamento",
+        tone: "muted",
+        title: "Ainda nao existe ritmo suficiente para prever o fim do ciclo",
+        body: "O ledger ainda nao tem gasto recente suficiente para estimar quanto o saldo dura.",
+      }
       : forecast.reachesNextPayment
         ? {
-            label: "Previsao ate o pagamento",
-            tone: forecast.marginDays <= 2 ? "yellow" : "green",
-            title:
-              forecast.projectedBalanceAtPayment >= 0
-                ? "No ritmo atual o saldo chega ao proximo pagamento"
-                : "Voce chega ao pagamento, mas com margem curta",
-            body: `Media recente de ${formatCurrency(forecast.averageDailySpend)} por dia. O saldo deve durar ${forecast.estimatedDaysWithBalanceLabel} e ${forecast.projectedBalanceAtPayment >= 0 ? `sobrar ${formatCurrency(forecast.projectedBalanceAtPayment)}` : `ficar apertado em ${formatCurrency(Math.abs(forecast.projectedBalanceAtPayment))}`} ate o pagamento.`,
-          }
+          label: "Previsao ate o pagamento",
+          tone: forecast.marginDays <= 2 ? "yellow" : "green",
+          title:
+            forecast.projectedBalanceAtPayment >= 0
+              ? "No ritmo atual o saldo chega ao proximo pagamento"
+              : "Voce chega ao pagamento, mas com margem curta",
+          body: `Media recente de ${formatCurrency(forecast.averageDailySpend)} por dia. O saldo deve durar ${forecast.estimatedDaysWithBalanceLabel} e ${forecast.projectedBalanceAtPayment >= 0 ? `sobrar ${formatCurrency(forecast.projectedBalanceAtPayment)}` : `ficar apertado em ${formatCurrency(Math.abs(forecast.projectedBalanceAtPayment))}`} ate o pagamento.`,
+        }
         : {
-            label: "Previsao ate o pagamento",
-            tone: "red",
-            title: "No ritmo atual o saldo nao chega ao proximo pagamento",
-            body: `Mantido o ritmo recente de ${formatCurrency(forecast.averageDailySpend)} por dia, o saldo acaba ${forecast.daysBeforeBalanceRunsOutLabel} antes do pagamento e pode faltar ${formatCurrency(forecast.estimatedDeficit)}.`,
-          };
+          label: "Previsao ate o pagamento",
+          tone: "red",
+          title: "No ritmo atual o saldo nao chega ao proximo pagamento",
+          body: `Mantido o ritmo recente de ${formatCurrency(forecast.averageDailySpend)} por dia, o saldo acaba ${forecast.daysBeforeBalanceRunsOutLabel} antes do pagamento e pode faltar ${formatCurrency(forecast.estimatedDeficit)}.`,
+        };
 
   const categoryInsight = dominantCategory
     ? {
-        label: "Categoria dominante",
-        tone: dominantCategory.percentual >= 45 ? "yellow" : "blue",
-        title: `${dominantCategory.categoria} lidera os gastos do periodo`,
-        body: `${formatCurrency(dominantCategory.total)} representam ${formatPercentLabel(dominantCategory.percentual)} do total em ${selectedSummary.label?.toLowerCase?.() || "o periodo atual"}.`,
-      }
+      label: "Categoria dominante",
+      tone: dominantCategory.percentual >= 45 ? "yellow" : "blue",
+      title: `${dominantCategory.categoria} lidera os gastos do periodo`,
+      body: `${formatCurrency(dominantCategory.total)} representam ${formatPercentLabel(dominantCategory.percentual)} do total em ${selectedSummary.label?.toLowerCase?.() || "o periodo atual"}.`,
+    }
     : {
-        label: "Categoria dominante",
-        tone: "muted",
-        title: "Ainda nao existe categoria dominante",
-        body: "Quando houver gastos suficientes no periodo, a categoria mais pesada aparece aqui.",
-      };
+      label: "Categoria dominante",
+      tone: "muted",
+      title: "Ainda nao existe categoria dominante",
+      body: "Quando houver gastos suficientes no periodo, a categoria mais pesada aparece aqui.",
+    };
 
   const categoryVariationInsight = categoryAnalytics.topGrowingCategory
     ? {
-        label: "Variacao por categoria",
-        tone:
-          Number(categoryAnalytics.topGrowingCategory.variacaoPeriodoAnterior.percentChange || 0) >= 25
-            ? "red"
-            : "yellow",
-        title: `Seus gastos com ${categoryAnalytics.topGrowingCategory.label} subiram`,
-        body: `${formatCurrency(categoryAnalytics.topGrowingCategory.total)} no periodo atual, com alta de ${formatPercentLabel(categoryAnalytics.topGrowingCategory.variacaoPeriodoAnterior.percentChange)} frente ao periodo anterior.`,
-      }
+      label: "Variacao por categoria",
+      tone:
+        Number(categoryAnalytics.topGrowingCategory.variacaoPeriodoAnterior.percentChange || 0) >= 25
+          ? "red"
+          : "yellow",
+      title: `Seus gastos com ${categoryAnalytics.topGrowingCategory.label} subiram`,
+      body: `${formatCurrency(categoryAnalytics.topGrowingCategory.total)} no periodo atual, com alta de ${formatPercentLabel(categoryAnalytics.topGrowingCategory.variacaoPeriodoAnterior.percentChange)} frente ao periodo anterior.`,
+    }
     : categoryAnalytics.categoryAboveRecentAverage
       ? {
-          label: "Variacao por categoria",
-          tone: "yellow",
-          title: `${categoryAnalytics.categoryAboveRecentAverage.label} esta acima da media recente`,
-          body: `${formatCurrency(categoryAnalytics.categoryAboveRecentAverage.total)} no periodo atual, cerca de ${formatPercentLabel(categoryAnalytics.categoryAboveRecentAverage.variacaoMediaRecente.percentChange)} acima da faixa recente equivalente.`,
-        }
+        label: "Variacao por categoria",
+        tone: "yellow",
+        title: `${categoryAnalytics.categoryAboveRecentAverage.label} esta acima da media recente`,
+        body: `${formatCurrency(categoryAnalytics.categoryAboveRecentAverage.total)} no periodo atual, cerca de ${formatPercentLabel(categoryAnalytics.categoryAboveRecentAverage.variacaoMediaRecente.percentChange)} acima da faixa recente equivalente.`,
+      }
       : {
-          label: "Variacao por categoria",
-          tone: "muted",
-          title: "Ainda nao apareceu variacao forte por categoria",
-          body: "Com mais historico no ledger, o app destaca automaticamente as categorias que mais aceleram.",
-        };
+        label: "Variacao por categoria",
+        tone: "muted",
+        title: "Ainda nao apareceu variacao forte por categoria",
+        body: "Com mais historico no ledger, o app destaca automaticamente as categorias que mais aceleram.",
+      };
 
   const subcategoryInsight = categoryAnalytics.topSubcategoryDriver
     ? {
-        label: "Subcategoria em destaque",
-        tone: "yellow",
-        title: `${categoryAnalytics.topSubcategoryDriver.subcategoria} puxa a alta de ${categoryAnalytics.topSubcategoryDriver.categoria}`,
-        body: `${formatCurrency(categoryAnalytics.topSubcategoryDriver.total)} nessa subcategoria, com aumento de ${formatCurrency(categoryAnalytics.topSubcategoryDriver.delta)} frente ao periodo anterior.`,
-      }
+      label: "Subcategoria em destaque",
+      tone: "yellow",
+      title: `${categoryAnalytics.topSubcategoryDriver.subcategoria} puxa a alta de ${categoryAnalytics.topSubcategoryDriver.categoria}`,
+      body: `${formatCurrency(categoryAnalytics.topSubcategoryDriver.total)} nessa subcategoria, com aumento de ${formatCurrency(categoryAnalytics.topSubcategoryDriver.delta)} frente ao periodo anterior.`,
+    }
     : categoryAnalytics.dominantCategory?.topSubcategory
       ? {
-          label: "Subcategoria em destaque",
-          tone: "blue",
-          title: `${categoryAnalytics.dominantCategory.topSubcategory.label} e a principal subcategoria de ${categoryAnalytics.dominantCategory.label}`,
-          body: `${formatCurrency(categoryAnalytics.dominantCategory.topSubcategory.total)} concentrados nessa faixa no periodo atual.`,
-        }
+        label: "Subcategoria em destaque",
+        tone: "blue",
+        title: `${categoryAnalytics.dominantCategory.topSubcategory.label} e a principal subcategoria de ${categoryAnalytics.dominantCategory.label}`,
+        body: `${formatCurrency(categoryAnalytics.dominantCategory.topSubcategory.total)} concentrados nessa faixa no periodo atual.`,
+      }
       : {
-          label: "Subcategoria em destaque",
-          tone: "muted",
-          title: "As subcategorias ainda estao ganhando historico",
-          body: "Quando as descricoes se repetirem mais, o app mostra qual subgrupo esta puxando a variacao.",
-        };
+        label: "Subcategoria em destaque",
+        tone: "muted",
+        title: "As subcategorias ainda estao ganhando historico",
+        body: "Quando as descricoes se repetirem mais, o app mostra qual subgrupo esta puxando a variacao.",
+      };
 
   const recurringDescriptionInsight = recurringDescriptions.topAverageTicketIncrease
     ? {
-        label: "Descricao recorrente",
-        tone:
-          Number(recurringDescriptions.topAverageTicketIncrease.variacaoTicketMedio.percentChange || 0) >= 25
-            ? "red"
-            : "yellow",
-        title: `Seu ticket medio em ${recurringDescriptions.topAverageTicketIncrease.descricao} aumentou`,
-        body: `${formatCurrency(recurringDescriptions.topAverageTicketIncrease.ticketMedio)} por lancamento agora, contra ${formatCurrency(recurringDescriptions.topAverageTicketIncrease.variacaoTicketMedio.baseline)} antes.`,
-      }
+      label: "Descricao recorrente",
+      tone:
+        Number(recurringDescriptions.topAverageTicketIncrease.variacaoTicketMedio.percentChange || 0) >= 25
+          ? "red"
+          : "yellow",
+      title: `Seu ticket medio em ${recurringDescriptions.topAverageTicketIncrease.descricao} aumentou`,
+      body: `${formatCurrency(recurringDescriptions.topAverageTicketIncrease.ticketMedio)} por lancamento agora, contra ${formatCurrency(recurringDescriptions.topAverageTicketIncrease.variacaoTicketMedio.baseline)} antes.`,
+    }
     : recurringDescriptions.topTotalIncrease
       ? {
-          label: "Descricao recorrente",
-          tone: "yellow",
-          title: `${recurringDescriptions.topTotalIncrease.descricao} ganhou peso no periodo`,
-          body: `${formatCurrency(recurringDescriptions.topTotalIncrease.total)} no periodo atual, com alta de ${formatCurrency(recurringDescriptions.topTotalIncrease.variacaoTotal.delta)} frente ao anterior.`,
-        }
+        label: "Descricao recorrente",
+        tone: "yellow",
+        title: `${recurringDescriptions.topTotalIncrease.descricao} ganhou peso no periodo`,
+        body: `${formatCurrency(recurringDescriptions.topTotalIncrease.total)} no periodo atual, com alta de ${formatCurrency(recurringDescriptions.topTotalIncrease.variacaoTotal.delta)} frente ao anterior.`,
+      }
       : {
-          label: "Descricao recorrente",
-          tone: "muted",
-          title: "Ainda nao existe padrao forte por descricao recorrente",
-          body: "Com mais repeticao no ledger, o app passa a medir aumento de ticket medio por descricao.",
-        };
+        label: "Descricao recorrente",
+        tone: "muted",
+        title: "Ainda nao existe padrao forte por descricao recorrente",
+        body: "Com mais repeticao no ledger, o app passa a medir aumento de ticket medio por descricao.",
+      };
 
   const comparisonInsight =
     comparison.recentAverageDailySpend <= 0
       ? {
-          label: "Comparacao com media",
-          tone: comparison.todayTotal > 0 ? "yellow" : "muted",
-          title:
-            comparison.todayTotal > 0
-              ? "Hoje abriu o historico recente"
-              : "Sem base recente para comparar o gasto de hoje",
-          body:
-            comparison.todayTotal > 0
-              ? `Hoje soma ${formatCurrency(comparison.todayTotal)} e o ledger ainda nao formou uma media diaria confiavel.`
-              : "Registre mais movimentacoes para destravar essa comparacao.",
-        }
+        label: "Comparacao com media",
+        tone: comparison.todayTotal > 0 ? "yellow" : "muted",
+        title:
+          comparison.todayTotal > 0
+            ? "Hoje abriu o historico recente"
+            : "Sem base recente para comparar o gasto de hoje",
+        body:
+          comparison.todayTotal > 0
+            ? `Hoje soma ${formatCurrency(comparison.todayTotal)} e o ledger ainda nao formou uma media diaria confiavel.`
+            : "Registre mais movimentacoes para destravar essa comparacao.",
+      }
       : comparison.status === "above"
         ? {
-            label: "Comparacao com media",
-            tone: comparison.intensity === "forte" ? "red" : "yellow",
-            title: "Hoje esta acima da media diaria recente",
-            body: `${formatCurrency(comparison.todayTotal)} hoje contra media de ${formatCurrency(comparison.recentAverageDailySpend)}. Excesso atual de ${formatCurrency(comparison.difference)}.`,
-          }
+          label: "Comparacao com media",
+          tone: comparison.intensity === "forte" ? "red" : "yellow",
+          title: "Hoje esta acima da media diaria recente",
+          body: `${formatCurrency(comparison.todayTotal)} hoje contra media de ${formatCurrency(comparison.recentAverageDailySpend)}. Excesso atual de ${formatCurrency(comparison.difference)}.`,
+        }
         : comparison.status === "below"
           ? {
-              label: "Comparacao com media",
-              tone: "green",
-              title: "Hoje esta abaixo da media diaria recente",
-              body: `${formatCurrency(comparison.todayTotal)} hoje contra media de ${formatCurrency(comparison.recentAverageDailySpend)}. Folga atual de ${formatCurrency(Math.abs(comparison.difference))}.`,
-            }
+            label: "Comparacao com media",
+            tone: "green",
+            title: "Hoje esta abaixo da media diaria recente",
+            body: `${formatCurrency(comparison.todayTotal)} hoje contra media de ${formatCurrency(comparison.recentAverageDailySpend)}. Folga atual de ${formatCurrency(Math.abs(comparison.difference))}.`,
+          }
           : {
-              label: "Comparacao com media",
-              tone: "blue",
-              title: "Hoje esta dentro do padrao recente",
-              body: `${formatCurrency(comparison.todayTotal)} hoje, bem perto da media recente de ${formatCurrency(comparison.recentAverageDailySpend)}.`,
-            };
+            label: "Comparacao com media",
+            tone: "blue",
+            title: "Hoje esta dentro do padrao recente",
+            body: `${formatCurrency(comparison.todayTotal)} hoje, bem perto da media recente de ${formatCurrency(comparison.recentAverageDailySpend)}.`,
+          };
 
   const preventiveInsight = !summary.paymentInfo?.configured || summary.diasRestantes <= 0
     ? {
-        label: "Alertas preventivos",
-        tone: "muted",
-        title: "Configure o proximo pagamento para ativar os alertas preventivos",
-        body: "Sem a data do proximo recebimento, o app ainda nao mede o risco real do ciclo.",
-      }
+      label: "Alertas preventivos",
+      tone: "muted",
+      title: "Configure o proximo pagamento para ativar os alertas preventivos",
+      body: "Sem a data do proximo recebimento, o app ainda nao mede o risco real do ciclo.",
+    }
     : alerts.riskBeforePayment
       ? {
-          label: "Alertas preventivos",
-          tone: "red",
-          title: "Existe risco de faltar dinheiro antes do pagamento",
-          body: `O ledger mostra desgaste acima do ideal. A projecao indica falta de ${formatCurrency(forecast.estimatedDeficit)} se o ritmo atual continuar.`,
-        }
+        label: "Alertas preventivos",
+        tone: "red",
+        title: "Existe risco de faltar dinheiro antes do pagamento",
+        body: `O ledger mostra desgaste acima do ideal. A projecao indica falta de ${formatCurrency(forecast.estimatedDeficit)} se o ritmo atual continuar.`,
+      }
       : alerts.dailyLimitAndAboveAverage
         ? {
-            label: "Alertas preventivos",
-            tone: "red",
-            title: "Hoje passou do limite diario e da media recente",
-            body: "O dia saiu do padrao em duas frentes ao mesmo tempo. Vale reduzir o restante do consumo agora.",
-          }
+          label: "Alertas preventivos",
+          tone: "red",
+          title: "Hoje passou do limite diario e da media recente",
+          body: "O dia saiu do padrao em duas frentes ao mesmo tempo. Vale reduzir o restante do consumo agora.",
+        }
         : alerts.categoryPressure
           ? {
-              label: "Alertas preventivos",
-              tone: "yellow",
-              title: "Uma categoria esta pesando demais no periodo",
-              body: `${dominantCategory?.categoria || "A categoria dominante"} ja responde por ${formatPercentLabel(dominantCategory?.percentual || 0)} dos gastos do periodo atual.`,
-            }
+            label: "Alertas preventivos",
+            tone: "yellow",
+            title: "Uma categoria esta pesando demais no periodo",
+            body: `${dominantCategory?.categoria || "A categoria dominante"} ja responde por ${formatPercentLabel(dominantCategory?.percentual || 0)} dos gastos do periodo atual.`,
+          }
           : alerts.nearDailyLimit || alerts.aboveWeeklyAverage || alerts.outOfPattern
             ? {
-                label: "Alertas preventivos",
-                tone: alerts.aboveDailyLimit ? "red" : "yellow",
-                title: "O momento pede mais atencao",
-                body: [
-                  alerts.nearDailyLimit ? "o gasto de hoje esta perto do limite diario" : "",
-                  alerts.aboveWeeklyAverage ? "hoje passou da media recente" : "",
-                  alerts.outOfPattern ? "o comportamento saiu do padrao" : "",
-                ]
-                  .filter(Boolean)
-                  .join(" e ")
-                  .replace(/^/, "Sinal preventivo: ")
-                  .concat("."),
-              }
+              label: "Alertas preventivos",
+              tone: alerts.aboveDailyLimit ? "red" : "yellow",
+              title: "O momento pede mais atencao",
+              body: [
+                alerts.nearDailyLimit ? "o gasto de hoje esta perto do limite diario" : "",
+                alerts.aboveWeeklyAverage ? "hoje passou da media recente" : "",
+                alerts.outOfPattern ? "o comportamento saiu do padrao" : "",
+              ]
+                .filter(Boolean)
+                .join(" e ")
+                .replace(/^/, "Sinal preventivo: ")
+                .concat("."),
+            }
             : {
-                label: "Alertas preventivos",
-                tone: "green",
-                title: "Sem alerta preventivo forte neste momento",
-                body: "O gasto de hoje, o limite diario e o ritmo recente seguem em uma faixa mais controlada.",
-              };
+              label: "Alertas preventivos",
+              tone: "green",
+              title: "Sem alerta preventivo forte neste momento",
+              body: "O gasto de hoje, o limite diario e o ritmo recente seguem em uma faixa mais controlada.",
+            };
 
   const weeklyTrendInsight = weeklyTrend
     ? {
-        label: "Padrao semanal",
-        tone: weeklyTrend.percentual >= 35 ? "yellow" : "blue",
-        title: `${weeklyTrend.weekday} costuma concentrar mais gasto`,
-        body: `${formatCurrency(weeklyTrend.total)} sairam nesse dia da semana no historico recente, ou ${formatPercentLabel(weeklyTrend.percentual)} do total observado.`,
-      }
+      label: "Padrao semanal",
+      tone: weeklyTrend.percentual >= 35 ? "yellow" : "blue",
+      title: `${weeklyTrend.weekday} costuma concentrar mais gasto`,
+      body: `${formatCurrency(weeklyTrend.total)} sairam nesse dia da semana no historico recente, ou ${formatPercentLabel(weeklyTrend.percentual)} do total observado.`,
+    }
     : {
-        label: "Padrao semanal",
-        tone: "muted",
-        title: "Ainda nao existe um padrao semanal claro",
-        body: "Com mais historico no ledger, o app passa a mostrar qual dia da semana pesa mais.",
-      };
+      label: "Padrao semanal",
+      tone: "muted",
+      title: "Ainda nao existe um padrao semanal claro",
+      body: "Com mais historico no ledger, o app passa a mostrar qual dia da semana pesa mais.",
+    };
 
   const behaviorInsight = behavior.hasOutlierToday
     ? {
-        label: "Fora do padrao",
-        tone: "red",
-        title: "Hoje ficou muito acima do comportamento normal",
-        body: `${formatCurrency(comparison.todayTotal || 0)} hoje contra uma base recente de ${formatCurrency(behavior.outlierBaseline || 0)} por dia ativo.`,
-      }
+      label: "Fora do padrao",
+      tone: "red",
+      title: "Hoje ficou muito acima do comportamento normal",
+      body: `${formatCurrency(comparison.todayTotal || 0)} hoje contra uma base recente de ${formatCurrency(behavior.outlierBaseline || 0)} por dia ativo.`,
+    }
     : behavior.hasOutlierDay
       ? {
-          label: "Fora do padrao",
-          tone: "yellow",
-          title: "Ja houve dia muito acima do normal no historico recente",
-          body: `${formatDate(behavior.outlierDays[0]?.date)} puxou ${formatCurrency(behavior.outlierDays[0]?.total || 0)}, cerca de ${formatPercentLabel((behavior.outlierDays[0]?.ratioToAverage || 0) * 100)} da base esperada.`,
-        }
+        label: "Fora do padrao",
+        tone: "yellow",
+        title: "Ja houve dia muito acima do normal no historico recente",
+        body: `${formatDate(behavior.outlierDays[0]?.date)} puxou ${formatCurrency(behavior.outlierDays[0]?.total || 0)}, cerca de ${formatPercentLabel((behavior.outlierDays[0]?.ratioToAverage || 0) * 100)} da base esperada.`,
+      }
       : behavior.acceleratedAtStartOfPeriod
         ? {
-            label: "Fora do padrao",
-            tone: "yellow",
-            title: "Os gastos aceleraram logo no comeco do periodo",
-            body: `Os primeiros ${behavior.leadingDays} dia(s) ja concentraram ${formatPercentLabel(behavior.leadingShare * 100)} do gasto do periodo, acima do esperado para esse ponto do ciclo.`,
-          }
+          label: "Fora do padrao",
+          tone: "yellow",
+          title: "Os gastos aceleraram logo no comeco do periodo",
+          body: `Os primeiros ${behavior.leadingDays} dia(s) ja concentraram ${formatPercentLabel(behavior.leadingShare * 100)} do gasto do periodo, acima do esperado para esse ponto do ciclo.`,
+        }
         : {
-            label: "Fora do padrao",
-            tone: "green",
-            title: "O comportamento segue mais estavel no ledger",
-            body: "Nao apareceu pico forte nem aceleracao anormal no periodo em foco.",
-          };
+          label: "Fora do padrao",
+          tone: "green",
+          title: "O comportamento segue mais estavel no ledger",
+          body: "Nao apareceu pico forte nem aceleracao anormal no periodo em foco.",
+        };
 
   return [
     forecastInsight,
@@ -2414,11 +2564,10 @@ function buildFinancialInsightMessages(intelligence) {
       label: automaticSummaries.month?.label || "Resumo do mes",
       tone: automaticSummaries.month?.tone || "muted",
       title: automaticSummaries.month?.title || "Sem resumo do mes",
-      body: `${automaticSummaries.month?.body || "Adicione gastos para gerar um resumo automatico do mes."}${
-        categoryAutomation?.rules?.length
+      body: `${automaticSummaries.month?.body || "Adicione gastos para gerar um resumo automatico do mes."}${categoryAutomation?.rules?.length
           ? ` ${categoryAutomation.matchedEntries || 0} descricao(oes) ja combinam com ${categoryAutomation.rules.length} regra(s) de classificacao automatica.`
           : ""
-      }`,
+        }`,
     },
   ];
 }
@@ -2553,10 +2702,10 @@ function calculateFinancialIntelligence(data, period = "week", referenceDate = n
     },
     dominantCategory: dominantCategory
       ? {
-          categoria: dominantCategory.categoria,
-          total: dominantCategory.total,
-          percentual: dominantCategoryPercent,
-        }
+        categoria: dominantCategory.categoria,
+        total: dominantCategory.total,
+        percentual: dominantCategoryPercent,
+      }
       : null,
     comparison: {
       todayTotal: expenseOverview.today.totalGasto,
@@ -2573,12 +2722,12 @@ function calculateFinancialIntelligence(data, period = "week", referenceDate = n
     recurringDescriptions,
     weeklyTrend: weeklyPattern.dominantDay
       ? {
-          weekday: weeklyPattern.dominantDay.weekday,
-          total: weeklyPattern.dominantDay.total,
-          percentual: weeklyPattern.dominantDay.percentual,
-          ocorrencias: weeklyPattern.dominantDay.ocorrencias,
-          mediaPorOcorrencia: weeklyPattern.dominantDay.mediaPorOcorrencia,
-        }
+        weekday: weeklyPattern.dominantDay.weekday,
+        total: weeklyPattern.dominantDay.total,
+        percentual: weeklyPattern.dominantDay.percentual,
+        ocorrencias: weeklyPattern.dominantDay.ocorrencias,
+        mediaPorOcorrencia: weeklyPattern.dominantDay.mediaPorOcorrencia,
+      }
       : null,
     behavior,
     automaticSummaries: {
@@ -2616,6 +2765,15 @@ function calculateFinancialIntelligence(data, period = "week", referenceDate = n
 
 function agruparLancamentosPorData(lancamentos) {
   const grouped = new Map();
+
+  const getSortStamp = (item) => {
+    const normalizedDate =
+      safeNormalizeDate(item?.dataHora || item?.dataNormalizada || item?.data) ||
+      safeNormalizeDate(item?.dataNormalizada || item?.data);
+    const time = normalizedDate?.getTime?.() || 0;
+    const line = Number(item?.linha_origem || item?.line || item?.ordem || 0);
+    return time * 1000 + line;
+  };
 
   (Array.isArray(lancamentos) ? lancamentos : []).forEach((item) => {
     const normalizedDate = safeNormalizeDate(item.data || item.dataNormalizada);
@@ -2677,12 +2835,11 @@ function agruparLancamentosPorData(lancamentos) {
         total: group.total,
         count: group.count,
         topCategory: topCategory ? topCategory[0] : "outros",
-        items: group.items.sort(
-          (left, right) =>
-            safeNormalizeDate(left.data)?.getTime?.() - safeNormalizeDate(right.data)?.getTime?.()
-        ),
-      };
-    });
+      items: group.items.sort(
+        (left, right) => getSortStamp(left) - getSortStamp(right)
+      ),
+    };
+  });
 }
 
 function agruparLancamentosPorDia(lancamentos) {
@@ -2726,14 +2883,26 @@ function calculatePrimaryFinancialMetrics(data, referenceDate = new Date()) {
   const paymentInfo = calcularProximoPagamento(data, referenceDate);
   const nextPaymentDate = safeNormalizeDate(paymentInfo?.nextDate);
   const benefits = getBenefitsSummary(data, referenceDate);
+  const principalIncomeEntries = getIncomeEntries(data).filter(isPrincipalIncome);
   const expenses = getLedgerExpenseEntries(data);
 
   const totalDespesas = expenses.reduce((total, expense) => {
     const numericValue = Math.abs(normalizeNumericValue(expense?.valor));
-    const hasValidDate = Boolean(safeNormalizeDate(expense?.data || expense?.dataNormalizada));
+    const normalizedDate = safeNormalizeDate(expense?.data || expense?.dataNormalizada);
+    const hasValidDate = Boolean(normalizedDate);
 
-    if (numericValue <= 0 || !hasValidDate) {
+    if (
+      numericValue <= 0 ||
+      !hasValidDate ||
+      isBalanceSummaryDescription(expense?.descricao || expense?.nome || "")
+    ) {
       return total;
+    }
+
+    if (paymentInfo?.cycleStart && paymentInfo?.cycleEnd) {
+      if (!isWithinRange(normalizedDate, paymentInfo.cycleStart, paymentInfo.cycleEnd)) {
+        return total;
+      }
     }
 
     return total + numericValue;
@@ -2758,12 +2927,32 @@ function calculatePrimaryFinancialMetrics(data, referenceDate = new Date()) {
       return total + Number(benefit.value || 0);
     }, 0)
     : 0;
+  const projectedIncomeInSaldo = nextPaymentDate
+    ? principalIncomeEntries.reduce((total, income) => {
+      if (!income?.dataPrevista || income.status === "recebido") {
+        return total;
+      }
+
+      if (income.dataPrevista.getTime() > nextPaymentDate.getTime()) {
+        return total;
+      }
+
+      return total + Number(income.valorPrevisto || income.valorRecebido || 0);
+    }, 0)
+    : principalIncomeEntries.reduce(
+      (total, income) =>
+        income?.status === "recebido"
+          ? total
+          : total + Number(income.valorPrevisto || income.valorRecebido || 0),
+      0
+    );
   const valorComprometido =
     committedBreakdown.despesasRegistradas +
     committedBreakdown.contasFixas +
     committedBreakdown.faturasCartao +
     committedBreakdown.parcelamentos;
-  const saldoDisponivel = saldoInicial + projectedBenefitsInSaldo - valorComprometido;
+  const saldoDisponivel =
+    saldoInicial + projectedBenefitsInSaldo + projectedIncomeInSaldo - valorComprometido;
   const saldoRestante = saldoDisponivel;
   const diasRestantes = nextPaymentDate
     ? Math.max(getDaysDifference(today, nextPaymentDate), 0)
@@ -2775,6 +2964,7 @@ function calculatePrimaryFinancialMetrics(data, referenceDate = new Date()) {
     totalDespesas,
     committedBreakdown,
     projectedBenefitsInSaldo,
+    projectedIncomeInSaldo,
     valorComprometido,
     valor_comprometido: valorComprometido,
     saldoDisponivel,
@@ -2875,8 +3065,35 @@ function buildBalanceProjection(data, referenceDate = new Date()) {
   const summary = calcularResumoFinanceiro(data, today);
   const projection = [];
   let runningBalance = summary.saldoAtual;
+  const incomeEntries = getIncomeEntries(data).filter(isPrincipalIncome);
+  const benefitEntries = getBenefitEntries(data).filter((item) => item?.contabilizarNoSaldo !== false);
 
-  for (let day = 0; day < summary.diasRestantes; day += 1) {
+  const incomeByDate = new Map();
+  incomeEntries.forEach((income) => {
+    if (!income?.dataPrevista || income.status === "recebido") {
+      return;
+    }
+    const key = safeNormalizeDate(income.dataPrevista)?.toISOString().slice(0, 10);
+    if (!key) {
+      return;
+    }
+    incomeByDate.set(key, (incomeByDate.get(key) || 0) + Number(income.valorPrevisto || income.valorRecebido || 0));
+  });
+
+  const benefitByDate = new Map();
+  benefitEntries.forEach((benefit) => {
+    if (!benefit?.nextDate || benefit.status === "recebido") {
+      return;
+    }
+    const key = safeNormalizeDate(benefit.nextDate)?.toISOString().slice(0, 10);
+    if (!key) {
+      return;
+    }
+    benefitByDate.set(key, (benefitByDate.get(key) || 0) + Number(benefit.value || 0));
+  });
+
+  const horizon = Math.max(summary.diasRestantes, 30);
+  for (let day = 0; day < horizon; day += 1) {
     const currentDate = new Date(today);
     currentDate.setDate(today.getDate() + day + 1);
     currentDate.setHours(0, 0, 0, 0);
@@ -2898,7 +3115,13 @@ function buildBalanceProjection(data, referenceDate = new Date()) {
         return expenseDate && areSameDay(expenseDate, currentDate);
       })
       .reduce((sum, item) => sum + normalizeNumericValue(item.valor), 0);
+    const dailyIncome =
+      incomeByDate.get(currentDate.toISOString().slice(0, 10)) || 0;
+    const dailyBenefit =
+      benefitByDate.get(currentDate.toISOString().slice(0, 10)) || 0;
 
+    runningBalance += dailyIncome;
+    runningBalance += dailyBenefit;
     runningBalance -= dueAccounts;
     runningBalance -= dueCards;
     runningBalance -= dueInstallments;

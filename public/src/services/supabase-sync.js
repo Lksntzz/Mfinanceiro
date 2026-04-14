@@ -1251,7 +1251,49 @@
           : migratedFromLegacyExpenses
             ? derivedLedgerExpenses
           : localExpenses,
-    };
+      };
+  }
+
+  function buildLocalLedgerEntryKey(entry) {
+    if (!entry || typeof entry !== "object") {
+      return "";
+    }
+
+    const isImported =
+      entry.origem === "importado" ||
+      entry.origem === "extrato_importado" ||
+      entry.origem === "extrato_importado_excel";
+
+    return [
+      isImported ? String(entry.arquivo_origem || "") : "",
+      isImported ? String(entry.linha_origem ?? "") : "",
+      String(entry.id || ""),
+      String(entry.external_id || entry.externalId || ""),
+      String(entry.dataNormalizada || entry.data || entry.dataHora || ""),
+      Number(entry.valor || 0).toFixed(2),
+      String(entry.tipo || ""),
+      String(entry.descricao || ""),
+      String(entry.origem || ""),
+    ].join("|");
+  }
+
+  function mergeHydratedLedgerCollections(remoteEntries, localEntries) {
+    const merged = [];
+    const seen = new Set();
+
+    [...(Array.isArray(localEntries) ? localEntries : []), ...(Array.isArray(remoteEntries) ? remoteEntries : [])].forEach(
+      (entry) => {
+        const key = buildLocalLedgerEntryKey(entry);
+        if (!key || seen.has(key)) {
+          return;
+        }
+
+        seen.add(key);
+        merged.push(entry);
+      }
+    );
+
+    return merged;
   }
 
   function isMissingTableError(error) {
@@ -3084,6 +3126,20 @@
           remoteData.rawIncomes,
           remoteData.rawBenefits
         );
+        const localLedgerEntries = Array.isArray(localData?.ledgerMovimentacoes)
+          ? localData.ledgerMovimentacoes
+          : [];
+        const localDailyEntries = Array.isArray(localData?.contasDiaADia)
+          ? localData.contasDiaADia
+          : [];
+        mergedData.ledgerMovimentacoes = mergeHydratedLedgerCollections(
+          mergedData.ledgerMovimentacoes,
+          localLedgerEntries
+        );
+        mergedData.contasDiaADia = mergeHydratedLedgerCollections(
+          mergedData.contasDiaADia,
+          localDailyEntries
+        ).filter((entry) => entry?.tipo !== "entrada" || entry?.origem === "importado");
         const ledgerMigrationPending = !hasRemoteLedger && hasRemoteExpenses;
         isApplyingRemoteState = true;
         window.FinanceStore.replaceAppData(mergedData, REMOTE_SOURCE);

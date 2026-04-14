@@ -8258,6 +8258,11 @@ body[data-page="banking"] .banking-form-actions {
   justify-content: center;
   gap: 14px;
   padding-top: 18px;
+  position: sticky;
+  bottom: 0;
+  z-index: 2;
+  background: linear-gradient(180deg, rgba(18, 26, 47, 0.12), rgba(18, 26, 47, 0.92));
+  backdrop-filter: blur(10px);
 }
 
 body[data-page="banking"] .banking-form-actions .primary-button,
@@ -8335,6 +8340,30 @@ body[data-page="banking"] .base-finance-form > .base-finance-grid {
 body[data-page="banking"] .base-finance-form > .base-finance-grid:nth-of-type(1),
 body[data-page="banking"] .base-finance-form > .base-finance-grid:nth-of-type(2) {
   grid-auto-rows: min-content;
+}
+
+body[data-page="banking"] .accordion-content {
+  grid-template-rows: 1fr !important;
+  opacity: 1 !important;
+  transition: none !important;
+}
+
+body[data-page="banking"] .accordion-content-inner {
+  overflow: visible !important;
+  min-height: 0 !important;
+  padding: 0 20px 20px !important;
+}
+
+body[data-page="banking"] .accordion-section.is-open .accordion-content-inner {
+  padding: 0 20px 20px !important;
+}
+
+body[data-page="banking"] .accordion-section .accordion-icon {
+  transform: rotate(45deg);
+}
+
+body[data-page="banking"] .accordion-toggle {
+  cursor: default;
 }
 
 body[data-page="banking"] .summary-preview-section {

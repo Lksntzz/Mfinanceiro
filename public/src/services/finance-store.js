@@ -238,7 +238,8 @@ function deriveDailyExpensesFromLedger(ledgerItems) {
         item.status_importacao === "valida" &&
         item.tipo === "saida" &&
         item.data &&
-        toNumber(item.valor) > 0
+        toNumber(item.valor) > 0 &&
+        isImportedLedgerOrigin(item.origem)
     )
     .map((item) => ({
       id: item.external_id || item.id,
@@ -274,10 +275,19 @@ function mergeLedgerMovementsWithManualExpenses(ledgerItems, dailyExpenses) {
   const seenKeys = new Set();
 
   return [...normalizedLedgerItems, ...manualItems].filter((item) => {
+    const isImported = isImportedLedgerOrigin(item?.origem);
     const dedupeKey = String(
-      item?.external_id ||
-      item?.id ||
-      [item?.data, item?.descricao, item?.valor, item?.tipo, item?.origem].join("|")
+      [
+        isImported ? item?.arquivo_origem || "" : "",
+        isImported ? item?.linha_origem ?? "" : "",
+        item?.external_id || "",
+        item?.id || "",
+        item?.data || "",
+        item?.descricao || "",
+        item?.valor || "",
+        item?.tipo || "",
+        item?.origem || "",
+      ].join("|")
     ).trim();
 
     if (!dedupeKey || seenKeys.has(dedupeKey)) {
@@ -287,6 +297,41 @@ function mergeLedgerMovementsWithManualExpenses(ledgerItems, dailyExpenses) {
     seenKeys.add(dedupeKey);
     return true;
   });
+}
+
+function mergeDailyExpenseSnapshots(...snapshots) {
+  const seenKeys = new Set();
+
+  return snapshots
+    .flatMap((snapshot) => (Array.isArray(snapshot) ? snapshot : []))
+    .map((item) => ({
+      ...item,
+      origem: item?.origem || "manual",
+      tipo: item?.tipo || "saida",
+    }))
+    .filter((item) => {
+      const isImported = isImportedLedgerOrigin(item?.origem);
+      const dedupeKey = String(
+        [
+          isImported ? item?.arquivo_origem || "" : "",
+          isImported ? item?.linha_origem ?? "" : "",
+          item?.external_id || "",
+          item?.id || "",
+          item?.data || "",
+          item?.descricao || "",
+          item?.valor || "",
+          item?.tipo || "",
+          item?.origem || "",
+        ].join("|")
+      ).trim();
+
+      if (!dedupeKey || seenKeys.has(dedupeKey)) {
+        return false;
+      }
+
+      seenKeys.add(dedupeKey);
+      return true;
+    });
 }
 
 function getDefaultAppData() {
@@ -425,17 +470,17 @@ function calcularDescontosManuais(bankingPayload) {
     bankingPayload.descontosDetalhados?.outrosDescontos
   )
     ? bankingPayload.descontosDetalhados.outrosDescontos.reduce(
-        (total, item) => total + toNumber(item.valor),
-        0
-      )
+      (total, item) => total + toNumber(item.valor),
+      0
+    )
     : 0;
 
   return roundCurrency(
     planoSaude +
-      planoOdontologico +
-      vt +
-      outrosDescontos +
-      (vrVaDescontadoEmFolha ? vrVa : 0)
+    planoOdontologico +
+    vt +
+    outrosDescontos +
+    (vrVaDescontadoEmFolha ? vrVa : 0)
   );
 }
 
@@ -468,7 +513,7 @@ function getMonthlyIrpfReduction(baseCalculo) {
   if (baseCalculo <= IRPF_MONTHLY_REDUCTION_2026.upperIncome) {
     return roundCurrency(
       IRPF_MONTHLY_REDUCTION_2026.fullReduction -
-        IRPF_MONTHLY_REDUCTION_2026.factor * baseCalculo
+      IRPF_MONTHLY_REDUCTION_2026.factor * baseCalculo
     );
   }
 
@@ -605,8 +650,8 @@ function normalizeLegacyData(data) {
         valor:
           banking.beneficios?.vrVa?.valor ??
           (banking.beneficios?.vr?.valor ?? 0) +
-            (banking.beneficios?.va?.valor ?? 0) +
-            (legacyProfile.valorVr ?? 0),
+          (banking.beneficios?.va?.valor ?? 0) +
+          (legacyProfile.valorVr ?? 0),
         dataRecebimento:
           banking.beneficios?.vrVa?.dataRecebimento ??
           banking.beneficios?.vr?.dataRecebimento ??
@@ -632,12 +677,12 @@ function normalizeLegacyData(data) {
       ...(data.recebimentos?.pagamento || {}),
       ...(legacyPayment
         ? {
-            dataPrevista: legacyPayment.data || "",
-            valorRecebido: legacyPayment.valor || 0,
-            status: "recebido",
-            aplicadoNoSaldo: true,
-            atualizadoEm: legacyPayment.confirmadoEm || "",
-          }
+          dataPrevista: legacyPayment.data || "",
+          valorRecebido: legacyPayment.valor || 0,
+          status: "recebido",
+          aplicadoNoSaldo: true,
+          atualizadoEm: legacyPayment.confirmadoEm || "",
+        }
         : {}),
     },
     beneficios: {
@@ -648,11 +693,11 @@ function normalizeLegacyData(data) {
           {}),
         ...(legacyVr
           ? {
-              dataPrevista: legacyVr.data || "",
-              valorPrevisto: legacyVr.valor || 0,
-              status: "recebido",
-              atualizadoEm: legacyVr.confirmadoEm || "",
-            }
+            dataPrevista: legacyVr.data || "",
+            valorPrevisto: legacyVr.valor || 0,
+            status: "recebido",
+            atualizadoEm: legacyVr.confirmadoEm || "",
+          }
           : {}),
       },
     },
@@ -759,8 +804,8 @@ function mergeData(base, incoming) {
           )
             ? normalizedIncoming.recebimentos.historico.beneficios.vrVa
             : Array.isArray(
-                normalizedIncoming?.recebimentos?.historico?.beneficios?.vr
-              )
+              normalizedIncoming?.recebimentos?.historico?.beneficios?.vr
+            )
               ? normalizedIncoming.recebimentos.historico.beneficios.vr
               : base.recebimentos.historico.beneficios.vrVa,
         },
@@ -951,15 +996,15 @@ function loadAppData() {
       : [];
     const manualItems = Array.isArray(manualDailyExpensesSnapshot)
       ? manualDailyExpensesSnapshot.map((item) => ({
-          ...item,
-          origem: item.origem || "manual",
-        }))
+        ...item,
+        origem: item.origem || "manual",
+      }))
       : fallbackDailyExpenses.filter((item) => item.origem !== "importado");
     const importedItems = Array.isArray(importedDailyExpensesSnapshot)
       ? importedDailyExpensesSnapshot.map((item) => ({
-          ...item,
-          origem: "importado",
-        }))
+        ...item,
+        origem: "importado",
+      }))
       : fallbackDailyExpenses.filter((item) => item.origem === "importado");
 
     hydratedData = {
@@ -977,11 +1022,22 @@ function loadAppData() {
     const manualItems = (Array.isArray(hydratedData.contasDiaADia) ? hydratedData.contasDiaADia : []).filter(
       (item) => !isImportedLedgerOrigin(item?.origem)
     );
+    const importedItemsSnapshot = Array.isArray(importedDailyExpensesSnapshot)
+      ? importedDailyExpensesSnapshot.map((item) => ({
+        ...item,
+        origem: "importado",
+        tipo: item.tipo || "saida",
+      }))
+      : [];
 
     hydratedData = {
       ...hydratedData,
       ledgerMovimentacoes: ledgerItems,
-      contasDiaADia: [...manualItems, ...importedItemsFromLedger],
+      contasDiaADia: mergeDailyExpenseSnapshots(
+        manualItems,
+        importedItemsSnapshot,
+        importedItemsFromLedger
+      ),
     };
   }
 
@@ -996,11 +1052,13 @@ function loadAppData() {
     };
   }
 
+  window.__DATA__ = hydratedData;
   return hydratedData;
 }
 
 function dispatchFinanceUpdate(source) {
   const currentData = loadAppData();
+  window.__DATA__ = currentData;
 
   stateSubscribers.forEach((listener) => {
     try {
@@ -1155,35 +1213,15 @@ function carregarContasVariaveis() {
   );
 
   if (Array.isArray(ledgerSnapshot) && ledgerSnapshot.length) {
-    return [
-      ...(Array.isArray(manualItems)
-        ? manualItems.map((item) => ({
-            ...item,
-            origem: item.origem || "manual",
-            tipo: item.tipo || "saida",
-          }))
-        : []),
-      ...deriveDailyExpensesFromLedger(ledgerSnapshot),
-    ];
+    return mergeDailyExpenseSnapshots(
+      manualItems,
+      importedItems,
+      deriveDailyExpensesFromLedger(ledgerSnapshot)
+    );
   }
 
   if (Array.isArray(manualItems) || Array.isArray(importedItems)) {
-    return [
-      ...(Array.isArray(manualItems)
-        ? manualItems.map((item) => ({
-            ...item,
-            origem: item.origem || "manual",
-            tipo: item.tipo || "saida",
-          }))
-        : []),
-      ...(Array.isArray(importedItems)
-        ? importedItems.map((item) => ({
-            ...item,
-            origem: "importado",
-            tipo: item.tipo || "saida",
-          }))
-        : []),
-    ];
+    return mergeDailyExpenseSnapshots(manualItems, importedItems);
   }
 
   return ((
@@ -1293,6 +1331,17 @@ function salvarRecebimento(tipo, payload) {
 
     if (tipo === "pagamento") {
       draft.recebimentos.pagamento = nextReceipt;
+      draft.banking.beneficios = {
+        ...draft.banking.beneficios,
+        pagamento: {
+          ...draft.banking.beneficios?.pagamento,
+          dataPrevista: nextReceipt.dataPrevista,
+          valorPrevisto: nextReceipt.valorPrevisto,
+          valorRecebido: nextReceipt.valorRecebido,
+          status: nextReceipt.status,
+          atualizadoEm: now,
+        },
+      };
       draft.recebimentos.historico.pagamentos.push({
         ...nextReceipt,
         id: createId("historico_pagamento"),
@@ -1300,6 +1349,17 @@ function salvarRecebimento(tipo, payload) {
     } else {
       const benefitKey = tipo === "vrva" ? "vrVa" : tipo;
       draft.recebimentos.beneficios[benefitKey] = nextReceipt;
+      draft.banking.beneficios = {
+        ...draft.banking.beneficios,
+        [benefitKey]: {
+          ...draft.banking.beneficios?.[benefitKey],
+          ativo: true,
+          valor: nextReceipt.valorPrevisto,
+          dataRecebimento: nextReceipt.dataPrevista,
+          recebido: nextReceipt.status === "recebido",
+          atualizadoEm: now,
+        },
+      };
       draft.recebimentos.historico.beneficios[benefitKey].push({
         ...nextReceipt,
         id: createId(`historico_${benefitKey}`),
@@ -1349,11 +1409,11 @@ function salvarContas(tipo, payload) {
       tipo === "fixa"
         ? payload
         : {
-            ...payload,
-            origem: payload.origem || "manual",
-            tipo: payload.tipo || "saida",
-            valor: toNumber(payload.valor),
-          };
+          ...payload,
+          origem: payload.origem || "manual",
+          tipo: payload.tipo || "saida",
+          valor: toNumber(payload.valor),
+        };
 
     if (existingIndex >= 0) {
       collection[existingIndex] = {
@@ -1387,22 +1447,74 @@ function salvarContaVariavel(payload) {
 
 function salvarContasVariaveisImportadas(payloads) {
   return updateAppData((draft) => {
-    const nextLedgerItems = Array.isArray(payloads)
+    const nextImportedItems = Array.isArray(payloads)
       ? payloads.map((item) =>
-          normalizeLedgerItem({
-            ...item,
-            origem: item.origem || "extrato_importado",
-            tipo: item.tipo || "saida",
-            valor: toNumber(item.valor),
-            status_importacao: item.status_importacao || "valida",
-          })
-        ).filter(Boolean)
+        normalizeLedgerItem({
+          ...item,
+          origem: item.origem || "extrato_importado",
+          tipo: item.tipo || "saida",
+          valor: toNumber(item.valor),
+          status_importacao: item.status_importacao || "valida",
+        })
+      ).filter(Boolean)
       : [];
     const currentItems = Array.isArray(draft.contasDiaADia) ? draft.contasDiaADia : [];
-    const manualItems = currentItems.filter((item) => !isImportedLedgerOrigin(item?.origem));
+    const manualItems = currentItems.filter(
+      (item) => !isImportedLedgerOrigin(item?.origem) && item?.tipo !== "entrada"
+    );
+    const currentImportedItems = currentItems.filter(
+      (item) => isImportedLedgerOrigin(item?.origem) && item?.tipo === "saida"
+    );
+    const importedExpenses = nextImportedItems.filter((item) => item.tipo === "saida");
 
-    draft.ledgerMovimentacoes = mergeLedgerMovementsWithManualExpenses(nextLedgerItems, manualItems);
-    draft.contasDiaADia = [...manualItems, ...deriveDailyExpensesFromLedger(nextLedgerItems)];
+    draft.ledgerMovimentacoes = mergeLedgerMovementsWithManualExpenses(
+      [...(Array.isArray(draft.ledgerMovimentacoes) ? draft.ledgerMovimentacoes : []), ...nextImportedItems],
+      manualItems
+    );
+    draft.contasDiaADia = mergeDailyExpenseSnapshots(
+      manualItems,
+      currentImportedItems,
+      importedExpenses
+    );
+    return draft;
+  });
+}
+
+function excluirLançamentosImportadosPorFiltro(filtro = {}) {
+  return updateAppData((draft) => {
+    const startKey = filtro.startDate ? String(filtro.startDate).slice(0, 10) : "";
+    const endKey = filtro.endDate ? String(filtro.endDate).slice(0, 10) : "";
+    const monthKey = String(filtro.monthKey || "").trim();
+    const targetDateKey = String(filtro.dateKey || "").trim();
+
+    const matchEntry = (item) => {
+      const itemDateKey = String(item?.data || item?.dataNormalizada || "").slice(0, 10);
+      if (!itemDateKey) {
+        return false;
+      }
+
+      if (targetDateKey && itemDateKey === targetDateKey) {
+        return true;
+      }
+
+      if (monthKey && itemDateKey.slice(0, 7) === monthKey) {
+        return true;
+      }
+
+      if (startKey && endKey && itemDateKey >= startKey && itemDateKey <= endKey) {
+        return true;
+      }
+
+      return false;
+    };
+
+    const ledgerMovimentacoes = (Array.isArray(draft.ledgerMovimentacoes) ? draft.ledgerMovimentacoes : [])
+      .filter((item) => !matchEntry(item));
+    const contasDiaADia = (Array.isArray(draft.contasDiaADia) ? draft.contasDiaADia : [])
+      .filter((item) => !matchEntry(item));
+
+    draft.ledgerMovimentacoes = ledgerMovimentacoes;
+    draft.contasDiaADia = contasDiaADia;
     return draft;
   });
 }
@@ -1490,7 +1602,7 @@ function editarParcelamento(id) {
 
 function subscribe(listener) {
   if (typeof listener !== "function") {
-    return () => {};
+    return () => { };
   }
 
   stateSubscribers.add(listener);
@@ -1556,6 +1668,7 @@ window.FinanceStore = {
   salvarRegistroPagamento,
   salvarVRVA,
   saveAppData,
+  excluirLançamentosImportadosPorFiltro,
   toNumber,
   updateAppData,
 };

@@ -1,4 +1,4 @@
-﻿(() => {
+(() => {
 const {
   carregarCartoes: loadAccountsCards,
   carregarContasFixas: loadSavedFixedAccounts,
@@ -26,32 +26,26 @@ const {
   getNextPaymentInfo,
 } = window.FinanceCalculations;
 
-const contaFixaForm = document.getElementById("conta-fixa-form");
-const contaMessage = document.getElementById("conta-message");
-const contasTableBody = document.getElementById("contas-table-body");
-const contasEmptyState = document.getElementById("contas-empty-state");
-const diaADiaForm = document.getElementById("dia-a-dia-form");
-const diaADiaEmptyState = document.getElementById("dia-a-dia-empty-state");
-const importMessage = document.getElementById("import-message");
-const importFileInput = document.getElementById("gastosImportFile");
-const importPreviewList = document.getElementById("import-preview-list");
-const importActions = document.querySelector(".import-actions");
-const processImportButton = document.getElementById("process-import-button");
-const confirmImportButton = document.getElementById("confirm-import-button");
-const installmentForm = document.getElementById("parcelamento-form");
-const installmentMessage = document.getElementById("parcelamento-message");
-const installmentsTableBody = document.getElementById("parcelamentos-table-body");
-const installmentsEmptyState = document.getElementById("parcelamentos-empty-state");
-const accountTabLinks = Array.from(
-  document.querySelectorAll("[data-account-tab-link]")
-);
-const accountTabPanels = Array.from(
-  document.querySelectorAll("[data-account-tab-panel]")
-);
+let contaFixaForm;
+let contaMessage;
+let contasTableBody;
+let contasEmptyState;
+let diaADiaForm;
+let diaADiaEmptyState;
+let importMessage;
+let importFileInput;
+let importPreviewList;
+let importActions;
+let processImportButton;
+let confirmImportButton;
+let installmentForm;
+let installmentMessage;
+let installmentsTableBody;
+let installmentsEmptyState;
+let accountTabLinks = [];
+let accountTabPanels = [];
 
 const DEFAULT_ACCOUNTS_TAB = "contas-fixas";
-
-window.AppShell.initAppShell();
 
 const DAILY_EXPENSE_CATEGORIES = [
   "alimentacao",
@@ -274,6 +268,10 @@ function suggestCategory(text) {
     return "mercado";
   }
 
+  if (/(mercadinho|mini mercado|mercearia|varejao|atacado|atacarejo)/.test(normalizedText)) {
+    return "mercado";
+  }
+
   if (/(uber|99|metro|Ã´nibus|onibus|combustivel|gasolina|transporte)/.test(normalizedText)) {
     return "transporte";
   }
@@ -342,6 +340,7 @@ function buildDraftFromFile(file) {
     valor: extractAmountFromText(file.name),
     data: extractDateFromText(file.name),
     categoria: suggestCategory(file.name),
+    categoriaSugerida: suggestCategory(file.name),
     tipo: "saida",
     origem: "importado",
     leituraAutomatica: {
@@ -350,6 +349,139 @@ function buildDraftFromFile(file) {
       estrategia: "heuristica_nome_arquivo",
     },
   };
+}
+
+function splitDelimitedLine(line, delimiter) {
+  const cells = [];
+  let current = "";
+  let insideQuotes = false;
+
+  for (let index = 0; index < line.length; index += 1) {
+    const char = line[index];
+
+    if (char === '"') {
+      const nextChar = line[index + 1];
+
+      if (insideQuotes && nextChar === '"') {
+        current += '"';
+        index += 1;
+      } else {
+        insideQuotes = !insideQuotes;
+      }
+      continue;
+    }
+
+    if (char === delimiter && !insideQuotes) {
+      cells.push(current.trim());
+      current = "";
+      continue;
+    }
+
+    current += char;
+  }
+
+  cells.push(current.trim());
+  return cells;
+}
+
+function normalizeCsvDate(value) {
+  const normalized = String(value || "").trim();
+  const isoMatch = normalized.match(/^(\d{4})[-/](\d{2})[-/](\d{2})$/);
+
+  if (isoMatch) {
+    return `${isoMatch[1]}-${isoMatch[2]}-${isoMatch[3]}`;
+  }
+
+  const brMatch = normalized.match(/^(\d{2})[-/](\d{2})[-/](\d{4})$/);
+
+  if (brMatch) {
+    return `${brMatch[3]}-${brMatch[2]}-${brMatch[1]}`;
+  }
+
+  return "";
+}
+
+function isStatementSummaryDescription(value) {
+  const normalized = String(value || "").trim().toUpperCase();
+  return (
+    !normalized ||
+    normalized.includes("INITIAL_BALANCE") ||
+    normalized.includes("FINAL_BALANCE") ||
+    normalized.includes("PARTIAL_BALANCE") ||
+    normalized.includes("SALDO INICIAL") ||
+    normalized.includes("SALDO FINAL") ||
+    normalized.includes("SALDO PARCIAL") ||
+    normalized.includes("RESUMO")
+  );
+}
+
+async function buildDraftsFromCsvFile(file) {
+  const text = await file.text();
+  const lines = String(text || "")
+    .replace(/\r/g, "")
+    .split("\n")
+    .map((line) => line.trim())
+    .filter(Boolean);
+
+  const headerIndex = lines.findIndex((line) => {
+    const cells = splitDelimitedLine(line, ";").map((cell) => cell.toUpperCase());
+    return cells.includes("RELEASE_DATE") && cells.includes("TRANSACTION_TYPE") && cells.includes("TRANSACTION_NET_AMOUNT");
+  });
+
+  if (headerIndex === -1) {
+    return [buildDraftFromFile(file)];
+  }
+
+  const header = splitDelimitedLine(lines[headerIndex], ";").map((cell) => cell.toUpperCase());
+  const indexes = {
+    data: header.indexOf("RELEASE_DATE"),
+    descricao: header.indexOf("TRANSACTION_TYPE"),
+    referencia: header.indexOf("REFERENCE_ID"),
+    valor: header.indexOf("TRANSACTION_NET_AMOUNT"),
+    saldo: header.indexOf("PARTIAL_BALANCE"),
+  };
+
+  const drafts = [];
+
+  for (let index = headerIndex + 1; index < lines.length; index += 1) {
+    const row = splitDelimitedLine(lines[index], ";");
+    if (row.length <= Math.max(indexes.data, indexes.descricao, indexes.valor)) {
+      continue;
+    }
+
+    const descricao = String(row[indexes.descricao] || "").trim();
+    const data = normalizeCsvDate(row[indexes.data]);
+    const valor = toAccountsNumber(row[indexes.valor]);
+    const externalId = indexes.referencia >= 0 ? String(row[indexes.referencia] || "").trim() : "";
+    const saldo = indexes.saldo >= 0 ? String(row[indexes.saldo] || "").trim() : "";
+    const tipo = valor < 0 ? "saida" : "entrada";
+
+    if (!data || !valor || isStatementSummaryDescription(descricao)) {
+      continue;
+    }
+
+    drafts.push({
+      id: createId("importado"),
+      arquivoNome: file.name,
+      descricao: descricao.toLowerCase(),
+      valor: Math.abs(valor),
+      data,
+      categoria: suggestCategory(descricao),
+      categoriaSugerida: suggestCategory(descricao),
+      tipo,
+      origem: "importado",
+      external_id: externalId || null,
+      linha_origem: index + 1,
+      saldo,
+      leituraAutomatica: {
+        arquivo: file.name,
+        tipo: file.type || "desconhecido",
+        estrategia: "csv_transacoes_individuais",
+      },
+    });
+  }
+
+  return drafts.length ? drafts : [buildDraftFromFile(file)];
 }
 
 function renderImportDrafts() {
@@ -628,7 +760,7 @@ function renderInstallments() {
     .join("");
 }
 
-function processImportFiles() {
+async function processImportFiles() {
   const files = Array.from(importFileInput?.files || []);
 
   if (!files.length) {
@@ -636,12 +768,29 @@ function processImportFiles() {
     return;
   }
 
-  importedDraftsState = files.map((file) => buildDraftFromFile(file));
+  const parsedDrafts = [];
+  for (const file of files) {
+    if (String(file.name || "").toLowerCase().endsWith(".csv")) {
+      const drafts = await buildDraftsFromCsvFile(file);
+      parsedDrafts.push(...drafts);
+    } else {
+      parsedDrafts.push(buildDraftFromFile(file));
+    }
+  }
+
+  importedDraftsState = parsedDrafts;
+  renderImportDrafts();
+  syncImportWorkflowState();
+  confirmImportedExpenses();
+  importedDraftsState = [];
+  if (importFileInput) {
+    importFileInput.value = "";
+  }
   renderImportDrafts();
   syncImportWorkflowState();
   showImportMessage(
     "success",
-    "Arquivos lidos. Revise cada lancamento sugerido antes de confirmar a importacao."
+    "Arquivos lidos e importados automaticamente."
   );
 }
 
@@ -702,6 +851,12 @@ function confirmImportedExpenses() {
     importedDraftsState.map((item) => ({
       ...item,
       valor: toAccountsNumber(item.valor),
+      categoria:
+        item.categoria && item.categoria !== "outros"
+          ? item.categoria
+          : item.categoriaSugerida || item.categoria || "outros",
+      categoriaSugerida: item.categoriaSugerida || item.categoria || "outros",
+      tipo: item.tipo === "entrada" ? "entrada" : "saida",
       origem: "importado",
     }))
   );
@@ -1093,95 +1248,429 @@ function renderAccountsPage() {
   renderImportDrafts();
 }
 
-if (contaFixaForm) {
-  contaFixaForm.addEventListener("submit", handleFixedSubmit);
-}
+const CONTAS_UI_TEMPLATE = `
+      <header class="db2-topbar" id="db2-topbar">
+        <div class="db2-brand">
+          <div class="db2-brand-icon">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <rect x="2" y="7" width="20" height="14" rx="3" fill="url(#brand-grad)"/>
+              <path d="M7 7V5a5 5 0 0 1 10 0v2" stroke="url(#brand-grad)" stroke-width="2" stroke-linecap="round"/>
+              <defs>
+                <linearGradient id="brand-grad" x1="0" y1="0" x2="24" y2="24" gradientUnits="userSpaceOnUse">
+                  <stop stop-color="#818cf8"/>
+                  <stop offset="1" stop-color="#38bdf8"/>
+                </linearGradient>
+              </defs>
+            </svg>
+          </div>
+          <span class="db2-brand-name">MFinanceiro</span>
+        </div>
 
-if (diaADiaForm) {
-  diaADiaForm.addEventListener("submit", handleDailySubmit);
-}
+        <nav class="db2-nav" aria-label="Navegação principal">
+          <a href="/dashboard.html" class="db2-nav-link">
+            <svg class="db2-tab-icon" width="14" height="14" viewBox="0 0 24 24" fill="none"><rect x="3" y="3" width="8" height="8" rx="1.5" fill="currentColor" opacity=".9"/><rect x="13" y="3" width="8" height="8" rx="1.5" fill="currentColor" opacity=".5"/><rect x="3" y="13" width="8" height="8" rx="1.5" fill="currentColor" opacity=".5"/><rect x="13" y="13" width="8" height="8" rx="1.5" fill="currentColor" opacity=".3"/></svg>
+            Visão Geral
+          </a>
+          <span class="db2-nav-sep" aria-hidden="true"></span>
+          <a href="/cadastro-bancario.html" class="db2-nav-link" id="link-banco">Base Financeira</a>
+          <a href="/contas.html" class="db2-nav-link is-active" id="link-contas">Contas</a>
+          <a href="/cartoes.html" class="db2-nav-link" id="link-cartoes">Cartões</a>
+          <a href="/recebimentos.html" class="db2-nav-link" id="link-recebimentos">Recebimentos</a>
+        </nav>
 
-if (installmentForm) {
-  installmentForm.addEventListener("submit", handleInstallmentSubmit);
-}
+        <div class="db2-topbar-right">
+          <div class="db2-user-pill" id="db2-user-pill">
+            <div class="db2-avatar" data-user-initial>U</div>
+            <span class="db2-user-name" data-user-name>Usuário</span>
+            <button type="button" class="db2-logout-btn secondary-button dashboard-logout-button" data-logout-button aria-label="Sair">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" stroke="currentColor" stroke-width="2" stroke-linecap="round"/><polyline points="16 17 21 12 16 7" stroke="currentColor" stroke-width="2" stroke-linecap="round"/><line x1="21" y1="12" x2="9" y2="12" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+            </button>
+          </div>
+        </div>
+      </header>
 
-if (contasTableBody) {
-  contasTableBody.addEventListener("click", handleContasTableClick);
-}
+      <div class="db2-panels">
+        <section class="db2-panel is-active" style="overflow: visible; overflow-x: hidden;">
+          <div class="dashboard-secondary-grid accounts-page-grid" style="padding: var(--db2-gap);">
 
-if (installmentsTableBody) {
-  installmentsTableBody.addEventListener("click", handleInstallmentsTableClick);
-}
+                <!-- Sub-tabs de contas -->
+                <nav class="section-anchor-nav accounts-anchor-nav" aria-label="Abas de contas">
+                  <a href="#contas-fixas" class="anchor-pill active" data-account-tab-link="contas-fixas" aria-selected="true" aria-controls="contas-fixas">Contas fixas</a>
+                  <a href="#dia-a-dia" class="anchor-pill" data-account-tab-link="dia-a-dia" aria-selected="false" aria-controls="dia-a-dia">Contas do dia a dia</a>
+                  <a href="#parcelamentos" class="anchor-pill" data-account-tab-link="parcelamentos" aria-selected="false" aria-controls="parcelamentos">Parcelamentos</a>
+                </nav>
 
+                <!-- Contas Fixas -->
+                <section class="section-stack is-active" id="contas-fixas" data-account-tab-panel="contas-fixas" aria-hidden="false">
+                  <article class="dashboard-surface dashboard-secondary-surface accounts-page-card">
+                    <div class="card-header">
+                      <div>
+                        <div class="card-label">Contas fixas</div>
+                        <h2 class="section-title">Compromissos recorrentes ou pontuais</h2>
+                        <p class="table-caption section-subtitle">
+                          Estas contas entram no valor comprometido quando vencem dentro do ciclo atual.
+                        </p>
+                      </div>
+                      <div class="status-chip" id="contas-status-chip">Sem contas</div>
+                    </div>
 
-if (processImportButton) {
-  processImportButton.addEventListener("click", processImportFiles);
-}
+                    <section class="dual-grid">
+                      <article class="dashboard-card">
+                        <form id="conta-fixa-form" class="settings-grid compact-grid">
+                          <div class="field">
+                            <span>Nome da conta</span>
+                            <input type="text" id="contaNome" placeholder="Ex.: Aluguel" required />
+                          </div>
+                          <div class="field">
+                            <span>Valor</span>
+                            <input type="text" inputmode="decimal" id="contaValor" placeholder="0,00" required />
+                          </div>
+                          <div class="field">
+                            <span>Vencimento</span>
+                            <input type="date" id="contaData" required />
+                          </div>
+                          <div class="field">
+                            <span>Categoria</span>
+                            <input type="text" id="contaCategoria" placeholder="Moradia, servicos..." />
+                          </div>
+                          <label class="toggle-row">
+                            <input type="checkbox" id="contaRecorrente" />
+                            <span>Conta recorrente</span>
+                          </label>
+                          <button type="submit" class="primary-button">Salvar conta fixa</button>
+                        </form>
+                      </article>
 
-if (confirmImportButton) {
-  confirmImportButton.addEventListener("click", confirmImportedExpenses);
-}
+                      <article class="dashboard-card">
+                        <div class="detail-list">
+                          <div class="detail-row">
+                            <span>Total comprometido no ciclo</span>
+                            <strong id="contas-total-ciclo">R$ 0,00</strong>
+                          </div>
+                          <div class="detail-row">
+                            <span>Quantidade de contas</span>
+                            <strong id="contas-quantidade">0</strong>
+                          </div>
+                          <div class="detail-row">
+                            <span>Mais proxima do vencimento</span>
+                            <strong id="contas-proxima-data">--</strong>
+                          </div>
+                        </div>
+                      </article>
+                    </section>
 
-if (importFileInput) {
-  importFileInput.addEventListener("change", () => {
-    importedDraftsState = [];
-    renderImportDrafts();
-    syncImportWorkflowState();
+                    <div id="conta-message" class="message-box hidden" aria-live="polite"></div>
 
-    if (importFileInput.files?.length) {
-      showImportMessage(
-        "success",
-        "Arquivo selecionado. Clique em Ler arquivo para revisar os lancamentos antes de importar."
-      );
-    } else {
-      showImportMessage("hidden", "");
+                    <table class="finance-table">
+                      <thead>
+                        <tr>
+                          <th>Conta</th>
+                          <th>Valor</th>
+                          <th>Vencimento</th>
+                          <th>Status</th>
+                          <th>Acoes</th>
+                        </tr>
+                      </thead>
+                      <tbody id="contas-table-body"></tbody>
+                    </table>
+                    <div id="contas-empty-state" class="empty-state hidden"></div>
+                  </article>
+                </section>
+
+                <!-- Dia a dia -->
+                <section class="section-stack hidden" id="dia-a-dia" data-account-tab-panel="dia-a-dia" aria-hidden="true">
+                  <article class="dashboard-surface dashboard-secondary-surface accounts-page-card">
+                    <div class="card-header">
+                      <div>
+                        <div class="card-label">Contas do dia a dia</div>
+                        <h2 class="section-title">Gastos variaveis registrados pelo usuario</h2>
+                        <p class="table-caption section-subtitle">
+                          Use esta lista para registrar o que ja saiu do bolso ou o que esta programado para os proximos dias.
+                        </p>
+                      </div>
+                      <div class="status-chip" id="dia-a-dia-status-chip">Sem gastos</div>
+                    </div>
+
+                    <section class="dual-grid">
+                      <article class="dashboard-card">
+                        <form id="dia-a-dia-form" class="settings-grid compact-grid">
+                          <div class="field">
+                            <span>Descricao</span>
+                            <input type="text" id="gastoDescricao" placeholder="Ex.: Mercado" required />
+                          </div>
+                          <div class="field">
+                            <span>Valor</span>
+                            <input type="text" inputmode="decimal" id="gastoValor" placeholder="0,00" required />
+                          </div>
+                          <div class="field">
+                            <span>Data</span>
+                            <input type="date" id="gastoData" required />
+                          </div>
+                          <div class="field">
+                            <span>Categoria</span>
+                            <input type="text" id="gastoCategoria" placeholder="Alimentacao, transporte..." />
+                          </div>
+                          <button type="submit" class="primary-button">Salvar gasto</button>
+                        </form>
+                      </article>
+
+                      <article class="dashboard-card">
+                        <div class="detail-list">
+                          <div class="detail-row">
+                            <span>Total no ciclo</span>
+                            <strong id="dia-a-dia-total">R$ 0,00</strong>
+                          </div>
+                          <div class="detail-row">
+                            <span>Gasto de hoje</span>
+                            <strong id="dia-a-dia-hoje">R$ 0,00</strong>
+                          </div>
+                          <div class="detail-row">
+                            <span>Quantidade de lancamentos</span>
+                            <strong id="dia-a-dia-quantidade">0</strong>
+                          </div>
+                        </div>
+                        <div class="import-section">
+                          <label for="gastosImportFile" class="file-input-label">
+                            <input type="file" id="gastosImportFile" accept=".csv,.xlsx,.xls" />
+                            <span>Importar gastos do Excel/CSV</span>
+                          </label>
+                          <div id="import-preview-list" class="import-preview hidden"></div>
+                          <div class="import-actions hidden">
+                            <button type="button" id="process-import-button" class="secondary-button">Ler arquivo</button>
+                            <button type="button" id="confirm-import-button" class="primary-button">Confirmar importação</button>
+                          </div>
+                        </div>
+                      </article>
+                    </section>
+
+                    <div id="import-message" class="message-box hidden" aria-live="polite"></div>
+                    <div id="dia-a-dia-empty-state" class="empty-state hidden"></div>
+                  </article>
+                </section>
+
+                <!-- Parcelamentos -->
+                <section class="section-stack hidden" id="parcelamentos" data-account-tab-panel="parcelamentos" aria-hidden="true">
+                  <article class="dashboard-surface dashboard-secondary-surface accounts-page-card">
+                    <div class="card-header">
+                      <div>
+                        <div class="card-label">Parcelamentos</div>
+                        <h2 class="section-title">Controle das parcelas que entram no ciclo</h2>
+                        <p class="table-caption section-subtitle">
+                          Apenas a parcela do mes entra no valor comprometido enquanto o parcelamento estiver ativo.
+                        </p>
+                      </div>
+                      <div class="status-chip" id="parcelamentos-status-chip">Sem parcelamentos</div>
+                    </div>
+
+                    <section class="dual-grid">
+                      <article class="dashboard-card">
+                        <form id="parcelamento-form" class="settings-grid compact-grid">
+                          <div class="field">
+                            <span>Nome</span>
+                            <input type="text" id="parcelamentoNome" placeholder="Ex.: Notebook" required />
+                          </div>
+                          <div class="field">
+                            <span>Valor total</span>
+                            <input type="text" inputmode="decimal" id="parcelamentoValorTotal" placeholder="0,00" required />
+                          </div>
+                          <div class="field">
+                            <span>Parcelas</span>
+                            <input type="number" min="1" id="parcelamentoParcelas" required />
+                          </div>
+                          <div class="field">
+                            <span>Valor da parcela</span>
+                            <input type="text" inputmode="decimal" id="parcelamentoValorParcela" placeholder="0,00" required />
+                          </div>
+                          <div class="field">
+                            <span>Data inicio</span>
+                            <input type="date" id="parcelamentoDataInicio" required />
+                          </div>
+                          <div class="field">
+                            <span>Vencimento</span>
+                            <input type="number" min="1" max="31" id="parcelamentoVencimento" required />
+                          </div>
+                          <div class="field">
+                            <span>Tipo</span>
+                            <select id="parcelamentoTipo" class="app-select">
+                              <option value="cartao">Cartao</option>
+                              <option value="boleto">Boleto</option>
+                            </select>
+                          </div>
+                          <div class="field">
+                            <span>Status</span>
+                            <select id="parcelamentoStatus" class="app-select">
+                              <option value="ativo">Ativo</option>
+                              <option value="finalizado">Finalizado</option>
+                            </select>
+                          </div>
+                          <button type="submit" class="primary-button">Salvar parcelamento</button>
+                        </form>
+                      </article>
+
+                      <article class="dashboard-card">
+                        <div class="detail-list">
+                          <div class="detail-row">
+                            <span>Total do ciclo</span>
+                            <strong id="parcelamentos-total-ciclo">R$ 0,00</strong>
+                          </div>
+                          <div class="detail-row">
+                            <span>Parcelamentos ativos</span>
+                            <strong id="parcelamentos-quantidade">0</strong>
+                          </div>
+                        </div>
+                      </article>
+                    </section>
+
+                    <div id="parcelamento-message" class="message-box hidden" aria-live="polite"></div>
+
+                    <table class="finance-table">
+                      <thead>
+                        <tr>
+                          <th>Nome</th>
+                          <th>Parcela atual</th>
+                          <th>Vencimento</th>
+                          <th>Status</th>
+                          <th>Acoes</th>
+                        </tr>
+                      </thead>
+                      <tbody id="parcelamentos-table-body"></tbody>
+                    </table>
+                    <div id="parcelamentos-empty-state" class="empty-state hidden"></div>
+                  </article>
+                </section>
+              </div>
+        </section>
+      </div><!-- /db2-panels -->
+`;
+
+function bindEvents() {
+  if (contaFixaForm) {
+    contaFixaForm.addEventListener("submit", handleFixedSubmit);
+  }
+
+  if (diaADiaForm) {
+    diaADiaForm.addEventListener("submit", handleDailySubmit);
+  }
+
+  if (installmentForm) {
+    installmentForm.addEventListener("submit", handleInstallmentSubmit);
+  }
+
+  if (contasTableBody) {
+    contasTableBody.addEventListener("click", handleContasTableClick);
+  }
+
+  if (installmentsTableBody) {
+    installmentsTableBody.addEventListener("click", handleInstallmentsTableClick);
+  }
+
+  if (processImportButton) {
+    processImportButton.addEventListener("click", processImportFiles);
+  }
+
+  if (confirmImportButton) {
+    confirmImportButton.addEventListener("click", confirmImportedExpenses);
+  }
+
+  if (importFileInput) {
+    importFileInput.addEventListener("change", () => {
+      importedDraftsState = [];
+      renderImportDrafts();
+      syncImportWorkflowState();
+
+      if (importFileInput.files?.length) {
+        showImportMessage(
+          "success",
+          "Arquivo selecionado. Clique em Ler arquivo para importar automaticamente."
+        );
+      } else {
+        showImportMessage("hidden", "");
+      }
+    });
+  }
+
+  if (importPreviewList) {
+    importPreviewList.addEventListener("input", updateImportDraft);
+    importPreviewList.addEventListener("change", updateImportDraft);
+    importPreviewList.addEventListener("click", handleImportPreviewClick);
+  }
+
+  accountTabLinks.forEach((link) => {
+    link.addEventListener("click", (event) => {
+      event.preventDefault();
+      activateAccountsTab(link.dataset.accountTabLink);
+    });
+  });
+
+  window.addEventListener("hashchange", () => {
+    syncAccountsTabFromHash();
+  });
+
+  window.addEventListener("app-shell-action", (event) => {
+    const action = event.detail?.action;
+
+    if (action === "save-current-form") {
+      triggerCurrentFormSubmit();
+    }
+
+    if (action === "edit-current-form") {
+      triggerCurrentFormEditReset();
     }
   });
-}
 
-if (importPreviewList) {
-  importPreviewList.addEventListener("input", updateImportDraft);
-  importPreviewList.addEventListener("change", updateImportDraft);
-  importPreviewList.addEventListener("click", handleImportPreviewClick);
-}
-
-accountTabLinks.forEach((link) => {
-  link.addEventListener("click", (event) => {
-    event.preventDefault();
-    activateAccountsTab(link.dataset.accountTabLink);
+  window.addEventListener("finance-data-updated", () => {
+    renderAccountsPage();
   });
-});
 
-window.addEventListener("hashchange", () => {
-  syncAccountsTabFromHash();
-});
+  window.addEventListener("storage", () => {
+    renderAccountsPage();
+  });
 
-window.addEventListener("app-shell-action", (event) => {
-  const action = event.detail?.action;
+  window.addEventListener("mfinanceiro-supabase-hydrated", () => {
+    ensureExpensesHydrated();
+  });
+}
 
-  if (action === "save-current-form") {
-    triggerCurrentFormSubmit();
+function initContasModule() {
+  try {
+    const shell = document.querySelector(".db2-shell");
+    if (shell && !shell.innerHTML.trim()) {
+      shell.innerHTML = CONTAS_UI_TEMPLATE;
+    }
+
+    contaFixaForm = document.getElementById("conta-fixa-form");
+    contaMessage = document.getElementById("conta-message");
+    contasTableBody = document.getElementById("contas-table-body");
+    contasEmptyState = document.getElementById("contas-empty-state");
+    diaADiaForm = document.getElementById("dia-a-dia-form");
+    diaADiaEmptyState = document.getElementById("dia-a-dia-empty-state");
+    importMessage = document.getElementById("import-message");
+    importFileInput = document.getElementById("gastosImportFile");
+    importPreviewList = document.getElementById("import-preview-list");
+    importActions = document.querySelector(".import-actions");
+    processImportButton = document.getElementById("process-import-button");
+    confirmImportButton = document.getElementById("confirm-import-button");
+    installmentForm = document.getElementById("parcelamento-form");
+    installmentMessage = document.getElementById("parcelamento-message");
+    installmentsTableBody = document.getElementById("parcelamentos-table-body");
+    installmentsEmptyState = document.getElementById("parcelamentos-empty-state");
+    accountTabLinks = Array.from(document.querySelectorAll("[data-account-tab-link]"));
+    accountTabPanels = Array.from(document.querySelectorAll("[data-account-tab-panel]"));
+
+    bindEvents();
+
+    if (window.AppShell?.initAppShell) {
+      window.AppShell.initAppShell();
+    }
+    
+    syncAccountsTabFromHash({ replaceHash: true });
+    renderAccountsPage();
+    syncImportWorkflowState();
+    ensureExpensesHydrated();
+  } catch (error) {
+    console.error("[Contas] Runtime error during rendering:", error);
   }
+}
 
-  if (action === "edit-current-form") {
-    triggerCurrentFormEditReset();
-  }
-});
-window.addEventListener("finance-data-updated", () => {
-  renderAccountsPage();
-});
-window.addEventListener("storage", () => {
-  renderAccountsPage();
-});
-window.addEventListener("mfinanceiro-supabase-hydrated", () => {
-  ensureExpensesHydrated();
-});
-
-syncAccountsTabFromHash({ replaceHash: true });
-renderAccountsPage();
-syncImportWorkflowState();
-ensureExpensesHydrated();
+initContasModule();
 })();
-
-
-
