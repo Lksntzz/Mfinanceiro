@@ -96,8 +96,8 @@ function renderMetrics({
       `ate ${summary.paymentInfo.nextDate.toLocaleDateString("pt-BR", { day: "2-digit", month: "2-digit" })}`,
       helpers.getWeekdayLabel(summary.paymentInfo.nextDate)
     );
-    elements.nextPaymentChip.textContent = "Proximo pagamento";
-    elements.committedChip.textContent = helpers.formatDateLong(summary.paymentInfo.nextDate);
+    elements.nextPaymentChip.textContent = helpers.formatDateLong(summary.paymentInfo.nextDate);
+    elements.committedChip.textContent = `${helpers.formatCurrency(summary.paymentInfo.value)}${summary.paymentInfo.daysRemaining >= 0 ? ` · ${summary.paymentInfo.daysRemaining} dia(s)` : ""}`;
   } else {
     elements.cardDiasRestantes.textContent = "0 dia(s)";
     elements.cardDiasRestantesSubtitle.textContent = "Configure salario e dias de pagamento.";
@@ -107,8 +107,8 @@ function renderMetrics({
       "sem data",
       "Pagamento pendente"
     );
-    elements.nextPaymentChip.textContent = "Pagamento pendente";
-    elements.committedChip.textContent = "Sem data definida";
+    elements.nextPaymentChip.textContent = "Sem data";
+    elements.committedChip.textContent = "Pagamento pendente";
   }
 
   elements.cardLimiteDiario.textContent = helpers.formatCurrency(summary.limiteDiario);

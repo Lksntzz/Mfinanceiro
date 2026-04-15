@@ -10,6 +10,7 @@ const {
   editarContaVariavel: editSavedDailyExpense,
   editarParcelamento: editSavedInstallment,
   loadAppData: loadAccountsData,
+  mergeLedgerMovementsWithManualExpenses,
   salvarContaFixa: saveFixedAccount,
   salvarContaVariavel: saveDailyExpense,
   salvarContasVariaveisImportadas: saveImportedDailyExpenses,
@@ -46,6 +47,7 @@ let accountTabLinks = [];
 let accountTabPanels = [];
 
 const DEFAULT_ACCOUNTS_TAB = "contas-fixas";
+const FIXED_BILL_REMINDER_STORAGE_KEY = "mfinanceiro_fixed_bill_reminders";
 
 const DAILY_EXPENSE_CATEGORIES = [
   "alimentacao",
@@ -61,6 +63,295 @@ let expenseHydrationPromise = null;
 
 function getExpenseSyncApi() {
   return window.MFinanceiroSupabaseSync || null;
+}
+
+function loadFixedBillReminderState() {
+  try {
+    const raw = window.localStorage.getItem(FIXED_BILL_REMINDER_STORAGE_KEY);
+    const parsed = raw ? JSON.parse(raw) : {};
+    return parsed && typeof parsed === "object" ? parsed : {};
+  } catch (error) {
+    console.warn("[Contas] Nao foi possivel carregar estado de lembretes.", error);
+    return {};
+  }
+}
+
+function saveFixedBillReminderState(state) {
+  try {
+    window.localStorage.setItem(
+      FIXED_BILL_REMINDER_STORAGE_KEY,
+      JSON.stringify(state && typeof state === "object" ? state : {})
+    );
+  } catch (error) {
+    console.warn("[Contas] Nao foi possivel salvar estado de lembretes.", error);
+  }
+}
+
+function normalizeFixedPaymentDate(value) {
+  if (!value) {
+    return "";
+  }
+
+  if (typeof value === "string" && /^\d{4}-\d{2}-\d{2}$/.test(value)) {
+    return value;
+  }
+
+  const parsedDate = new Date(value);
+
+  if (Number.isNaN(parsedDate.getTime())) {
+    return "";
+  }
+
+  return parsedDate.toISOString().slice(0, 10);
+}
+
+function buildFixedPaymentExpenseId(contaId, paidAt) {
+  const paymentDate = normalizeFixedPaymentDate(paidAt);
+  return paymentDate ? `conta_fixa_paga_${contaId}_${paymentDate}` : `conta_fixa_paga_${contaId}`;
+}
+
+function buildFixedPaymentExpensePayload(conta, paidAt) {
+  const paymentDate = normalizeFixedPaymentDate(paidAt);
+
+  if (!conta?.id || !paymentDate) {
+    return null;
+  }
+
+  return {
+    id: buildFixedPaymentExpenseId(conta.id, paidAt),
+    descricao: conta.nome || "Conta fixa paga",
+    valor: toAccountsNumber(conta.valor),
+    data: paymentDate,
+    categoria: conta.categoria || "outros",
+    tipo: "saida",
+    origem: "conta_fixa_paga",
+    contaFixaId: conta.id,
+  };
+}
+
+function syncFixedPaymentExpenseLocally(draft, expensePayload, expenseIdToRemove) {
+  const currentItems = Array.isArray(draft.contasDiaADia) ? draft.contasDiaADia : [];
+  const nextItems = currentItems.filter((item) => {
+    const itemId = String(item?.id || "");
+    return itemId !== String(expenseIdToRemove || "");
+  });
+
+  if (expensePayload) {
+    nextItems.push(expensePayload);
+  }
+
+  draft.contasDiaADia = nextItems;
+  draft.ledgerMovimentacoes = mergeLedgerMovementsWithManualExpenses(
+    draft.ledgerMovimentacoes,
+    draft.contasDiaADia
+  );
+  return draft;
+}
+
+function getContaDueDateForReminder(conta, referenceDate = new Date()) {
+  if (!conta?.dataVencimento) {
+    return null;
+  }
+
+  const today = new Date(referenceDate);
+  today.setHours(0, 0, 0, 0);
+  const baseDate = new Date(conta.dataVencimento);
+
+  if (Number.isNaN(baseDate.getTime())) {
+    return null;
+  }
+
+  if (!conta.recorrente) {
+    baseDate.setHours(0, 0, 0, 0);
+    return baseDate;
+  }
+
+  const dueDay = baseDate.getDate();
+  const dueDate = new Date(today.getFullYear(), today.getMonth(), dueDay);
+  dueDate.setHours(0, 0, 0, 0);
+  return dueDate;
+}
+
+function isContaPaidForCurrentCycle(conta, paymentInfo) {
+  if (!conta) {
+    return false;
+  }
+
+  if (!conta.recorrente) {
+    return conta.status === "paga";
+  }
+
+  const paidAt = conta.ultimaQuitacao ? new Date(conta.ultimaQuitacao) : null;
+  return Boolean(
+    paidAt &&
+    paidAt.getTime() >= paymentInfo.cycleStart.getTime() &&
+    paidAt.getTime() <= paymentInfo.cycleEnd.getTime()
+  );
+}
+
+function getContaStateSnapshot(conta, paymentInfo, referenceDate = new Date()) {
+  const dueDate = getContaDueDateForReminder(conta, referenceDate);
+  const today = new Date(referenceDate);
+  today.setHours(0, 0, 0, 0);
+  const paid = isContaPaidForCurrentCycle(conta, paymentInfo);
+  const isDueToday = Boolean(dueDate && dueDate.getTime() === today.getTime() && !paid);
+  const isOverdue = Boolean(dueDate && dueDate.getTime() < today.getTime() && !paid);
+
+  return {
+    dueDate,
+    paid,
+    isDueToday,
+    isOverdue,
+  };
+}
+
+async function persistFixedBillToggle(conta, shouldMarkPaid, paidAt) {
+  const syncApi = getExpenseSyncApi();
+  const expensePayload = shouldMarkPaid ? buildFixedPaymentExpensePayload(conta, paidAt) : null;
+  const expenseIdToRemove = buildFixedPaymentExpenseId(conta.id, conta.recorrente ? conta.ultimaQuitacao : conta.pagaEm);
+
+  if (typeof syncApi?.addFixedBill === "function") {
+    await syncApi.addFixedBill({
+      ...conta,
+      status: shouldMarkPaid ? "paga" : "pendente",
+      pagaEm: conta.recorrente ? conta.pagaEm || null : shouldMarkPaid ? paidAt : null,
+      ultimaQuitacao: conta.recorrente ? shouldMarkPaid ? paidAt : null : conta.ultimaQuitacao || null,
+    });
+  }
+
+  if (typeof syncApi?.addExpense === "function" && expensePayload) {
+    await syncApi.addExpense(expensePayload);
+  } else if (typeof syncApi?.deleteExpense === "function" && !shouldMarkPaid) {
+    await syncApi.deleteExpense(expenseIdToRemove);
+  }
+}
+
+async function toggleFixedBillPayment(id, options = {}) {
+  const currentConta = loadAccountsData().contasFixas.find((conta) => conta.id === id);
+
+  if (!currentConta) {
+    return false;
+  }
+
+  const shouldMarkPaid = typeof options.forcePaid === "boolean"
+    ? options.forcePaid
+    : currentConta.recorrente
+      ? !currentConta.ultimaQuitacao
+      : currentConta.status !== "paga";
+  const paidAt = shouldMarkPaid ? new Date().toISOString() : null;
+  const expenseIdToRemove = buildFixedPaymentExpenseId(
+    currentConta.id,
+    currentConta.recorrente ? currentConta.ultimaQuitacao : currentConta.pagaEm
+  );
+
+  if (typeof getExpenseSyncApi()?.addFixedBill === "function") {
+    await persistFixedBillToggle(currentConta, shouldMarkPaid, paidAt);
+    await refreshFixedBillsFromSupabase();
+    await refreshExpensesFromSupabase();
+    return true;
+  }
+
+  updateAccountsData((draft) => {
+    draft.contasFixas = draft.contasFixas.map((conta) => {
+      if (conta.id !== id) {
+        return conta;
+      }
+
+      if (conta.recorrente) {
+        return {
+          ...conta,
+          ultimaQuitacao: shouldMarkPaid ? paidAt : null,
+        };
+      }
+
+      return {
+        ...conta,
+        status: shouldMarkPaid ? "paga" : "pendente",
+        pagaEm: shouldMarkPaid ? paidAt : null,
+      };
+    });
+
+    const updatedConta = draft.contasFixas.find((conta) => conta.id === id) || null;
+    const expensePayload = shouldMarkPaid
+      ? buildFixedPaymentExpensePayload(updatedConta, paidAt)
+      : null;
+
+    syncFixedPaymentExpenseLocally(draft, expensePayload, expenseIdToRemove);
+    return draft;
+  });
+
+  return true;
+}
+
+async function evaluateFixedBillReminders() {
+  const data = loadAccountsData();
+  const paymentInfo = getNextPaymentInfo(data);
+  const accounts = Array.isArray(data.contasFixas) ? data.contasFixas : [];
+  const reminderState = loadFixedBillReminderState();
+  const todayKey = new Date().toISOString().slice(0, 10);
+  let dueTodayNotices = 0;
+  let overduePrompts = 0;
+
+  for (const conta of accounts) {
+    const snapshot = getContaStateSnapshot(conta, paymentInfo, new Date());
+    const reminderKey = String(conta.id || "");
+
+    if (!reminderKey || snapshot.paid) {
+      continue;
+    }
+
+    if (snapshot.isDueToday) {
+      const dueState = reminderState[reminderKey]?.dueTodayNoticeAt;
+
+      if (dueState !== todayKey) {
+        dueTodayNotices += 1;
+        reminderState[reminderKey] = {
+          ...(reminderState[reminderKey] || {}),
+          dueTodayNoticeAt: todayKey,
+        };
+      }
+    }
+
+    if (snapshot.isOverdue) {
+      const overdueState = reminderState[reminderKey]?.overduePromptAt;
+
+      if (overdueState === todayKey) {
+        continue;
+      }
+
+      overduePrompts += 1;
+      reminderState[reminderKey] = {
+        ...(reminderState[reminderKey] || {}),
+        overduePromptAt: todayKey,
+      };
+      saveFixedBillReminderState(reminderState);
+
+      const message = `A conta fixa "${conta.nome}" venceu em ${formatAccountsDateLong(snapshot.dueDate)}. Ela foi paga?`;
+      const wasPaid = window.confirm(message);
+      await toggleFixedBillPayment(conta.id, { forcePaid: wasPaid });
+    }
+  }
+
+  saveFixedBillReminderState(reminderState);
+
+  if (dueTodayNotices || overduePrompts) {
+    const fragments = [];
+
+    if (dueTodayNotices) {
+      fragments.push(
+        `${dueTodayNotices} conta(s) vencem hoje e precisam de confirmacao de pagamento.`
+      );
+    }
+
+    if (overduePrompts) {
+      fragments.push(
+        `${overduePrompts} conta(s) vencidas foram revisadas para evitar pendencia inconsistente.`
+      );
+    }
+
+    showContaMessage("error", fragments.join(" "));
+    renderAccountsPage();
+  }
 }
 
 function isAuthSessionMissingError(error) {
@@ -561,25 +852,27 @@ function syncImportWorkflowState() {
 }
 
 function getContaStatus(conta, paymentInfo) {
+  const state = getContaStateSnapshot(conta, paymentInfo, new Date());
+
   if (!conta.recorrente) {
-    const isPaid = conta.status === "paga";
+    const isPaid = state.paid;
     return {
-      label: isPaid ? "Paga" : "Pendente",
+      label: isPaid ? "Paga" : state.isOverdue ? "Vencida" : state.isDueToday ? "Vence hoje" : "Pendente",
       action: isPaid ? "Reabrir" : "Marcar paga",
-      statusClass: isPaid ? "status-positive" : "status-warning",
+      statusClass: isPaid ? "status-positive" : state.isOverdue ? "status-danger" : "status-warning",
     };
   }
 
-  const paidAt = conta.ultimaQuitacao ? new Date(conta.ultimaQuitacao) : null;
-  const paidThisCycle =
-    paidAt &&
-    paidAt.getTime() >= paymentInfo.cycleStart.getTime() &&
-    paidAt.getTime() <= paymentInfo.cycleEnd.getTime();
-
   return {
-    label: paidThisCycle ? "Paga no ciclo" : "Pendente no ciclo",
-    action: paidThisCycle ? "Reabrir ciclo" : "Marcar paga",
-    statusClass: paidThisCycle ? "status-positive" : "status-warning",
+    label: state.paid
+      ? "Paga no ciclo"
+      : state.isOverdue
+        ? "Vencida no ciclo"
+        : state.isDueToday
+          ? "Vence hoje"
+          : "Pendente no ciclo",
+    action: state.paid ? "Reabrir ciclo" : "Marcar paga",
+    statusClass: state.paid ? "status-positive" : state.isOverdue ? "status-danger" : "status-warning",
   };
 }
 
@@ -1067,30 +1360,15 @@ async function handleContasTableClick(event) {
   }
 
   if (action === "toggle-fixed") {
-    updateAccountsData((draft) => {
-      draft.contasFixas = draft.contasFixas.map((conta) => {
-        if (conta.id !== id) {
-          return conta;
-        }
-
-        if (conta.recorrente) {
-          return {
-            ...conta,
-            ultimaQuitacao: conta.ultimaQuitacao ? null : new Date().toISOString(),
-          };
-        }
-
-        return {
-          ...conta,
-          status: conta.status === "paga" ? "pendente" : "paga",
-          pagaEm: conta.status === "paga" ? null : new Date().toISOString(),
-        };
-      });
-      return draft;
-    });
-
-    renderFixedAccounts();
-    showContaMessage("success", "Status da conta fixa atualizado.");
+    try {
+      await toggleFixedBillPayment(id);
+      renderFixedAccounts();
+      renderDailyExpenses();
+      showContaMessage("success", "Status da conta fixa atualizado.");
+    } catch (error) {
+      console.error("[Contas] Falha ao atualizar status da conta fixa.", error);
+      showContaMessage("error", "Nao foi possivel atualizar o status da conta fixa.");
+    }
   }
 }
 
@@ -1667,6 +1945,9 @@ function initContasModule() {
     renderAccountsPage();
     syncImportWorkflowState();
     ensureExpensesHydrated();
+    evaluateFixedBillReminders().catch((error) => {
+      console.error("[Contas] Falha ao avaliar lembretes de contas fixas.", error);
+    });
   } catch (error) {
     console.error("[Contas] Runtime error during rendering:", error);
   }

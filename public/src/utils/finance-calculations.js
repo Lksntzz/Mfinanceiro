@@ -722,7 +722,7 @@ function getAccountsInCycle(data, referenceDate = new Date()) {
     .filter(
       (conta) =>
         conta.dueDate &&
-        isWithinRange(conta.dueDate, cycleStart, cycleEnd) &&
+        conta.dueDate.getTime() <= cycleEnd.getTime() &&
         !conta.isPaid
     );
 
@@ -919,7 +919,9 @@ function buildCyclePriorityMessage(item, referenceDate = new Date()) {
   const daysUntil = dueDate ? getDaysDifference(today, dueDate) : Infinity;
   let title = `Pague ${item.nome} ate o dia ${dueDay}`;
 
-  if (item.group === "moradia") {
+  if (daysUntil < 0) {
+    title = `${item.nome} venceu no dia ${dueDay}`;
+  } else if (item.group === "moradia") {
     title = `Reserve ${item.nome} para o dia ${dueDay}`;
   } else if (item.group === "cartao") {
     title = `Separe o valor da fatura ${item.nome} para o dia ${dueDay}`;
@@ -928,9 +930,12 @@ function buildCyclePriorityMessage(item, referenceDate = new Date()) {
   }
 
   return {
-    type: daysUntil <= 1 ? "danger" : daysUntil <= 3 ? "warning" : "success",
+    type: daysUntil < 0 ? "danger" : daysUntil <= 1 ? "danger" : daysUntil <= 3 ? "warning" : "success",
     title,
-    description: `${formatCurrency(item.valor)} previsto para ${formatDateLong(dueDate)}.`,
+    description:
+      daysUntil < 0
+        ? `${formatCurrency(item.valor)} segue pendente desde ${formatDateLong(dueDate)}. Confirme se a conta foi paga.`
+        : `${formatCurrency(item.valor)} previsto para ${formatDateLong(dueDate)}.`,
     kind: item.kind,
     dueDate,
     rank: item.rank,
@@ -2883,7 +2888,7 @@ function calculatePrimaryFinancialMetrics(data, referenceDate = new Date()) {
   const paymentInfo = calcularProximoPagamento(data, referenceDate);
   const nextPaymentDate = safeNormalizeDate(paymentInfo?.nextDate);
   const benefits = getBenefitsSummary(data, referenceDate);
-  const principalIncomeEntries = getIncomeEntries(data).filter(isPrincipalIncome);
+  const incomeEntries = getIncomeEntries(data);
   const expenses = getLedgerExpenseEntries(data);
 
   const totalDespesas = expenses.reduce((total, expense) => {
@@ -2928,7 +2933,7 @@ function calculatePrimaryFinancialMetrics(data, referenceDate = new Date()) {
     }, 0)
     : 0;
   const projectedIncomeInSaldo = nextPaymentDate
-    ? principalIncomeEntries.reduce((total, income) => {
+    ? incomeEntries.reduce((total, income) => {
       if (!income?.dataPrevista || income.status === "recebido") {
         return total;
       }
@@ -2939,7 +2944,7 @@ function calculatePrimaryFinancialMetrics(data, referenceDate = new Date()) {
 
       return total + Number(income.valorPrevisto || income.valorRecebido || 0);
     }, 0)
-    : principalIncomeEntries.reduce(
+    : incomeEntries.reduce(
       (total, income) =>
         income?.status === "recebido"
           ? total
@@ -3065,7 +3070,7 @@ function buildBalanceProjection(data, referenceDate = new Date()) {
   const summary = calcularResumoFinanceiro(data, today);
   const projection = [];
   let runningBalance = summary.saldoAtual;
-  const incomeEntries = getIncomeEntries(data).filter(isPrincipalIncome);
+  const incomeEntries = getIncomeEntries(data);
   const benefitEntries = getBenefitEntries(data).filter((item) => item?.contabilizarNoSaldo !== false);
 
   const incomeByDate = new Map();

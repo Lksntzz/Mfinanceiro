@@ -434,8 +434,12 @@
       const income = findIncomeById(editButton.dataset.editIncomeId);
 
       if (income) {
+        paymentEditMode = true;
+        unlockPaymentReceiptEditing();
         fillIncomeForm(income);
         showMessage("success", "Recebimento carregado para edicao.");
+        paymentValueInput?.focus();
+        paymentValueInput?.select?.();
       }
 
       return;

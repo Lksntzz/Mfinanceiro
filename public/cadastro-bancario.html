@@ -3,7 +3,7 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Base Financeira — MFinanceiro</title>
+    <title>Base Financeira - MFinanceiro</title>
     <link rel="stylesheet" href="/styles.css" />
     <link rel="stylesheet" href="/dashboard-v2.css" />
     <script src="/src/lib/auth-session.js"></script>
@@ -36,22 +36,22 @@
           <span class="db2-brand-name">MFinanceiro</span>
         </div>
 
-        <nav class="db2-nav" aria-label="Navegação principal">
+        <nav class="db2-nav" aria-label="Navegacao principal">
           <a href="/dashboard.html" class="db2-nav-link">
             <svg class="db2-tab-icon" width="14" height="14" viewBox="0 0 24 24" fill="none"><rect x="3" y="3" width="8" height="8" rx="1.5" fill="currentColor" opacity=".9"/><rect x="13" y="3" width="8" height="8" rx="1.5" fill="currentColor" opacity=".5"/><rect x="3" y="13" width="8" height="8" rx="1.5" fill="currentColor" opacity=".5"/><rect x="13" y="13" width="8" height="8" rx="1.5" fill="currentColor" opacity=".3"/></svg>
-            Visão Geral
+            Visao Geral
           </a>
           <span class="db2-nav-sep" aria-hidden="true"></span>
           <a href="/cadastro-bancario.html" class="db2-nav-link is-active" id="link-banco">Base Financeira</a>
           <a href="/contas.html" class="db2-nav-link" id="link-contas">Contas</a>
-          <a href="/cartoes.html" class="db2-nav-link" id="link-cartoes">Cartões</a>
+          <a href="/cartoes.html" class="db2-nav-link" id="link-cartoes">Cartoes</a>
           <a href="/recebimentos.html" class="db2-nav-link" id="link-recebimentos">Recebimentos</a>
         </nav>
 
         <div class="db2-topbar-right">
           <div class="db2-user-pill" id="db2-user-pill">
             <div class="db2-avatar" data-user-initial>U</div>
-            <span class="db2-user-name" data-user-name>Usuário</span>
+            <span class="db2-user-name" data-user-name>Usuario</span>
             <button type="button" class="db2-logout-btn secondary-button dashboard-logout-button" data-logout-button aria-label="Sair">
               <svg width="14" height="14" viewBox="0 0 24 24" fill="none"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" stroke="currentColor" stroke-width="2" stroke-linecap="round"/><polyline points="16 17 21 12 16 7" stroke="currentColor" stroke-width="2" stroke-linecap="round"/><line x1="21" y1="12" x2="9" y2="12" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
             </button>
@@ -60,575 +60,406 @@
       </header>
 
       <div class="db2-panels">
-        <section class="db2-panel is-active" style="overflow: visible; overflow-x: hidden;">
-          <div class="dashboard-secondary-grid banking-page-grid" style="padding: var(--db2-gap); height: 100%;">
-
-                <article class="dashboard-surface dashboard-secondary-surface banking-page-card banking-shell-card">
-                  <div class="banking-hero">
-                    <div class="banking-hero-copy">
-                      <div class="card-label">Base Financeira</div>
-                      <h1 class="banking-hero-title">Base Financeira</h1>
-                      <p class="table-caption section-subtitle">
-                        Centralize saldo, salario, beneficios, descontos e ciclo de pagamento em uma unica visao.
-                      </p>
-                    </div>
-                    <div class="status-chip" id="banking-status-chip">Aguardando configuracao</div>
-                  </div>
-
-                  <section class="banking-overview-strip" aria-label="Resumo rapido da base financeira">
-                    <article class="banking-overview-card">
-                      <span class="banking-overview-label">Saldo atual</span>
-                      <strong id="banking-strip-saldo">R$ 0,00</strong>
-                      <span id="banking-strip-saldo-meta" class="banking-overview-meta">Base manual</span>
-                    </article>
-                    <article class="banking-overview-card">
-                      <span class="banking-overview-label">Salario liquido</span>
-                      <strong id="banking-strip-salario">R$ 0,00</strong>
-                      <span id="banking-strip-salario-meta" class="banking-overview-meta">Estimativa atual</span>
-                    </article>
-                    <article class="banking-overview-card">
-                      <span class="banking-overview-label">Proximo pagamento</span>
-                      <strong id="banking-strip-pagamento">--</strong>
-                      <span id="banking-strip-pagamento-meta" class="banking-overview-meta">Sem previsao</span>
-                    </article>
-                    <article class="banking-overview-card">
-                      <span class="banking-overview-label">Ciclo ativo</span>
-                      <strong id="banking-strip-ciclo">0 dia(s)</strong>
-                      <span id="banking-strip-ciclo-meta" class="banking-overview-meta">Aguardando configuracao</span>
-                    </article>
-                  </section>
-
-                  <form id="banking-form" class="settings-grid base-finance-form">
-                    <div class="dual-grid base-finance-grid">
-                      <section class="form-section balance-highlight-section accordion-section balance-accordion-section" data-accordion-section="saldo">
-                        <button type="button" class="accordion-toggle balance-accordion-toggle" data-accordion-toggle="saldo" aria-expanded="false">
-                          <div class="accordion-heading">
-                            <h4>1. Saldo atual</h4>
-                            <p class="section-note">
-                              Defina a origem do saldo e mantenha o valor atual do banco como base do dashboard.
-                            </p>
-                          </div>
-                          <div class="accordion-summary" id="balance-accordion-summary">
-                            Saldo: R$ 0,00 | Manual
-                          </div>
-                          <span class="accordion-icon" aria-hidden="true">+</span>
-                        </button>
-                        <div class="accordion-content" data-accordion-content="saldo">
-                          <div class="accordion-content-inner">
-                            <div class="inline-fields">
-                              <div class="field">
-                                <span>Origem do saldo atual</span>
-                                <select id="origemSaldoModo" class="app-select">
-                                  <option value="manual">Manual</option>
-                                  <option value="extrato">Importar extrato</option>
-                                </select>
-                              </div>
-                              <div class="field hidden" id="origemSaldoBancoWrapper">
-                                <span>Origem do extrato</span>
-                                <select id="origemSaldoBanco" class="app-select">
-                                  <option value="mercado-pago">Mercado Pago</option>
-                                  <option value="nubank">Nubank</option>
-                                  <option value="itau">Itau</option>
-                                  <option value="caixa">Caixa</option>
-                                  <option value="banco-do-brasil">Banco do Brasil</option>
-                                  <option value="bradesco">Bradesco</option>
-                                  <option value="santander">Santander</option>
-                                  <option value="inter">Inter</option>
-                                  <option value="c6">C6</option>
-                                  <option value="outro">Outro</option>
-                                </select>
-                              </div>
-                            </div>
-                            <div class="field" id="saldoAtualField">
-                              <span class="field-label">
-                                Saldo atual
-                                <span class="info-icon" title="Este campo representa apenas o dinheiro que ja esta no banco agora.">i</span>
-                              </span>
-                              <input type="text" inputmode="decimal" id="saldoAtual" name="saldoAtual" placeholder="0,00" />
-                            </div>
-                            <div class="field-hint" id="saldoManualHint">
-                              Atualize seus gastos ao final do dia para manter o saldo correto.
-                            </div>
-                            <div class="subtle-panel hidden" id="extratoActionSection">
-                              <div class="form-section-heading">
-                                <h4>Importar extrato</h4>
-                                <p class="section-note">
-                                  Escolha o arquivo, revise os lancamentos e confirme a importacao
-                                  sem sair da Base Financeira.
-                                </p>
-                                <div class="status-chip" id="statement-status-chip">Aguardando arquivo</div>
-                              </div>
-
-                              <div class="settings-grid compact-grid hidden">
-                                <div class="field">
-                                  <span>Banco do extrato</span>
-                                  <select id="statementBank" class="app-select">
-                                    <option value="mercado-pago">Mercado Pago</option>
-                                    <option value="nubank">Nubank</option>
-                                    <option value="itau">Itau</option>
-                                    <option value="caixa">Caixa</option>
-                                    <option value="banco-do-brasil">Banco do Brasil</option>
-                                    <option value="bradesco">Bradesco</option>
-                                    <option value="santander">Santander</option>
-                                    <option value="inter">Inter</option>
-                                    <option value="c6">C6</option>
-                                    <option value="outro">Outro</option>
-                                  </select>
-                                </div>
-                                <div class="field">
-                                  <span>Período inicial</span>
-                                  <input type="date" id="statementPeriodStart" />
-                                </div>
-                                <div class="field">
-                                  <span>Período final</span>
-                                  <input type="date" id="statementPeriodEnd" />
-                                </div>
-                              </div>
-
-                              <div class="statement-upload-row">
-                                <input type="file" id="statementFile" class="hidden-file-input" accept=".csv,.ofx,.xls,.xlsx,.pdf,.jpg,.jpeg,.png,.webp" />
-                                <label for="statementFile" class="secondary-button statement-file-button">
-                                  Escolher arquivo
-                                </label>
-                                <span class="statement-file-name" id="statement-selected-file-name">
-                                  Nenhum arquivo escolhido
-                                </span>
-                              </div>
-
-                              <div class="button-row align-start">
-                                <button type="button" id="read-statement-button" class="secondary-button">
-                                  Ler arquivo
-                                </button>
-                                <button type="button" id="confirm-imported-expenses-button" class="primary-button">
-                                  Confirmar importacao
-                                </button>
-                              </div>
-
-                              <div class="button-row align-start hidden" id="statement-balance-actions">
-                                <button type="button" id="accept-statement-balance-button" class="secondary-button">
-                                  Sim, usar saldo calculado
-                                </button>
-                                <button type="button" id="adjust-balance-manually-button" class="ghost-button">
-                                  Não, ajustar manualmente
-                                </button>
-                              </div>
-
-                              <div class="detail-list">
-                                <div class="detail-row">
-                                  <span>Total de lancamentos</span>
-                                  <strong id="statement-total-preview">0</strong>
-                                </div>
-                                <div class="detail-row">
-                                  <span>Entradas</span>
-                                  <strong id="statement-entries-preview">0</strong>
-                                </div>
-                                <div class="detail-row">
-                                  <span>Saidas</span>
-                                  <strong id="statement-exits-preview">0</strong>
-                                </div>
-                                <div class="detail-row">
-                                  <span>Saldo calculado do extrato</span>
-                                  <strong id="statement-balance-preview">R$ 0,00</strong>
-                                </div>
-                              </div>
-
-                              <div id="statement-preview-list" class="list-stack">
-                                <div class="subtle-panel">
-                                  <strong>Nenhum arquivo processado</strong>
-                                  <span class="section-note">
-                                    Escolha um arquivo para revisar os lancamentos antes de importar.
-                                  </span>
-                                </div>
-                              </div>
-
-                              <div id="statement-message" class="message-box hidden" aria-live="polite"></div>
-                            </div>
-                          </div>
-                        </div>
-                      </section>
-
-                      <section class="form-section accordion-section" data-accordion-section="salario">
-                        <button type="button" class="accordion-toggle" data-accordion-toggle="salario" aria-expanded="false">
-                          <div class="accordion-heading">
-                            <h4>2. Salário</h4>
-                            <p class="section-note">
-                              Informe o valor bruto e acompanhe o líquido calculado automaticamente.
-                            </p>
-                          </div>
-                          <div class="accordion-summary" id="salary-accordion-summary">
-                            Bruto: R$ 0,00 | Líquido: R$ 0,00
-                          </div>
-                          <span class="accordion-icon" aria-hidden="true">+</span>
-                        </button>
-                        <div class="accordion-content" data-accordion-content="salario">
-                          <div class="accordion-content-inner">
-                            <div class="inline-fields">
-                              <div class="field">
-                                <span>Salário bruto</span>
-                                <input type="text" inputmode="decimal" id="salarioBruto" name="salarioBruto" placeholder="0,00" />
-                              </div>
-                              <div class="field salary-meta-field">
-                                <span class="field-label">
-                                  INSS calculado
-                                  <span class="info-icon" title="Desconto automatico calculado pela tabela progressiva do INSS.">i</span>
-                                </span>
-                                <input type="text" id="inssCalculado" name="inssCalculado" readonly value="R$ 0,00" />
-                              </div>
-                            </div>
-
-                            <div class="inline-fields">
-                              <div class="field salary-meta-field">
-                                <span class="field-label">
-                                  IRPF calculado
-                                  <span class="info-icon" title="Desconto automatico mensal calculado apenas quando houver incidencia de IRPF.">i</span>
-                                </span>
-                                <input type="text" id="irpfCalculado" name="irpfCalculado" readonly value="R$ 0,00" />
-                              </div>
-                              <div class="field">
-                                <span class="field-label">
-                                  Salário líquido estimado
-                                  <span class="info-icon" title="O salário líquido já considera INSS, IRPF e os descontos da folha quando aplicáveis.">i</span>
-                                </span>
-                                <input type="text" id="salarioLiquido" name="salarioLiquido" readonly value="R$ 0,00" />
-                              </div>
-                            </div>
-                            <div class="salary-confirmation-panel">
-                              <strong>Esse valor bate com o que você recebe?</strong>
-                              <div class="salary-confirmation-actions">
-                                <button type="button" class="secondary-button salary-confirmation-button is-active" data-salary-liquido-mode="auto">Sim</button>
-                                <button type="button" class="ghost-button salary-confirmation-button" data-salary-liquido-mode="manual">Não</button>
-                              </div>
-                              <div class="field hidden" id="salarioLiquidoManualField">
-                                <span>Salário líquido real recebido</span>
-                                <input type="text" inputmode="decimal" id="salarioLiquidoManual" placeholder="0,00" />
-                              </div>
-                            </div>
-                          </div>
-                        </div>
-                      </section>
-
-                      <section class="form-section accordion-section" data-accordion-section="beneficios">
-                        <button type="button" class="accordion-toggle" data-accordion-toggle="beneficios" aria-expanded="false">
-                          <div class="accordion-heading">
-                            <h4>5. Beneficios</h4>
-                            <p class="section-note">
-                              Registre o VR/VA previsto do ciclo para refletir esse valor no dashboard.
-                            </p>
-                          </div>
-                          <div class="accordion-summary" id="benefits-accordion-summary">
-                            VR/VA: R$ 0,00
-                          </div>
-                          <span class="accordion-icon" aria-hidden="true">+</span>
-                        </button>
-                        <div class="accordion-content" data-accordion-content="beneficios">
-                          <div class="accordion-content-inner">
-                            <div class="card-header">
-                              <div>
-                                <div class="card-label">Desconto em folha</div>
-                                <h3>VR/VA abatido no salário</h3>
-                              </div>
-                              <div class="status-chip" id="beneficios-status-chip">Sem benefícios ativos</div>
-                            </div>
-
-                            <article class="subtle-panel">
-                              <strong>VR/VA descontado em folha</strong>
-                              <div class="receipt-form-grid">
-                                <div class="field">
-                                  <span>Data de recebimento</span>
-                                  <input type="date" id="vrvaDataPrevista" />
-                                </div>
-                                <div class="field">
-                                  <span>Valor</span>
-                                  <input type="text" inputmode="decimal" id="vrvaValorPrevisto" />
-                                </div>
-                                <label class="toggle-row">
-                                  <input type="checkbox" id="vrvaRecebido" />
-                                  <span>Ja recebido</span>
-                                </label>
-                                <div class="field-hint" id="vrvaHint">Use esta área apenas para o VR/VA que reduz o salário líquido.</div>
-                                <div class="button-row align-start">
-                                  <button type="button" id="save-vrva-button" class="secondary-button">Salvar VR/VA</button>
-                                  <button type="button" id="edit-vrva-button" class="ghost-button">Editar VR/VA</button>
-                                </div>
-                              </div>
-                            </article>
-                          </div>
-                        </div>
-                      </section>
-                    </div>
-
-                    <div class="dual-grid base-finance-grid">
-                      <section class="form-section accordion-section" data-accordion-section="descontos">
-                        <button type="button" class="accordion-toggle" data-accordion-toggle="descontos" aria-expanded="false">
-                          <div class="accordion-heading">
-                            <h4>3. Descontos da folha</h4>
-                            <p class="section-note">
-                              Registre os descontos fixos e adicione outros descontos dinamicos quando precisar.
-                            </p>
-                          </div>
-                          <div class="accordion-summary" id="discounts-accordion-summary">
-                            Total: R$ 0,00
-                          </div>
-                          <span class="accordion-icon" aria-hidden="true">+</span>
-                        </button>
-                        <div class="accordion-content" data-accordion-content="descontos">
-                          <div class="accordion-content-inner">
-                            <div class="inline-fields">
-                              <div class="field">
-                                <span>Plano de saude</span>
-                                <input type="text" inputmode="decimal" id="planoSaude" name="planoSaude" placeholder="0,00" />
-                              </div>
-                              <div class="field">
-                                <span>Plano odontologico</span>
-                                <input type="text" inputmode="decimal" id="planoOdontologico" name="planoOdontologico" placeholder="0,00" />
-                              </div>
-                            </div>
-
-                            <div class="inline-fields">
-                              <div class="field">
-                                <span>VT</span>
-                                <input type="text" inputmode="decimal" id="vt" name="vt" placeholder="0,00" />
-                              </div>
-                              <div class="field">
-                                <span>VR/VA</span>
-                                <input type="text" inputmode="decimal" id="vrVa" name="vrVa" placeholder="0,00" />
-                              </div>
-                            </div>
-
-                            <label class="toggle-row">
-                              <input type="checkbox" id="vrVaDescontadoEmFolha" />
-                              <span>VR/VA descontado em folha</span>
-                            </label>
-                            <div class="subtle-panel form-subsection">
-                              <strong>Outros descontos</strong>
-                              <p class="section-note">
-                                Adicione descontos extras com nome e valor. Eles entram no calculo do salario liquido ao salvar.
-                              </p>
-
-                              <div class="inline-fields">
-                                <div class="field">
-                                  <span>Nome do desconto</span>
-                                  <input type="text" id="outroDescontoNome" placeholder="Ex.: Sindicato" />
-                                </div>
-                                <div class="field">
-                                  <span>Valor</span>
-                                  <input type="text" inputmode="decimal" id="outroDescontoValor" placeholder="0,00" />
-                                </div>
-                              </div>
-
-                              <div class="button-row align-start">
-                                <button type="button" id="add-outro-desconto-button" class="secondary-button">
-                                  + Outro desconto
-                                </button>
-                              </div>
-
-                              <div id="outros-descontos-list" class="list-stack"></div>
-                            </div>
-                          </div>
-                        </div>
-                      </section>
-
-                      <section class="form-section accordion-section" data-accordion-section="ciclo">
-                        <button type="button" class="accordion-toggle" data-accordion-toggle="ciclo" aria-expanded="false">
-                          <div class="accordion-heading">
-                            <h4>4. Ciclo de pagamento</h4>
-                            <p class="section-note">
-                              Defina se voce recebe uma ou duas vezes por mes, os dias e os percentuais de cada ciclo.
-                            </p>
-                          </div>
-                          <div class="accordion-summary" id="cycle-accordion-summary">
-                            Dia 5 | 100%
-                          </div>
-                          <span class="accordion-icon" aria-hidden="true">+</span>
-                        </button>
-                        <div class="accordion-content" data-accordion-content="ciclo">
-                          <div class="accordion-content-inner">
-                            <div class="inline-fields">
-                              <div class="field">
-                                <span class="field-label">
-                                  Tipo de ciclo
-                                  <span class="info-icon" title="Ciclo 1 usa um pagamento por mes. Ciclo 2 usa dois pagamentos, como dia 5 e dia 20.">i</span>
-                                </span>
-                                <select id="tipoCiclo" class="app-select">
-                                  <option value="ciclo1">Ciclo 1</option>
-                                  <option value="ciclo2">Ciclo 2</option>
-                                </select>
-                              </div>
-                              <div class="field">
-                                <span class="field-label">
-                                  Primeiro dia de pagamento
-                                  <span class="info-icon" title="Informe o dia do mes em que o pagamento costuma cair.">i</span>
-                                </span>
-                                <input type="number" min="1" max="31" id="diaPagamento1" />
-                              </div>
-                            </div>
-
-                            <div class="inline-fields">
-                              <div class="field" id="diaPagamento2Wrapper">
-                                <span>Segundo dia de pagamento</span>
-                                <input type="number" min="1" max="31" id="diaPagamento2" />
-                              </div>
-                              <div class="field">
-                                <span>Percentual do 1º pagamento</span>
-                                <input type="number" min="0" max="100" id="percentualPagamento1" />
-                              </div>
-                            </div>
-
-                            <div class="inline-fields">
-                              <div class="field">
-                                <span>Percentual do 2º pagamento</span>
-                                <input type="number" min="0" max="100" id="percentualPagamento2" />
-                              </div>
-                              <div class="field">
-                                <span class="field-label">
-                                  Próximo pagamento calculado
-                                  <span class="info-icon" title="O sistema sempre considera a proxima data futura conforme o ciclo configurado.">i</span>
-                                </span>
-                                <input type="text" id="cycle-next-payment-date" readonly value="--" />
-                              </div>
-                            </div>
-
-                            <div class="inline-fields">
-                              <div class="field">
-                                <span>Dias restantes</span>
-                                <input type="text" id="cycle-next-payment-days" readonly value="0 dia(s)" />
-                              </div>
-                              <div class="field">
-                                <span>Valor previsto do proximo pagamento</span>
-                                <input type="text" id="cycle-next-payment-value" readonly value="R$ 0,00" />
-                              </div>
-                              <div class="field">
-                                <span>Total dos percentuais</span>
-                                <input type="text" id="cycle-percent-total" readonly value="100%" />
-                              </div>
-                            </div>
-                          </div>
-                        </div>
-                      </section>
-
-                      <section class="form-section receipt-inline-section">
-                        <div class="card-header">
-                          <div>
-                            <div class="card-label">Recebimento principal</div>
-                            <h3>Previsão e confirmação do pagamento</h3>
-                            <p class="table-caption">
-                              Esse bloco mantem o registro do pagamento principal do ciclo sem sair da Base Financeira.
-                            </p>
-                          </div>
-                          <div class="status-chip" id="receipt-status-chip">Pronto para registrar</div>
-                        </div>
-
-                        <div class="dual-grid">
-                          <article class="dashboard-card">
-                            <div class="card-header">
-                              <div>
-                                <div class="card-label">Pagamento</div>
-                                <h4>Registro principal do ciclo</h4>
-                              </div>
-                              <div class="status-chip" id="pagamento-status-chip">Pendente</div>
-                            </div>
-
-                            <div class="detail-list">
-                              <div class="detail-row">
-                                <span>Proxima previsao</span>
-                                <strong id="pagamento-proxima-previsao">--</strong>
-                              </div>
-                              <div class="detail-row">
-                                <span>Dias restantes</span>
-                                <strong id="pagamento-dias-restantes">0</strong>
-                              </div>
-                            </div>
-
-                            <div class="receipt-form-grid">
-                              <div class="field">
-                                <span>Data prevista</span>
-                                <input type="date" id="pagamentoDataPrevista" />
-                              </div>
-                              <div class="field">
-                                <span>Valor previsto</span>
-                                <input type="text" inputmode="decimal" id="pagamentoValorPrevisto" placeholder="0,00" />
-                              </div>
-                            </div>
-
-                            <div class="button-row align-start">
-                              <button type="button" id="save-pagamento-button" class="primary-button">
-                                Salvar recebimento
-                              </button>
-                              <button type="button" id="mark-pagamento-recebido-button" class="secondary-button">
-                                Recebido
-                              </button>
-                            </div>
-                          </article>
-
-                          <article class="dashboard-card receipt-support-card">
-                            <div class="card-header">
-                              <div>
-                                <div class="card-label">Leitura rapida</div>
-                                <h4>Como isso impacta o ciclo</h4>
-                              </div>
-                            </div>
-
-                            <div class="detail-list">
-                              <div class="detail-row">
-                                <span>Status do registro</span>
-                                <strong id="receipt-inline-status-text">Aguardando previsao</strong>
-                              </div>
-                              <div class="detail-row">
-                                <span>Uso no dashboard</span>
-                                <strong>Saldo, limite e proximos dias</strong>
-                              </div>
-                            </div>
-                          </article>
-                        </div>
-
-                        <div id="receipt-message" class="message-box hidden" aria-live="polite"></div>
-                      </section>
-
-                      <div class="form-actions banking-form-actions">
-                        <button type="submit" id="save-banking-button" class="primary-button">
-                          Salvar Base Financeira
-                        </button>
-                        <button type="button" id="edit-banking-button" class="secondary-button">
-                          Editar Base Financeira
-                        </button>
-                      </div>
-                    </div>
-
-                    <section class="form-section summary-preview-section banking-impact-section">
-                      <div class="form-section-heading">
-                        <div class="card-label">Impacto no sistema</div>
-                        <h4>Como a Base Financeira afeta o aplicativo</h4>
-                        <p class="section-note">
-                          Esses indicadores alimentam saldo, limite diario, previsoes e alertas da Visao Geral.
-                        </p>
-                      </div>
-                      <div class="summary-preview-grid">
-                        <div class="detail-row">
-                          <span>Saldo base</span>
-                          <strong id="banking-summary-saldo">R$ 0,00</strong>
-                        </div>
-                        <div class="detail-row">
-                          <span>Proximo pagamento</span>
-                          <strong id="banking-summary-payment">R$ 0,00</strong>
-                        </div>
-                        <div class="detail-row">
-                          <span>Dias restantes</span>
-                          <strong id="banking-summary-days">0 dia(s)</strong>
-                        </div>
-                        <div class="detail-row">
-                          <span>Disponivel por dia</span>
-                          <strong id="banking-summary-daily">R$ 0,00</strong>
-                        </div>
-                      </div>
-                    </section>
-                  </form>
-
-                  <div id="banking-message" class="message-box hidden" aria-live="polite"></div>
-                </article>
-
+        <section class="db2-panel is-active">
+          <div class="dashboard-secondary-grid banking-page-grid banking-page-grid--rebuilt">
+            <article class="dashboard-surface dashboard-secondary-surface banking-page-card banking-shell-card banking-shell-card--rebuilt">
+              <div class="banking-hero banking-hero--rebuilt">
+                <div class="banking-hero-copy">
+                  <div class="card-label">Base Financeira</div>
+                  <h1 class="banking-hero-title">Base Financeira</h1>
+                  <p class="table-caption section-subtitle">
+                    Configure apenas a base oficial do ciclo: saldo atual, ciclo, salario, beneficios e recebimentos extras.
+                  </p>
+                </div>
+                <div class="status-chip" id="banking-status-chip">Aguardando configuracao</div>
               </div>
+
+              <form id="banking-form" class="base-finance-form base-finance-form--rebuilt">
+                <section class="banking-kpi-row banking-card-shell">
+                  <article class="banking-kpi-card banking-kpi-card--blue">
+                    <div class="banking-kpi-icon"></div>
+                    <div class="banking-kpi-copy">
+                      <span class="banking-kpi-label">Saldo atual</span>
+                      <strong id="banking-strip-saldo">R$ 0,00</strong>
+                      <small id="banking-strip-saldo-meta">Base manual</small>
+                    </div>
+                  </article>
+                  <article class="banking-kpi-card banking-kpi-card--green">
+                    <div class="banking-kpi-icon"></div>
+                    <div class="banking-kpi-copy">
+                      <span class="banking-kpi-label">Salario liquido</span>
+                      <strong id="banking-strip-salario">R$ 0,00</strong>
+                      <small id="banking-strip-salario-meta">Estimativa atual</small>
+                    </div>
+                  </article>
+                  <article class="banking-kpi-card banking-kpi-card--purple">
+                    <div class="banking-kpi-icon"></div>
+                    <div class="banking-kpi-copy">
+                      <span class="banking-kpi-label">Proximo pagamento</span>
+                      <strong id="banking-strip-pagamento">--</strong>
+                      <small id="banking-strip-pagamento-meta">Sem previsao</small>
+                    </div>
+                  </article>
+                  <article class="banking-kpi-card banking-kpi-card--gold">
+                    <div class="banking-kpi-icon"></div>
+                    <div class="banking-kpi-copy">
+                      <span class="banking-kpi-label">Ciclo ativo</span>
+                      <strong id="banking-strip-ciclo">0 dia(s)</strong>
+                      <small id="banking-strip-ciclo-meta">Aguardando configuracao</small>
+                    </div>
+                  </article>
+                </section>
+
+                <section class="form-section banking-card banking-card--receipt banking-card-shell">
+                  <div class="banking-card-head">
+                    <div>
+                      <div class="card-label">Recebimento principal</div>
+                      <h3>Planejamento do pagamento do ciclo</h3>
+                      <p class="section-note">Registre a previsao e confirme o recebimento sem alterar os calculos.</p>
+                    </div>
+                    <div class="status-chip" id="receipt-status-chip">Pronto para registrar</div>
+                  </div>
+                  <div class="banking-card-body">
+                    <div class="banking-receipt-summary">
+                      <div class="banking-receipt-metric">
+                        <span>Proxima previsao</span>
+                        <strong id="pagamento-proxima-previsao">--</strong>
+                      </div>
+                      <div class="banking-receipt-metric">
+                        <span>Dias restantes</span>
+                        <strong id="pagamento-dias-restantes">0</strong>
+                      </div>
+                      <div class="banking-receipt-metric">
+                        <span>Status</span>
+                        <strong id="pagamento-status-chip">Pendente</strong>
+                      </div>
+                    </div>
+                    <div class="banking-grid banking-grid--receipt">
+                      <div class="field">
+                        <span>Data de pagamento</span>
+                        <input type="date" id="pagamentoDataPrevista" data-editable />
+                      </div>
+                      <div class="field">
+                        <span>Valor previsto</span>
+                        <input type="text" inputmode="decimal" id="pagamentoValorPrevisto" placeholder="0,00" data-editable />
+                      </div>
+                    </div>
+                    <div class="banking-receipt-actions">
+                      <button type="button" id="mark-pagamento-recebido-button" class="secondary-button" data-editable>Recebido</button>
+                      <button type="button" id="save-pagamento-button" class="primary-button" data-editable>Salvar alteracoes</button>
+                    </div>
+                    <div id="receipt-message" class="message-box hidden" aria-live="polite"></div>
+                  </div>
+                </section>
+
+                <section class="form-section banking-card banking-card--cycle-visual banking-card-shell">
+                  <div class="banking-card-head">
+                    <div>
+                      <div class="card-label">Ciclo financeiro</div>
+                      <h3>Leitura do periodo atual</h3>
+                      <p class="section-note">Visualizacao do ciclo alimentada pelos mesmos dados do sistema.</p>
+                    </div>
+                    <div class="banking-card-summary" id="banking-summary-payment">R$ 0,00</div>
+                  </div>
+                  <div class="banking-card-body">
+                    <div class="banking-cycle-stats">
+                      <div class="banking-cycle-stat">
+                        <span>Dia de pagamento</span>
+                        <strong id="banking-cycle-day">--</strong>
+                      </div>
+                      <div class="banking-cycle-stat">
+                        <span>Inicio do ciclo</span>
+                        <strong id="banking-cycle-start">--</strong>
+                      </div>
+                      <div class="banking-cycle-stat">
+                        <span>Fim do ciclo</span>
+                        <strong id="banking-cycle-end">--</strong>
+                      </div>
+                    </div>
+                    <div class="banking-cycle-progress-block">
+                      <div class="banking-cycle-progress-copy">
+                        <span>Dias restantes</span>
+                        <strong id="banking-summary-days">0 dia(s)</strong>
+                        <small id="banking-cycle-progress-label">0% do ciclo concluido</small>
+                      </div>
+                      <div class="banking-cycle-progress-track">
+                        <span id="banking-cycle-progress-fill"></span>
+                      </div>
+                    </div>
+                  </div>
+                </section>
+
+                <section class="form-section banking-card banking-card--balance accordion-section is-open" data-accordion-section="saldo">
+                  <div class="banking-card-head">
+                    <div>
+                      <div class="card-label">Saldo atual</div>
+                      <h3>Base inicial do sistema</h3>
+                      <p class="section-note">Esse valor continua sendo a referencia principal do saldo atual.</p>
+                    </div>
+                    <div class="banking-card-summary" id="balance-accordion-summary">Saldo: R$ 0,00 | Manual</div>
+                  </div>
+                  <div class="banking-card-body">
+                    <div class="field" id="saldoAtualField">
+                      <span>Saldo atual</span>
+                      <input type="text" inputmode="decimal" id="saldoAtual" name="saldoAtual" placeholder="0,00" data-editable />
+                    </div>
+                    <div class="field-hint" id="saldoManualHint">Atualize o saldo sempre que quiser redefinir a base oficial.</div>
+                  </div>
+                </section>
+
+                <section class="form-section banking-card banking-card--cycle accordion-section is-open" data-accordion-section="ciclo">
+                  <div class="banking-card-head">
+                    <div>
+                      <div class="card-label">Ciclo de pagamento</div>
+                      <h3>Uma ou duas datas de recebimento</h3>
+                      <p class="section-note">No ciclo 2, os percentuais precisam somar 100%.</p>
+                    </div>
+                    <div class="banking-card-summary" id="cycle-accordion-summary">Dia 5 | 100%</div>
+                  </div>
+                  <div class="banking-card-body">
+                    <div class="banking-segmented" role="radiogroup" aria-label="Tipo de ciclo">
+                      <button type="button" class="banking-segmented-btn is-active" id="cycle-option-1" data-cycle-type="ciclo1" data-editable>Ciclo 1</button>
+                      <button type="button" class="banking-segmented-btn" id="cycle-option-2" data-cycle-type="ciclo2" data-editable>Ciclo 2</button>
+                    </div>
+                    <div class="banking-grid banking-grid--cycle">
+                      <div class="field">
+                        <span>1a data de recebimento</span>
+                        <input type="date" id="cycle-date-1" data-editable />
+                      </div>
+                      <div class="field" id="diaPagamento2Wrapper">
+                        <span>2a data de recebimento</span>
+                        <input type="date" id="cycle-date-2" data-editable />
+                      </div>
+                      <div class="field banking-cycle-percentage" id="cycle-percent-1-field">
+                        <span>% do 1o recebimento</span>
+                        <input type="number" min="0" max="100" id="percentualPagamento1" data-editable />
+                      </div>
+                      <div class="field banking-cycle-percentage" id="cycle-percent-2-field">
+                        <span>% do 2o recebimento</span>
+                        <input type="number" min="0" max="100" id="percentualPagamento2" data-editable />
+                      </div>
+                    </div>
+                  </div>
+                </section>
+
+                <section class="form-section banking-card banking-card--salary accordion-section is-open" data-accordion-section="salario">
+                  <div class="banking-card-head">
+                    <div>
+                      <div class="card-label">Salario liquido</div>
+                      <h3>Bruto e liquido estimado</h3>
+                      <p class="section-note">O valor liquido continua calculado pela regra financeira atual.</p>
+                    </div>
+                    <div class="banking-card-summary" id="salary-accordion-summary">Bruto: R$ 0,00 | Liquido: R$ 0,00</div>
+                  </div>
+                  <div class="banking-card-body">
+                    <div class="banking-grid banking-grid--salary">
+                      <div class="field">
+                        <span>Salario bruto</span>
+                        <input type="text" inputmode="decimal" id="salarioBruto" name="salarioBruto" placeholder="0,00" data-editable />
+                      </div>
+                      <div class="field">
+                        <span>INSS calculado</span>
+                        <input type="text" id="inssCalculado" name="inssCalculado" readonly value="R$ 0,00" />
+                      </div>
+                      <div class="field">
+                        <span>IRPF calculado</span>
+                        <input type="text" id="irpfCalculado" name="irpfCalculado" readonly value="R$ 0,00" />
+                      </div>
+                      <div class="field">
+                        <span>Salario liquido estimado</span>
+                        <input type="text" id="salarioLiquido" name="salarioLiquido" readonly value="R$ 0,00" />
+                      </div>
+                    </div>
+                    <div class="salary-confirmation-panel salary-confirmation-panel--rebuilt">
+                      <label class="toggle-row">
+                        <input type="checkbox" id="salario-estimado-confirmado" data-editable />
+                        <span>Confirmar valor estimado</span>
+                      </label>
+                      <div class="salary-confirmation-actions">
+                        <button type="button" class="secondary-button salary-confirmation-button is-active" data-salary-liquido-mode="auto" data-editable>Usar estimativa</button>
+                        <button type="button" class="ghost-button salary-confirmation-button" data-salary-liquido-mode="manual" data-editable>Ajustar manualmente</button>
+                      </div>
+                      <div class="field hidden" id="salarioLiquidoManualField">
+                        <span>Salario liquido oficial</span>
+                        <input type="text" inputmode="decimal" id="salarioLiquidoManual" placeholder="0,00" data-editable />
+                      </div>
+                    </div>
+                  </div>
+                </section>
+
+                <section class="form-section banking-card banking-card--discounted accordion-section is-open" data-accordion-section="descontos">
+                  <div class="banking-card-head">
+                    <div>
+                      <div class="card-label">Descontos em folha</div>
+                      <h3>Valores abatidos do liquido</h3>
+                      <p class="section-note">Adicione e remova os itens que reduzem o salario liquido do ciclo.</p>
+                    </div>
+                    <div class="status-chip" id="discounted-benefits-chip">Sem itens</div>
+                  </div>
+                  <div class="banking-card-body">
+                    <div class="banking-grid banking-grid--inline">
+                      <div class="field">
+                        <span>Nome do item</span>
+                        <input type="text" id="outroDescontoNome" placeholder="Ex.: VT empresa" data-editable />
+                      </div>
+                      <div class="field">
+                        <span>Valor</span>
+                        <input type="text" inputmode="decimal" id="outroDescontoValor" placeholder="0,00" data-editable />
+                      </div>
+                      <button type="button" id="add-outro-desconto-button" class="secondary-button" data-editable>Adicionar item</button>
+                    </div>
+                    <div id="outros-descontos-list" class="list-stack banking-compact-list"></div>
+                    <div class="banking-card-summary banking-card-summary--foot" id="discounts-accordion-summary">Total: R$ 0,00</div>
+                  </div>
+                </section>
+
+                <section class="form-section banking-card banking-card--benefits accordion-section is-open" data-accordion-section="beneficios">
+                  <div class="banking-card-head">
+                    <div>
+                      <div class="card-label">Beneficios recebidos</div>
+                      <h3>Valores que entram no saldo</h3>
+                      <p class="section-note">Esses beneficios ficam fora da folha e podem ser contabilizados no saldo do ciclo.</p>
+                    </div>
+                    <div class="status-chip" id="beneficios-status-chip">Sem beneficios ativos</div>
+                  </div>
+                  <div class="banking-card-body">
+                    <div class="banking-grid banking-grid--benefit">
+                      <div class="field">
+                        <span>Nome do beneficio</span>
+                        <input type="text" id="benefit-name" placeholder="Ex.: VR, ajuda de custo" data-editable />
+                      </div>
+                      <div class="field">
+                        <span>Data de recebimento</span>
+                        <input type="date" id="benefit-date" data-editable />
+                      </div>
+                      <div class="field">
+                        <span>Valor</span>
+                        <input type="text" inputmode="decimal" id="benefit-value" placeholder="0,00" data-editable />
+                      </div>
+                      <button type="button" id="add-benefit-button" class="secondary-button" data-editable>Adicionar beneficio</button>
+                    </div>
+                    <div id="benefits-list" class="list-stack banking-compact-list"></div>
+                    <div class="banking-card-summary banking-card-summary--foot" id="benefits-accordion-summary">Sem beneficios</div>
+                  </div>
+                </section>
+
+                <section class="form-section banking-card banking-card--extras">
+                  <div class="banking-card-head">
+                    <div>
+                      <div class="card-label">Recebimentos extras</div>
+                      <h3>Entradas adicionais do ciclo</h3>
+                      <p class="section-note">Cadastre manualmente extra, adiantamento, ferias ou outros recebimentos.</p>
+                    </div>
+                    <div class="status-chip" id="extras-status-chip">Sem extras</div>
+                  </div>
+                  <div class="banking-card-body">
+                    <div class="banking-grid banking-grid--extras">
+                      <div class="field">
+                        <span>Tipo</span>
+                        <select id="extra-income-type" class="app-select" data-editable>
+                          <option value="extra">Extra</option>
+                          <option value="adiantamento">Adiantamento</option>
+                          <option value="ferias">Ferias</option>
+                          <option value="outros">Outros</option>
+                        </select>
+                      </div>
+                      <div class="field">
+                        <span>Descricao</span>
+                        <input type="text" id="extra-income-description" placeholder="Ex.: Bonus mensal" data-editable />
+                      </div>
+                      <div class="field">
+                        <span>Data prevista</span>
+                        <input type="date" id="extra-income-date" data-editable />
+                      </div>
+                      <div class="field">
+                        <span>Valor</span>
+                        <input type="text" inputmode="decimal" id="extra-income-value" placeholder="0,00" data-editable />
+                      </div>
+                      <button type="button" id="add-extra-income-button" class="secondary-button" data-editable>Adicionar recebimento</button>
+                    </div>
+                    <div id="extra-income-list" class="list-stack banking-compact-list"></div>
+                  </div>
+                </section>
+
+                <section class="form-section banking-card banking-card--actions banking-card--impact">
+                  <div class="banking-card-head">
+                    <div>
+                      <div class="card-label">Impacto no sistema</div>
+                      <h3>Como a base alimenta o aplicativo</h3>
+                      <p class="section-note">A logica continua a mesma. Esta area organiza visualmente os principais efeitos da base no app.</p>
+                    </div>
+                    <div class="status-chip" id="banking-edit-status-chip">Bloqueado</div>
+                  </div>
+                  <div class="banking-card-body banking-card-body--actions">
+                    <div class="banking-impact-grid">
+                      <article class="banking-impact-node banking-impact-node--blue">
+                        <span>Base financeira</span>
+                        <strong id="banking-summary-saldo">R$ 0,00</strong>
+                      </article>
+                      <article class="banking-impact-node banking-impact-node--green">
+                        <span>Saldo diario</span>
+                        <strong id="banking-summary-daily">R$ 0,00</strong>
+                      </article>
+                      <article class="banking-impact-node banking-impact-node--gold">
+                        <span>Proximo pagamento</span>
+                        <strong id="banking-impact-next-payment">R$ 0,00</strong>
+                      </article>
+                    </div>
+                    <div class="form-actions banking-form-actions">
+                      <button type="submit" id="save-banking-button" class="primary-button" data-editable>Salvar Base Financeira</button>
+                      <button type="button" id="edit-banking-button" class="secondary-button">Editar Base Financeira</button>
+                    </div>
+                    <div id="banking-message" class="message-box hidden" aria-live="polite"></div>
+                  </div>
+                </section>
+
+                <div class="banking-compatibility-layer hidden" aria-hidden="true">
+                  <select id="origemSaldoModo"><option value="manual" selected>Manual</option><option value="extrato">Extrato</option></select>
+                  <div id="origemSaldoBancoWrapper" class="hidden"></div>
+                  <select id="origemSaldoBanco"><option value="mercado-pago" selected>Mercado Pago</option><option value="nubank">Nubank</option><option value="itau">Itau</option><option value="caixa">Caixa</option><option value="banco-do-brasil">Banco do Brasil</option><option value="bradesco">Bradesco</option><option value="santander">Santander</option><option value="inter">Inter</option><option value="c6">C6</option><option value="outro">Outro</option></select>
+                  <div id="extratoActionSection" class="hidden"></div>
+                  <input type="text" id="planoSaude" value="0" />
+                  <input type="text" id="planoOdontologico" value="0" />
+                  <input type="text" id="vt" value="0" />
+                  <input type="text" id="vrVa" value="0" />
+                  <input type="checkbox" id="vrVaDescontadoEmFolha" />
+                  <select id="tipoCiclo"><option value="ciclo1">Ciclo 1</option><option value="ciclo2">Ciclo 2</option></select>
+                  <input type="number" id="diaPagamento1" />
+                  <input type="number" id="diaPagamento2" />
+                  <input type="text" id="cycle-next-payment-date" value="--" />
+                  <input type="text" id="cycle-next-payment-days" value="0 dia(s)" />
+                  <input type="text" id="cycle-next-payment-value" value="R$ 0,00" />
+                  <input type="text" id="cycle-percent-total" value="100%" />
+                  <div id="receipt-inline-status-text">Aguardando previsao</div>
+                  <input type="date" id="vrvaDataPrevista" />
+                  <input type="text" id="vrvaValorPrevisto" value="0" />
+                  <input type="checkbox" id="vrvaRecebido" />
+                  <button type="button" id="save-vrva-button">Salvar VRVA</button>
+                  <button type="button" id="edit-vrva-button">Editar VRVA</button>
+                  <div id="vrvaHint"></div>
+                  <input type="date" id="statementPeriodStart" />
+                  <input type="date" id="statementPeriodEnd" />
+                  <select id="statementBank"><option value="mercado-pago">Mercado Pago</option></select>
+                  <input type="file" id="statementFile" />
+                  <div id="statement-selected-file-name"></div>
+                  <div id="statement-status-chip">Aguardando arquivo</div>
+                  <div id="statement-total-preview">0</div>
+                  <div id="statement-entries-preview">0</div>
+                  <div id="statement-exits-preview">0</div>
+                  <div id="statement-balance-preview">R$ 0,00</div>
+                  <div id="statement-balance-actions" class="hidden"></div>
+                  <div id="statement-preview-list"></div>
+                  <div id="statement-message" class="message-box hidden"></div>
+                  <button type="button" id="read-statement-button">Ler arquivo</button>
+                  <button type="button" id="confirm-imported-expenses-button">Confirmar importacao</button>
+                  <button type="button" id="accept-statement-balance-button">Aceitar saldo</button>
+                  <button type="button" id="adjust-balance-manually-button">Manual</button>
+                </div>
+              </form>
+            </article>
+          </div>
         </section>
-      </div><!-- /db2-panels -->
+      </div>
     </main>
 
     <aside id="app-sidebar" class="dashboard-sidebar dashboard-sidebar-hidden" aria-hidden="true"></aside>

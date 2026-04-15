@@ -28,6 +28,10 @@
 
   window.AppShell.initAppShell();
 
+  function getSyncApi() {
+    return window.MFinanceiroSupabaseSync || null;
+  }
+
   function showCardsMessage(type, text) {
     if (!cardsMessage) {
       return;
@@ -202,7 +206,7 @@
       .join("");
   }
 
-  function handleCardSubmit(event) {
+  async function handleCardSubmit(event) {
     event.preventDefault();
     const editId = cardForm.dataset.editId;
 
@@ -221,7 +225,11 @@
       return;
     }
 
-    saveCard(payload);
+    if (getSyncApi()?.addCard) {
+      await getSyncApi().addCard(payload);
+    } else {
+      saveCard(payload);
+    }
     cardForm.reset();
     resetFormMode(cardForm, "Salvar cartao");
     renderCardsPage();
@@ -229,7 +237,7 @@
     showCardsMessage("success", editId ? "Cartao atualizado com sucesso." : "Cartao salvo com sucesso.");
   }
 
-  function handleLaunchSubmit(event) {
+  async function handleLaunchSubmit(event) {
     event.preventDefault();
     const editId = launchForm.dataset.editId;
 
@@ -253,7 +261,11 @@
       payload.status = existingLaunch?.status || "pendente";
     }
 
-    saveCardExpense(payload);
+    if (getSyncApi()?.addCardExpense) {
+      await getSyncApi().addCardExpense(payload);
+    } else {
+      saveCardExpense(payload);
+    }
     launchForm.reset();
     resetFormMode(launchForm, "Salvar gasto da fatura");
     renderCardsPage();
@@ -264,7 +276,7 @@
     );
   }
 
-  function handleCardsTableClick(event) {
+  async function handleCardsTableClick(event) {
     const button = event.target.closest("button[data-action]");
 
     if (!button) {
@@ -292,11 +304,15 @@
     }
 
     if (action === "delete-card") {
-      updateCardsData((draft) => {
-        draft.cartoes = draft.cartoes.filter((card) => card.id !== id);
-        draft.lancamentosCartao = draft.lancamentosCartao.filter((launch) => launch.cartaoId !== id);
-        return draft;
-      });
+      if (getSyncApi()?.deleteCard) {
+        await getSyncApi().deleteCard(id);
+      } else {
+        updateCardsData((draft) => {
+          draft.cartoes = draft.cartoes.filter((card) => card.id !== id);
+          draft.lancamentosCartao = draft.lancamentosCartao.filter((launch) => launch.cartaoId !== id);
+          return draft;
+        });
+      }
       renderCardsPage();
       showCardsMessage("success", "Cartao removido com seus gastos.");
       return;
@@ -320,51 +336,89 @@
     }
 
     if (action === "toggle-launch") {
-      updateCardsData((draft) => {
-        draft.lancamentosCartao = draft.lancamentosCartao.map((launch) => {
-          if (launch.id !== id) {
-            return launch;
-          }
+      const currentLaunch = loadCardExpenseForEdit(id);
 
-          return {
-            ...launch,
-            status: launch.status === "pago" ? "pendente" : "pago",
-          };
+      if (!currentLaunch) {
+        return;
+      }
+
+      if (getSyncApi()?.addCardExpense) {
+        await getSyncApi().addCardExpense({
+          ...currentLaunch,
+          status: currentLaunch.status === "pago" ? "pendente" : "pago",
         });
-        return draft;
-      });
+      } else {
+        updateCardsData((draft) => {
+          draft.lancamentosCartao = draft.lancamentosCartao.map((launch) => {
+            if (launch.id !== id) {
+              return launch;
+            }
+
+            return {
+              ...launch,
+              status: launch.status === "pago" ? "pendente" : "pago",
+            };
+          });
+          return draft;
+        });
+      }
       renderCardsPage();
       showCardsMessage("success", "Status do gasto da fatura atualizado.");
       return;
     }
 
     if (action === "delete-launch") {
-      updateCardsData((draft) => {
-        draft.lancamentosCartao = draft.lancamentosCartao.filter((launch) => launch.id !== id);
-        return draft;
-      });
+      if (getSyncApi()?.deleteCardExpense) {
+        await getSyncApi().deleteCardExpense(id);
+      } else {
+        updateCardsData((draft) => {
+          draft.lancamentosCartao = draft.lancamentosCartao.filter((launch) => launch.id !== id);
+          return draft;
+        });
+      }
       renderCardsPage();
       showCardsMessage("success", "Gasto da fatura removido.");
     }
   }
 
   if (cardForm) {
-    cardForm.addEventListener("submit", handleCardSubmit);
+    cardForm.addEventListener("submit", (event) => {
+      handleCardSubmit(event).catch((error) => {
+        console.error("[Cartoes] Falha ao salvar cartao.", error);
+        showCardsMessage("error", "Nao foi possivel salvar o cartao.");
+      });
+    });
   }
 
   if (launchForm) {
-    launchForm.addEventListener("submit", handleLaunchSubmit);
+    launchForm.addEventListener("submit", (event) => {
+      handleLaunchSubmit(event).catch((error) => {
+        console.error("[Cartoes] Falha ao salvar gasto da fatura.", error);
+        showCardsMessage("error", "Nao foi possivel salvar o gasto da fatura.");
+      });
+    });
   }
 
   if (cardsTableBody) {
-    cardsTableBody.addEventListener("click", handleCardsTableClick);
+    cardsTableBody.addEventListener("click", (event) => {
+      handleCardsTableClick(event).catch((error) => {
+        console.error("[Cartoes] Falha ao atualizar cartao.", error);
+        showCardsMessage("error", "Nao foi possivel atualizar o cartao.");
+      });
+    });
   }
 
   if (launchesTableBody) {
-    launchesTableBody.addEventListener("click", handleCardsTableClick);
+    launchesTableBody.addEventListener("click", (event) => {
+      handleCardsTableClick(event).catch((error) => {
+        console.error("[Cartoes] Falha ao atualizar gasto da fatura.", error);
+        showCardsMessage("error", "Nao foi possivel atualizar o gasto da fatura.");
+      });
+    });
   }
 
   window.addEventListener("finance-data-updated", renderCardsPage);
+  window.addEventListener("mfinanceiro-supabase-hydrated", renderCardsPage);
   window.addEventListener("storage", renderCardsPage);
 
   renderCardsPage();

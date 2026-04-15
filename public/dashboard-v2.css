@@ -657,10 +657,11 @@ html:has(body.db2-body) {
 /* ── ROW 3: Chart + Summary ── */
 .db2-chart-row {
   display: grid;
-  grid-template-columns: minmax(0, 1.55fr) minmax(15rem, 0.78fr) minmax(20rem, 1.22fr);
+  grid-template-columns: minmax(0, 1.2fr) minmax(16rem, 1fr) minmax(0, 1.2fr);
   gap: var(--db2-gap);
   flex: 1 1 0;
   min-height: 0;
+  align-items: stretch;
 }
 
 /* Chart card */
@@ -675,6 +676,8 @@ html:has(body.db2-body) {
   backdrop-filter: var(--db2-blur);
   -webkit-backdrop-filter: var(--db2-blur);
   overflow: hidden;
+  min-height: 0;
+  height: 100%;
 }
 
 .db2-chart-header {
@@ -711,23 +714,26 @@ html:has(body.db2-body) {
   flex-direction: column;
   justify-content: space-between;
   gap: 0.85rem;
-  padding: 0.95rem 1rem;
+  padding: 12px 14px;
   background: var(--db2-surface);
   border: 1px solid var(--db2-border);
   border-radius: var(--db2-radius);
   backdrop-filter: var(--db2-blur);
   -webkit-backdrop-filter: var(--db2-blur);
   overflow: hidden;
+  min-height: 0;
+  height: 100%;
 }
 
 .db2-rhythm-card {
   display: flex;
   flex-direction: column;
   gap: 0.9rem;
-  padding: 1rem 1.05rem 1rem;
+  padding: 12px 14px;
   min-width: 0;
   min-height: 0;
   overflow: hidden;
+  height: 100%;
 }
 
 .db2-rhythm-header {
@@ -923,6 +929,9 @@ html:has(body.db2-body) {
 
 .db2-stat-value--category {
   font-size: 13px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .db2-stat-note {
@@ -1002,10 +1011,11 @@ html:has(body.db2-body) {
 /* ── ROW 4: Bottom 3 cards ── */
 .db2-bottom-row {
   display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
+  grid-template-columns: repeat(4, minmax(0, 1fr));
   gap: var(--db2-gap);
   flex: 0.82 1 0;
   min-height: 0;
+  align-items: stretch;
 }
 
 .db2-bottom-card {
@@ -1020,6 +1030,17 @@ html:has(body.db2-body) {
   -webkit-backdrop-filter: var(--db2-blur);
   overflow: hidden;
   min-height: 0;
+  height: 100%;
+}
+
+.db2-kpi,
+.db2-alert-card,
+.db2-insight-card,
+.db2-chart-card,
+.db2-summary-card,
+.db2-rhythm-card,
+.db2-bottom-card {
+  box-sizing: border-box;
 }
 
 .db2-bottom-card-footer {
@@ -1032,10 +1053,6 @@ html:has(body.db2-body) {
 
 .dashboard-card-summary-list {
   margin-top: 4px;
-}
-
-.db2-bottom-row > :last-child {
-  grid-column: 1 / -1;
 }
 
 .db2-bottom-header {
@@ -1103,10 +1120,11 @@ html:has(body.db2-body) {
   display: flex;
   flex-direction: column;
   gap: 6px;
-  overflow: hidden;
+  overflow: auto;
   list-style: none;
   padding: 0;
   margin: 0;
+  min-height: 0;
 }
 
 /* ═══════════════ FOOTER ═══════════════ */
@@ -1790,7 +1808,7 @@ body[data-page="banking"] .banking-form-actions .secondary-button {
 }
 
 .db2-panel[data-dashboard-panel="details"] .dashboard-secondary-grid {
-  grid-template-columns: minmax(0, 1.15fr) minmax(0, 1fr);
+  grid-template-columns: repeat(2, minmax(0, 1fr));
   grid-template-rows: minmax(0, 0.82fr) minmax(0, 1fr);
   grid-template-areas:
     "summary evolution"
@@ -2060,6 +2078,10 @@ body[data-page="banking"] .banking-form-actions .secondary-button {
 .db2-panel[data-dashboard-panel="history"] .history-day-count {
   color: var(--db2-text-secondary);
   font-size: 0.72rem;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 100%;
 }
 
 .db2-panel[data-dashboard-panel="history"] .history-day-summary-meta {
@@ -2234,49 +2256,69 @@ body[data-page="banking"] .banking-form-actions .secondary-button {
   display: flex;
   flex-direction: column;
   position: relative;
-  padding: 0 0.25rem 0.15rem 0.1rem;
+  padding: 0.15rem 0.35rem 0.35rem 4.6rem;
+  min-width: 0;
+  overflow: visible;
 }
 
 .projection-chart-svg {
   flex: 1;
   width: 100%;
   height: 100%;
+  overflow: visible;
 }
 
 .projection-chart-axis-x {
   display: flex;
   position: relative;
-  height: 18px;
+  height: 32px;
   flex-shrink: 0;
-  margin-top: 0.1rem;
+  margin-top: 0.35rem;
+  padding-right: 0.5rem;
 }
 
 .projection-chart-axis-x span {
   position: absolute;
-  font-size: 8px;
+  font-size: 9px;
   color: var(--db2-text-muted);
   transform: translateX(-50%);
   white-space: nowrap;
+  max-width: 5rem;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  text-align: center;
+  line-height: 1.15;
 }
 
 .projection-chart-axis-y {
   position: absolute;
-  left: 0;
-  top: 2px;
+  left: 0.25rem;
+  top: 0.2rem;
   display: flex;
   flex-direction: column;
-  height: calc(100% - 18px);
-  width: 0;
+  height: calc(100% - 2rem);
+  width: 4rem;
   pointer-events: none;
 }
 
 .projection-chart-axis-y span {
   position: absolute;
-  font-size: 8px;
+  font-size: 9px;
   color: var(--db2-text-muted);
-  right: calc(100% + 6px);
+  right: 0;
   transform: translateY(-50%);
   white-space: nowrap;
+  text-align: right;
+}
+
+.projection-chart-x-edge-left {
+  transform: translateX(0) !important;
+  text-align: left !important;
+}
+
+.projection-chart-x-edge-right {
+  transform: translateX(-100%) !important;
+  text-align: right !important;
 }
 
 .projection-grid-line { stroke: rgba(255,255,255,0.05); stroke-width: 1; }
@@ -2373,10 +2415,6 @@ body[data-page="banking"] .banking-form-actions .secondary-button {
 
   .db2-bottom-row {
     grid-template-columns: repeat(2, minmax(0, 1fr));
-  }
-
-  .db2-bottom-row > :last-child {
-    grid-column: 1 / -1;
   }
 }
 
@@ -2486,10 +2524,6 @@ body[data-page="banking"] .banking-form-actions .secondary-button {
     flex: 0.72 1 0;
   }
 
-  .db2-bottom-row > :last-child {
-    grid-column: 1 / -1;
-  }
-
   .db2-bottom-header,
   .db2-chart-header,
   .db2-summary-header,
@@ -2539,7 +2573,7 @@ body[data-page="banking"] .banking-form-actions .secondary-button {
   }
 
   .db2-chart-row {
-    grid-template-columns: minmax(0, 1.45fr) minmax(14rem, 0.76fr) minmax(18rem, 1.24fr);
+    grid-template-columns: minmax(0, 1.15fr) minmax(15rem, 1fr) minmax(0, 1.15fr);
   }
 }
 
@@ -2572,6 +2606,25 @@ body[data-page="banking"] .banking-form-actions .secondary-button {
   border-radius: var(--db2-radius) !important;
   backdrop-filter: var(--db2-blur) !important;
   -webkit-backdrop-filter: var(--db2-blur) !important;
+  min-width: 0 !important;
+  max-width: 100% !important;
+  overflow-wrap: anywhere !important;
+}
+.db2-summary-card, .db2-chart-card, .db2-rhythm-card, .db2-bottom-card,
+.detail-row, .summary-preview-grid .detail-row, .banking-overview-card,
+.receipt-inline-section {
+  min-width: 0 !important;
+  max-width: 100% !important;
+}
+.db2-chart-area, .db2-rhythm-chart-shell, .dashboard-card-summary-list,
+.recent-transactions-list, .db2-category-list, .summary-preview-grid,
+.base-finance-grid, .receipt-grid, .detail-list {
+  min-width: 0 !important;
+  max-width: 100% !important;
+}
+.db2-section-sub, .section-note, .db2-bottom-sub, .db2-stat-note,
+.banking-overview-meta, .detail-row span, .detail-row strong {
+  overflow-wrap: anywhere !important;
 }
 .balance-highlight-section {
   background: linear-gradient(135deg, rgba(129,140,248,0.1), rgba(56,189,248,0.05)) !important;
@@ -2765,7 +2818,7 @@ body[data-page="banking"] .banking-shell-card .subtle-panel {
 
 body[data-page="banking"] .base-finance-form {
   display: grid !important;
-  grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
+  grid-template-columns: minmax(0, 1.1fr) minmax(0, 1.1fr) minmax(18rem, 0.95fr) !important;
   grid-template-areas:
     "saldo salario ciclo"
     "recebimento beneficios ciclo"
@@ -2779,6 +2832,7 @@ body[data-page="banking"] .base-finance-form {
   height: auto !important;
   overflow: visible !important;
   align-items: start !important;
+  min-width: 0 !important;
 }
 
 body[data-page="banking"] .base-finance-form > .base-finance-grid {
@@ -2806,6 +2860,8 @@ body[data-page="banking"] .base-finance-form .receipt-inline-section {
   min-height: 0 !important;
   height: auto !important;
   align-self: start !important;
+  min-width: 0 !important;
+  overflow: hidden !important;
 }
 
 body[data-page="banking"] .base-finance-form .banking-form-actions {
@@ -2826,11 +2882,13 @@ body[data-page="banking"] .summary-preview-section.banking-impact-section {
 
 body[data-page="banking"] .summary-preview-section.banking-impact-section .summary-preview-grid {
   grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+  align-items: stretch !important;
 }
 
 body[data-page="banking"] .banking-overview-strip {
   display: grid !important;
   grid-template-columns: repeat(4, minmax(0, 1fr)) !important;
+  align-items: stretch !important;
 }
 
 @media (max-width: 1100px) {
@@ -2851,5 +2909,484 @@ body[data-page="banking"] .banking-overview-strip {
   body[data-page="banking"] .banking-overview-strip,
   body[data-page="banking"] .summary-preview-section.banking-impact-section .summary-preview-grid {
     grid-template-columns: 1fr !important;
+  }
+}
+
+/* Rebuild Base Financeira */
+body[data-page="banking"] .db2-panel.is-active,
+body[data-page="banking"] .banking-page-grid--rebuilt,
+body[data-page="banking"] .banking-shell-card--rebuilt,
+body[data-page="banking"] .base-finance-form--rebuilt {
+  min-height: 0;
+  height: auto;
+}
+
+body[data-page="banking"] .banking-page-grid--rebuilt {
+  padding: 0.75rem !important;
+  overflow: auto !important;
+}
+
+body[data-page="banking"] .banking-shell-card--rebuilt {
+  padding: 1rem !important;
+  overflow: visible !important;
+  display: grid !important;
+  grid-template-rows: auto auto;
+  gap: 0.75rem;
+}
+
+body[data-page="banking"] .banking-hero--rebuilt {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 0;
+}
+
+body[data-page="banking"] .banking-hero-copy {
+  display: grid;
+  gap: 0.2rem;
+}
+
+body[data-page="banking"] .banking-hero-title {
+  margin: 0;
+  font-size: clamp(2rem, 2.8vw, 2.6rem);
+  line-height: 1.04;
+}
+
+body[data-page="banking"] .banking-hero--rebuilt .section-subtitle {
+  max-width: 42rem;
+  margin: 0;
+}
+
+body[data-page="banking"] .base-finance-form--rebuilt {
+  display: grid !important;
+  grid-template-columns: repeat(12, minmax(0, 1fr)) !important;
+  grid-template-areas:
+    "kpis kpis kpis kpis kpis kpis kpis kpis kpis kpis kpis kpis"
+    "receipt receipt receipt receipt receipt receipt receipt cycleview cycleview cycleview cycleview cycleview"
+    "discounted discounted discounted discounted benefits benefits benefits benefits impact impact impact impact"
+    "balance balance balance balance salary salary salary salary cycle cycle cycle cycle"
+    "extras extras extras extras extras extras extras extras extras extras extras extras";
+  grid-auto-rows: auto;
+  gap: 0.95rem !important;
+  align-items: start !important;
+  align-content: start !important;
+  overflow: visible !important;
+}
+
+body[data-page="banking"] .base-finance-form--rebuilt > .banking-card,
+body[data-page="banking"] .base-finance-form--rebuilt > .banking-card-shell {
+  min-width: 0;
+  min-height: 0;
+  padding: 1rem !important;
+  border-radius: 20px;
+  background:
+    linear-gradient(180deg, rgba(255,255,255,0.055), rgba(255,255,255,0.025)),
+    rgba(14, 20, 38, 0.92) !important;
+  border: 1px solid rgba(136, 148, 185, 0.16) !important;
+  box-shadow: 0 18px 28px rgba(3, 8, 20, 0.14);
+  display: grid;
+  grid-template-rows: auto auto;
+  gap: 0.9rem;
+  overflow: visible;
+}
+
+body[data-page="banking"] .banking-kpi-row {
+  grid-area: kpis;
+}
+
+body[data-page="banking"] .base-finance-form--rebuilt > .banking-card--receipt {
+  grid-area: receipt;
+  min-height: 19rem;
+  border-color: rgba(96,165,250,0.28) !important;
+  box-shadow: 0 0 0 1px rgba(96,165,250,0.18), 0 18px 28px rgba(3, 8, 20, 0.14), 0 0 32px rgba(96,165,250,0.12);
+}
+
+body[data-page="banking"] .base-finance-form--rebuilt > .banking-card--cycle-visual {
+  grid-area: cycleview;
+  min-height: 19rem;
+  border-color: rgba(251,191,36,0.24) !important;
+  box-shadow: 0 0 0 1px rgba(251,191,36,0.16), 0 18px 28px rgba(3, 8, 20, 0.14), 0 0 32px rgba(251,191,36,0.08);
+}
+
+body[data-page="banking"] .base-finance-form--rebuilt > .banking-card--discounted {
+  grid-area: discounted;
+  min-height: 16rem;
+  border-color: rgba(248,113,113,0.22) !important;
+}
+
+body[data-page="banking"] .base-finance-form--rebuilt > .banking-card--benefits {
+  grid-area: benefits;
+  min-height: 16rem;
+  border-color: rgba(74,222,128,0.2) !important;
+}
+
+body[data-page="banking"] .base-finance-form--rebuilt > .banking-card--actions {
+  grid-area: impact;
+  min-height: 16rem;
+  border-color: rgba(96,165,250,0.2) !important;
+}
+
+body[data-page="banking"] .base-finance-form--rebuilt > .banking-card--balance {
+  grid-area: balance;
+  min-height: 11.5rem;
+}
+
+body[data-page="banking"] .base-finance-form--rebuilt > .banking-card--salary {
+  grid-area: salary;
+  min-height: 11.5rem;
+}
+
+body[data-page="banking"] .base-finance-form--rebuilt > .banking-card--cycle {
+  grid-area: cycle;
+  min-height: 11.5rem;
+}
+
+body[data-page="banking"] .base-finance-form--rebuilt > .banking-card--extras {
+  grid-area: extras;
+  min-height: 13rem;
+}
+
+body[data-page="banking"] .banking-kpi-row {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 0.85rem;
+}
+
+body[data-page="banking"] .banking-kpi-card {
+  min-width: 0;
+  border-radius: 18px;
+  padding: 1.05rem 1.1rem;
+  border: 1px solid rgba(136, 148, 185, 0.16);
+  background:
+    radial-gradient(circle at 100% 100%, rgba(96,165,250,0.12), transparent 18%),
+    linear-gradient(180deg, rgba(255,255,255,0.05), rgba(255,255,255,0.025)),
+    rgba(14, 20, 38, 0.92);
+  display: flex;
+  align-items: flex-start;
+  gap: 0.85rem;
+  box-shadow: 0 18px 28px rgba(3, 8, 20, 0.14);
+}
+
+body[data-page="banking"] .banking-kpi-card--green { border-color: rgba(52,211,153,0.2); }
+body[data-page="banking"] .banking-kpi-card--purple { border-color: rgba(167,139,250,0.2); }
+body[data-page="banking"] .banking-kpi-card--gold { border-color: rgba(251,191,36,0.2); }
+
+body[data-page="banking"] .banking-kpi-icon {
+  width: 2.75rem;
+  height: 2.75rem;
+  border-radius: 999px;
+  background: linear-gradient(180deg, rgba(255,255,255,0.18), rgba(255,255,255,0.04));
+  box-shadow: inset 0 1px 0 rgba(255,255,255,0.12);
+  flex: 0 0 auto;
+}
+
+body[data-page="banking"] .banking-kpi-copy {
+  display: grid;
+  gap: 0.3rem;
+  min-width: 0;
+}
+
+body[data-page="banking"] .banking-kpi-label {
+  font-size: 0.78rem;
+  color: var(--db2-text-sec);
+}
+
+body[data-page="banking"] .banking-kpi-copy strong {
+  font-size: clamp(1.05rem, 1.4vw, 1.8rem);
+  color: var(--db2-text-primary);
+}
+
+body[data-page="banking"] .banking-kpi-copy small {
+  color: var(--db2-text-muted);
+  font-size: 0.78rem;
+}
+
+body[data-page="banking"] .banking-card-head,
+body[data-page="banking"] .banking-card-body {
+  min-width: 0;
+}
+
+body[data-page="banking"] .banking-card-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 0.75rem;
+}
+
+body[data-page="banking"] .banking-card-head h3 {
+  margin: 0.2rem 0 0;
+  font-size: 1.05rem;
+}
+
+body[data-page="banking"] .banking-card-summary {
+  font-size: 0.78rem;
+  color: var(--db2-text-sec);
+  text-align: right;
+  max-width: 14rem;
+}
+
+body[data-page="banking"] .banking-card-summary--foot {
+  margin-top: auto;
+}
+
+body[data-page="banking"] .banking-card-body {
+  display: grid;
+  gap: 0.85rem;
+  min-height: auto;
+}
+
+body[data-page="banking"] .banking-card--balance .banking-card-body,
+body[data-page="banking"] .banking-card--salary .banking-card-body,
+body[data-page="banking"] .banking-card--cycle .banking-card-body,
+body[data-page="banking"] .banking-card--extras .banking-card-body {
+  gap: 0.7rem;
+}
+
+body[data-page="banking"] .banking-grid--receipt {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+body[data-page="banking"] .banking-grid {
+  display: grid;
+  gap: 0.75rem;
+  min-width: 0;
+}
+
+body[data-page="banking"] .banking-grid--cycle,
+body[data-page="banking"] .banking-grid--salary,
+body[data-page="banking"] .banking-grid--benefit,
+body[data-page="banking"] .banking-grid--extras {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+body[data-page="banking"] .banking-grid--inline {
+  grid-template-columns: minmax(0, 1.4fr) minmax(0, 0.8fr) auto;
+  align-items: end;
+}
+
+body[data-page="banking"] .banking-grid .field,
+body[data-page="banking"] .banking-grid button {
+  min-width: 0;
+}
+
+body[data-page="banking"] .banking-segmented {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.45rem;
+}
+
+body[data-page="banking"] .banking-segmented-btn {
+  border: 1px solid var(--db2-border);
+  background: rgba(255,255,255,0.03);
+  color: var(--db2-text-sec);
+  border-radius: 12px;
+  min-height: 2.75rem;
+  font: inherit;
+  cursor: pointer;
+}
+
+body[data-page="banking"] .banking-segmented-btn.is-active {
+  color: var(--db2-text-primary);
+  border-color: rgba(129,140,248,0.32);
+  background: rgba(129,140,248,0.14);
+}
+
+body[data-page="banking"] .salary-confirmation-panel--rebuilt {
+  padding: 0;
+  border: none;
+  background: transparent;
+}
+
+body[data-page="banking"] .salary-confirmation-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.55rem;
+}
+
+body[data-page="banking"] .banking-compact-list {
+  display: grid;
+  gap: 0.55rem;
+  align-content: start;
+  min-height: auto;
+  overflow: visible;
+}
+
+body[data-page="banking"] .banking-card--actions .banking-form-actions {
+  justify-content: stretch;
+  gap: 0.75rem;
+  margin-top: auto;
+}
+
+body[data-page="banking"] .banking-receipt-summary,
+body[data-page="banking"] .banking-cycle-stats,
+body[data-page="banking"] .banking-impact-grid {
+  display: grid;
+  gap: 0.75rem;
+}
+
+body[data-page="banking"] .banking-receipt-summary,
+body[data-page="banking"] .banking-cycle-stats {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+body[data-page="banking"] .banking-receipt-metric,
+body[data-page="banking"] .banking-cycle-stat,
+body[data-page="banking"] .banking-impact-node {
+  border: 1px solid rgba(136, 148, 185, 0.14);
+  background: rgba(255,255,255,0.03);
+  border-radius: 14px;
+  padding: 0.9rem 1rem;
+  display: grid;
+  gap: 0.35rem;
+}
+
+body[data-page="banking"] .banking-receipt-metric span,
+body[data-page="banking"] .banking-cycle-stat span,
+body[data-page="banking"] .banking-impact-node span {
+  color: var(--db2-text-sec);
+  font-size: 0.78rem;
+}
+
+body[data-page="banking"] .banking-receipt-metric strong,
+body[data-page="banking"] .banking-cycle-stat strong,
+body[data-page="banking"] .banking-impact-node strong {
+  color: var(--db2-text-primary);
+  font-size: 1.15rem;
+}
+
+body[data-page="banking"] .banking-receipt-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 0.75rem;
+}
+
+body[data-page="banking"] .banking-cycle-progress-block {
+  display: grid;
+  grid-template-columns: minmax(0, 13rem) minmax(0, 1fr);
+  gap: 1rem;
+  align-items: center;
+}
+
+body[data-page="banking"] .banking-cycle-progress-copy {
+  display: grid;
+  gap: 0.25rem;
+}
+
+body[data-page="banking"] .banking-cycle-progress-copy span,
+body[data-page="banking"] .banking-cycle-progress-copy small {
+  color: var(--db2-text-sec);
+}
+
+body[data-page="banking"] .banking-cycle-progress-copy strong {
+  font-size: 1.3rem;
+  color: #f8b84f;
+}
+
+body[data-page="banking"] .banking-cycle-progress-track {
+  height: 0.7rem;
+  border-radius: 999px;
+  background: rgba(255,255,255,0.08);
+  overflow: hidden;
+}
+
+body[data-page="banking"] .banking-cycle-progress-track > span {
+  display: block;
+  width: 0%;
+  height: 100%;
+  border-radius: inherit;
+  background: linear-gradient(90deg, #f8b84f, #f59e0b);
+}
+
+body[data-page="banking"] .banking-impact-grid {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+body[data-page="banking"] .banking-card-body--actions {
+  height: 100%;
+}
+
+body[data-page="banking"] .banking-card--actions .banking-form-actions .primary-button,
+body[data-page="banking"] .banking-card--actions .banking-form-actions .secondary-button {
+  flex: 1 1 0;
+  min-width: 0;
+}
+
+body[data-page="banking"] .banking-impact-node--blue { border-color: rgba(96,165,250,0.2); }
+body[data-page="banking"] .banking-impact-node--green { border-color: rgba(52,211,153,0.2); }
+body[data-page="banking"] .banking-impact-node--gold { border-color: rgba(251,191,36,0.2); }
+
+body[data-page="banking"] .base-finance-form--rebuilt.is-readonly [data-editable] {
+  opacity: 0.78;
+}
+
+body[data-page="banking"] .banking-compatibility-layer {
+  display: none !important;
+}
+
+@media (max-width: 1280px) {
+  body[data-page="banking"] .banking-kpi-row,
+  body[data-page="banking"] .banking-receipt-summary,
+  body[data-page="banking"] .banking-cycle-stats,
+  body[data-page="banking"] .banking-impact-grid,
+  body[data-page="banking"] .banking-cycle-progress-block {
+    grid-template-columns: 1fr;
+  }
+
+  body[data-page="banking"] .base-finance-form--rebuilt {
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+    grid-template-areas:
+      "kpis kpis"
+      "receipt receipt"
+      "cycleview cycleview"
+      "discounted benefits"
+      "impact impact"
+      "balance salary"
+      "cycle extras";
+    overflow: auto !important;
+  }
+
+  body[data-page="banking"] .base-finance-form--rebuilt > .banking-card,
+  body[data-page="banking"] .base-finance-form--rebuilt > .banking-card-shell {
+    grid-column: auto !important;
+  }
+}
+
+@media (max-width: 820px) {
+  body[data-page="banking"] .banking-shell-card--rebuilt {
+    padding: 0.9rem !important;
+  }
+
+  body[data-page="banking"] .banking-hero--rebuilt {
+    flex-direction: column;
+    gap: 0.65rem;
+  }
+
+  body[data-page="banking"] .base-finance-form--rebuilt {
+    grid-template-columns: 1fr !important;
+    grid-template-areas:
+      "kpis"
+      "receipt"
+      "cycleview"
+      "discounted"
+      "benefits"
+      "impact"
+      "balance"
+      "salary"
+      "cycle"
+      "extras";
+  }
+
+  body[data-page="banking"] .banking-kpi-row,
+  body[data-page="banking"] .banking-grid--receipt,
+  body[data-page="banking"] .banking-grid--cycle,
+  body[data-page="banking"] .banking-grid--salary,
+  body[data-page="banking"] .banking-grid--benefit,
+  body[data-page="banking"] .banking-grid--extras,
+  body[data-page="banking"] .banking-grid--inline,
+  body[data-page="banking"] .banking-segmented,
+  body[data-page="banking"] .banking-card--actions .banking-form-actions {
+    grid-template-columns: 1fr !important;
+    display: grid;
   }
 }

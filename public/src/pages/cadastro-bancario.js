@@ -64,6 +64,30 @@
   const salarioLiquidoManualField = document.getElementById("salarioLiquidoManualField");
   const salarioLiquidoManualInput = document.getElementById("salarioLiquidoManual");
   const salaryModeButtons = Array.from(document.querySelectorAll("[data-salary-liquido-mode]"));
+  const cycleTypeButtons = Array.from(document.querySelectorAll("[data-cycle-type]"));
+  const cycleDate1Input = document.getElementById("cycle-date-1");
+  const cycleDate2Input = document.getElementById("cycle-date-2");
+  const discountedBenefitsChip = document.getElementById("discounted-benefits-chip");
+  const extrasStatusChip = document.getElementById("extras-status-chip");
+  const bankingEditStatusChip = document.getElementById("banking-edit-status-chip");
+  const bankingImpactNextPayment = document.getElementById("banking-impact-next-payment");
+  const bankingCycleDay = document.getElementById("banking-cycle-day");
+  const bankingCycleStart = document.getElementById("banking-cycle-start");
+  const bankingCycleEnd = document.getElementById("banking-cycle-end");
+  const bankingCycleProgressLabel = document.getElementById("banking-cycle-progress-label");
+  const bankingCycleProgressFill = document.getElementById("banking-cycle-progress-fill");
+  const salaryEstimatedConfirmedInput = document.getElementById("salario-estimado-confirmado");
+  const benefitsList = document.getElementById("benefits-list");
+  const benefitNameInput = document.getElementById("benefit-name");
+  const benefitDateInput = document.getElementById("benefit-date");
+  const benefitValueInput = document.getElementById("benefit-value");
+  const addBenefitButton = document.getElementById("add-benefit-button");
+  const extraIncomeList = document.getElementById("extra-income-list");
+  const extraIncomeTypeInput = document.getElementById("extra-income-type");
+  const extraIncomeDescriptionInput = document.getElementById("extra-income-description");
+  const extraIncomeDateInput = document.getElementById("extra-income-date");
+  const extraIncomeValueInput = document.getElementById("extra-income-value");
+  const addExtraIncomeButton = document.getElementById("add-extra-income-button");
   const balanceAccordionSummary = document.getElementById("balance-accordion-summary");
   const salaryAccordionSummary = document.getElementById("salary-accordion-summary");
   const discountsAccordionSummary = document.getElementById("discounts-accordion-summary");
@@ -81,6 +105,10 @@
   let statementUnstructuredState = null;
   let salarioLiquidoModoState = "auto";
   let salarioLiquidoManualState = 0;
+  let salarioEstimadoConfirmadoState = false;
+  let nonDiscountedBenefitsState = [];
+  let extraIncomesState = [];
+  let bankingEditingLocked = true;
 
   window.AppShell.initAppShell();
 
@@ -105,6 +133,114 @@
     target.className = `message-box ${type}`;
   }
 
+  function setCycleType(type) {
+    const normalizedType = type === "ciclo2" ? "ciclo2" : "ciclo1";
+    tipoCicloInput.value = normalizedType;
+    cycleTypeButtons.forEach((button) => {
+      const isActive = button.dataset.cycleType === normalizedType;
+      button.classList.toggle("is-active", isActive);
+      button.setAttribute("aria-pressed", String(isActive));
+    });
+  }
+
+  function updateBankingEditState() {
+    const editableElements = Array.from(document.querySelectorAll("[data-editable]"));
+    editableElements.forEach((element) => {
+      if ("disabled" in element) {
+        element.disabled = bankingEditingLocked;
+      }
+    });
+
+    bankingForm?.classList.toggle("is-readonly", bankingEditingLocked);
+    if (bankingEditStatusChip) {
+      bankingEditStatusChip.textContent = bankingEditingLocked ? "Bloqueado" : "Edicao liberada";
+    }
+  }
+
+  function createCompatibilityBenefitFromItem(item) {
+    return {
+      ativo: true,
+      valor: toBankingNumber(item?.valor),
+      dataRecebimento: getDayFromInputDate(item?.dataPrevista || item?.dataRecebimento),
+      descontadoEmFolha: false,
+      contabilizarNoSaldo: true,
+      descricao: item?.descricao || item?.nome || "Beneficio",
+      tipo: item?.tipo || "beneficio",
+    };
+  }
+
+  function getLegacyDiscountItems(banking) {
+    const legacyItems = [];
+    const pushIfPositive = (nome, valor) => {
+      const normalizedValue = toBankingNumber(valor);
+      if (normalizedValue > 0) {
+        legacyItems.push({
+          id: createId("desconto_legado"),
+          nome,
+          valor: normalizedValue,
+        });
+      }
+    };
+
+    pushIfPositive("Plano de saude", banking?.descontosDetalhados?.planoSaude);
+    pushIfPositive("Plano odontologico", banking?.descontosDetalhados?.planoOdontologico);
+    pushIfPositive("VT", banking?.descontosDetalhados?.vt);
+    if (banking?.descontosDetalhados?.vrVaDescontadoEmFolha) {
+      pushIfPositive("VR/VA descontado", banking?.descontosDetalhados?.vrVa);
+    }
+
+    return legacyItems;
+  }
+
+  function getStoredNonDiscountedBenefits(data) {
+    const list = Array.isArray(data?.recebimentos?.beneficios?.lista)
+      ? data.recebimentos.beneficios.lista
+      : [];
+    const ownItems = list.filter((item) => item?.origemCadastro === "base-financeira-beneficio");
+
+    if (ownItems.length) {
+      return ownItems.map((item) => ({
+        id: item.id || createId("beneficio"),
+        nome: item.descricao || item.nome || item.tipo || "Beneficio",
+        valor: toBankingNumber(item.valor || item.valorPrevisto),
+        dataPrevista: normalizeStoredDate(item.dataRecebimento || item.dataPrevista),
+        tipo: item.tipo || "beneficio",
+      }));
+    }
+
+    const legacyBenefit = data?.banking?.beneficios?.vrVa;
+    if (
+      legacyBenefit &&
+      !legacyBenefit.descontadoEmFolha &&
+      toBankingNumber(legacyBenefit.valor) > 0
+    ) {
+      return [{
+        id: createId("beneficio_vrva"),
+        nome: "VR/VA",
+        valor: toBankingNumber(legacyBenefit.valor),
+        dataPrevista: buildCycleInputDate(legacyBenefit.dataRecebimento || 10),
+        tipo: "vrva",
+      }];
+    }
+
+    return [];
+  }
+
+  function getStoredExtraIncomes(data) {
+    const list = Array.isArray(data?.recebimentos?.lista)
+      ? data.recebimentos.lista
+      : [];
+    return list
+      .filter((item) => item?.origemCadastro === "base-financeira-extra")
+      .map((item) => ({
+        id: item.id || createId("extra"),
+        tipo: item.tipo || "extra",
+        descricao: item.descricao || "Recebimento extra",
+        dataPrevista: normalizeStoredDate(item.dataPrevista),
+        valor: toBankingNumber(item.valorPrevisto || item.valorRecebido),
+      }));
+  }
+
   function formatInputDate(value) {
     if (!value) {
       return "";
@@ -120,6 +256,46 @@
 
   function getTodayInputValue() {
     return new Date().toISOString().slice(0, 10);
+  }
+
+  function buildCycleInputDate(day, referenceDate = new Date()) {
+    const numericDay = Number(day || 0);
+    if (!numericDay) {
+      return "";
+    }
+
+    const baseDate = new Date(referenceDate);
+    const year = baseDate.getFullYear();
+    const month = baseDate.getMonth();
+    const lastDay = new Date(year, month + 1, 0).getDate();
+    const resolvedDate = new Date(year, month, Math.min(numericDay, lastDay));
+
+    if (resolvedDate < new Date(year, month, baseDate.getDate())) {
+      const nextMonthLastDay = new Date(year, month + 2, 0).getDate();
+      resolvedDate.setMonth(month + 1, Math.min(numericDay, nextMonthLastDay));
+    }
+
+    return resolvedDate.toISOString().slice(0, 10);
+  }
+
+  function getDayFromInputDate(value) {
+    if (!value || typeof value !== "string") {
+      return 0;
+    }
+
+    return Number(value.slice(8, 10)) || 0;
+  }
+
+  function normalizeStoredDate(value) {
+    if (!value) {
+      return "";
+    }
+
+    if (typeof value === "string" && /^\d{4}-\d{2}-\d{2}$/.test(value)) {
+      return value;
+    }
+
+    return formatInputDate(value);
   }
 
   // ============================================
@@ -1611,17 +1787,24 @@
   function syncCycleFields() {
     const isCycleTwo = tipoCicloInput.value === "ciclo2";
     getElement("diaPagamento2").disabled = !isCycleTwo;
-    diaPagamento2Wrapper.style.display = isCycleTwo ? "grid" : "none";
-    getElement("percentualPagamento1").parentElement.style.display = isCycleTwo ? "grid" : "none";
-    getElement("percentualPagamento2").parentElement.style.display = isCycleTwo ? "grid" : "none";
-    getElement("cycle-next-payment-value").parentElement.style.display = isCycleTwo ? "grid" : "none";
-    getElement("cycle-next-payment-date").parentElement.style.display = "none";
-    getElement("cycle-next-payment-days").parentElement.style.display = "none";
-    getElement("cycle-percent-total").parentElement.style.display = "none";
+    if (diaPagamento2Wrapper) {
+      diaPagamento2Wrapper.style.display = isCycleTwo ? "grid" : "none";
+    }
+    const cyclePercent1Field = getElement("cycle-percent-1-field");
+    const cyclePercent2Field = getElement("cycle-percent-2-field");
+    if (cyclePercent1Field) {
+      cyclePercent1Field.style.display = isCycleTwo ? "grid" : "none";
+    }
+    if (cyclePercent2Field) {
+      cyclePercent2Field.style.display = isCycleTwo ? "grid" : "none";
+    }
 
     if (!isCycleTwo) {
       getElement("percentualPagamento1").value = 100;
       getElement("percentualPagamento2").value = 0;
+      if (cycleDate2Input) {
+        cycleDate2Input.value = "";
+      }
     }
   }
 
@@ -1695,10 +1878,15 @@
   }
 
   function buildBankingPayload() {
-    const diasPagamento = [toBankingNumber(getElement("diaPagamento1").value)];
+    const firstPaymentDay = getDayFromInputDate(cycleDate1Input?.value) || toBankingNumber(getElement("diaPagamento1").value);
+    const secondPaymentDay = getDayFromInputDate(cycleDate2Input?.value) || toBankingNumber(getElement("diaPagamento2").value);
+    getElement("diaPagamento1").value = firstPaymentDay || "";
+    getElement("diaPagamento2").value = secondPaymentDay || "";
+
+    const diasPagamento = [firstPaymentDay];
 
     if (tipoCicloInput.value === "ciclo2") {
-      diasPagamento.push(toBankingNumber(getElement("diaPagamento2").value));
+      diasPagamento.push(secondPaymentDay);
     }
 
     const payload = {
@@ -1712,16 +1900,17 @@
         ultimoSaldoImportado: statementBalanceSuggestion,
       },
       salarioBruto: toBankingNumber(getElement("salarioBruto").value),
+      salarioEstimadoConfirmado: Boolean(salaryEstimatedConfirmedInput?.checked),
       salarioLiquidoModo: salarioLiquidoModoState,
       salarioLiquidoManual: salarioLiquidoModoState === "manual"
         ? toBankingNumber(salarioLiquidoManualInput?.value)
         : 0,
       descontosDetalhados: {
-        planoSaude: toBankingNumber(getElement("planoSaude").value),
-        planoOdontologico: toBankingNumber(getElement("planoOdontologico").value),
-        vt: toBankingNumber(getElement("vt").value),
-        vrVa: toBankingNumber(getElement("vrVa").value),
-        vrVaDescontadoEmFolha: getElement("vrVaDescontadoEmFolha").checked,
+        planoSaude: 0,
+        planoOdontologico: 0,
+        vt: 0,
+        vrVa: 0,
+        vrVaDescontadoEmFolha: false,
         outrosDescontos: [...outrosDescontosState],
       },
       tipoCiclo: tipoCicloInput.value,
@@ -1731,12 +1920,15 @@
         toBankingNumber(getElement("percentualPagamento2").value),
       ],
       beneficios: {
-        vrVa: {
-          ativo: toBankingNumber(getElement("vrVa").value) > 0,
-          valor: toBankingNumber(getElement("vrVa").value),
-          dataRecebimento: toBankingNumber(getElement("vrvaDataPrevista").value?.slice(8, 10)),
-          descontadoEmFolha: getElement("vrVaDescontadoEmFolha").checked,
-        },
+        vrVa: nonDiscountedBenefitsState.length
+          ? createCompatibilityBenefitFromItem(nonDiscountedBenefitsState[0])
+          : {
+            ativo: false,
+            valor: 0,
+            dataRecebimento: 10,
+            descontadoEmFolha: false,
+            contabilizarNoSaldo: true,
+          },
       },
     };
 
@@ -1961,6 +2153,21 @@
     getElement("cycle-next-payment-days").value = `${paymentInfo.daysRemaining} dia(s)`;
     getElement("cycle-next-payment-value").value = formatBankingCurrency(paymentInfo.value);
     getElement("cycle-percent-total").value = `${totalPercentage}%`;
+    if (bankingCycleDay) {
+      bankingCycleDay.textContent = paymentInfo?.nextDate
+        ? String(new Date(paymentInfo.nextDate).getDate()).padStart(2, "0")
+        : "--";
+    }
+    if (bankingCycleStart) {
+      bankingCycleStart.textContent = paymentInfo?.cycleStart
+        ? formatInputDate(paymentInfo.cycleStart)
+        : "--";
+    }
+    if (bankingCycleEnd) {
+      bankingCycleEnd.textContent = paymentInfo?.cycleEnd
+        ? formatInputDate(paymentInfo.cycleEnd)
+        : "--";
+    }
     updateAccordionSummaries();
   }
 
@@ -1977,6 +2184,25 @@
     bankingSummaryPayment.textContent = formatBankingCurrency(summary.paymentInfo.value);
     bankingSummaryDays.textContent = `${summary.diasRestantes} dia(s)`;
     bankingSummaryDaily.textContent = formatBankingCurrency(summary.limiteDiario);
+    if (bankingImpactNextPayment) {
+      bankingImpactNextPayment.textContent = formatBankingCurrency(summary.paymentInfo.value);
+    }
+    if (bankingCycleProgressLabel) {
+      const totalCycleDays = Math.max(
+        Math.round(
+          ((new Date(summary.paymentInfo.cycleEnd || new Date())).getTime() -
+            (new Date(summary.paymentInfo.cycleStart || new Date())).getTime()) /
+          (1000 * 60 * 60 * 24)
+        ),
+        1
+      );
+      const completedDays = Math.max(totalCycleDays - Number(summary.diasRestantes || 0), 0);
+      const progress = Math.max(0, Math.min((completedDays / totalCycleDays) * 100, 100));
+      bankingCycleProgressLabel.textContent = `${Math.round(progress)}% do ciclo concluido`;
+      if (bankingCycleProgressFill) {
+        bankingCycleProgressFill.style.width = `${progress}%`;
+      }
+    }
 
     if (bankingStripSaldo) {
       bankingStripSaldo.textContent = formatBankingCurrency(summary.saldoAtual);
@@ -2033,8 +2259,155 @@
       .join("");
   }
 
+  function renderNonDiscountedBenefits() {
+    if (!benefitsList) {
+      return;
+    }
+
+    if (!nonDiscountedBenefitsState.length) {
+      benefitsList.innerHTML = `
+        <div class="subtle-panel">
+          <strong>Nenhum beneficio configurado</strong>
+          <span class="section-note">Adicione beneficios que entram no saldo fora da folha.</span>
+        </div>
+      `;
+      if (beneficiosStatusChip) {
+        beneficiosStatusChip.textContent = "Sem beneficios ativos";
+      }
+      if (benefitsAccordionSummary) {
+        benefitsAccordionSummary.textContent = "Sem beneficios";
+      }
+      return;
+    }
+
+    benefitsList.innerHTML = nonDiscountedBenefitsState
+      .map((item) => `
+        <div class="list-row">
+          <div class="list-row-content">
+            <strong>${item.nome}</strong>
+            <span>${normalizeStoredDate(item.dataPrevista)} · ${formatBankingCurrency(item.valor)}</span>
+          </div>
+          <button type="button" class="ghost-button small-button" data-remove-benefit="${item.id}" ${bankingEditingLocked ? "disabled" : ""}>
+            Remover
+          </button>
+        </div>
+      `)
+      .join("");
+
+    if (beneficiosStatusChip) {
+      beneficiosStatusChip.textContent = `${nonDiscountedBenefitsState.length} ativo(s)`;
+    }
+    if (benefitsAccordionSummary) {
+      const total = nonDiscountedBenefitsState.reduce((sum, item) => sum + Number(item.valor || 0), 0);
+      benefitsAccordionSummary.textContent = `${nonDiscountedBenefitsState.length} item(ns) · ${formatBankingCurrency(total)}`;
+    }
+  }
+
+  function renderExtraIncomes() {
+    if (!extraIncomeList) {
+      return;
+    }
+
+    if (!extraIncomesState.length) {
+      extraIncomeList.innerHTML = `
+        <div class="subtle-panel">
+          <strong>Nenhum recebimento extra configurado</strong>
+          <span class="section-note">Use este bloco para entradas fora do salario principal.</span>
+        </div>
+      `;
+      if (extrasStatusChip) {
+        extrasStatusChip.textContent = "Sem extras";
+      }
+      return;
+    }
+
+    extraIncomeList.innerHTML = extraIncomesState
+      .map((item) => `
+        <div class="list-row">
+          <div class="list-row-content">
+            <strong>${item.descricao}</strong>
+            <span>${item.tipo} · ${normalizeStoredDate(item.dataPrevista)} · ${formatBankingCurrency(item.valor)}</span>
+          </div>
+          <button type="button" class="ghost-button small-button" data-remove-extra-income="${item.id}" ${bankingEditingLocked ? "disabled" : ""}>
+            Remover
+          </button>
+        </div>
+      `)
+      .join("");
+
+    if (extrasStatusChip) {
+      extrasStatusChip.textContent = `${extraIncomesState.length} extra(s)`;
+    }
+  }
+
+  function persistSupplementalCollections() {
+    window.FinanceStore.updateAppData((draft) => {
+      const currentIncomeList = Array.isArray(draft.recebimentos?.lista) ? draft.recebimentos.lista : [];
+      const preservedIncomeList = currentIncomeList.filter(
+        (item) => item?.origemCadastro !== "base-financeira-extra"
+      );
+      draft.recebimentos.lista = [
+        ...preservedIncomeList,
+        ...extraIncomesState.map((item) => ({
+          id: item.id,
+          tipo: item.tipo,
+          descricao: item.descricao,
+          dataPrevista: item.dataPrevista,
+          valorPrevisto: Number(item.valor || 0),
+          valorRecebido: 0,
+          status: "pendente",
+          origemCadastro: "base-financeira-extra",
+        })),
+      ];
+
+      const currentBenefitList = Array.isArray(draft.recebimentos?.beneficios?.lista)
+        ? draft.recebimentos.beneficios.lista
+        : [];
+      const preservedBenefitList = currentBenefitList.filter(
+        (item) => item?.origemCadastro !== "base-financeira-beneficio"
+      );
+
+      draft.recebimentos.beneficios = {
+        ...draft.recebimentos.beneficios,
+        lista: [
+          ...preservedBenefitList,
+          ...nonDiscountedBenefitsState.map((item) => ({
+            id: item.id,
+            tipo: item.tipo || "beneficio",
+            descricao: item.nome,
+            dataRecebimento: item.dataPrevista,
+            valor: Number(item.valor || 0),
+            ativo: true,
+            status: "pendente",
+            contabilizarNoSaldo: true,
+            origemCadastro: "base-financeira-beneficio",
+          })),
+        ],
+      };
+
+      draft.banking = {
+        ...draft.banking,
+        salarioEstimadoConfirmado: salarioEstimadoConfirmadoState,
+        beneficios: {
+          ...draft.banking.beneficios,
+          vrVa: nonDiscountedBenefitsState.length
+            ? createCompatibilityBenefitFromItem(nonDiscountedBenefitsState[0])
+            : {
+              ...draft.banking.beneficios?.vrVa,
+              ativo: false,
+              valor: 0,
+              contabilizarNoSaldo: true,
+            },
+        },
+      };
+
+      return draft;
+    });
+  }
+
   function renderBankingForm() {
     const banking = carregarCadastroBancario();
+    const data = loadBankingData();
 
     getElement("saldoAtual").value = banking.saldoAtual || "";
     getElement("origemSaldoModo").value = banking.origemSaldo?.modo || "manual";
@@ -2046,22 +2419,32 @@
     getElement("statementPeriodEnd").value =
       banking.origemSaldo?.periodoFim || "";
     getElement("salarioBruto").value = banking.salarioBruto || "";
+    salarioEstimadoConfirmadoState = Boolean(banking.salarioEstimadoConfirmado);
+    if (salaryEstimatedConfirmedInput) {
+      salaryEstimatedConfirmedInput.checked = salarioEstimadoConfirmadoState;
+    }
     getElement("inssCalculado").value = formatBankingCurrency(
       banking.descontosAutomaticos?.inss || 0
     );
     getElement("irpfCalculado").value = formatBankingCurrency(
       banking.descontosAutomaticos?.irpf || 0
     );
-    getElement("planoSaude").value = banking.descontosDetalhados?.planoSaude || "";
-    getElement("planoOdontologico").value = banking.descontosDetalhados?.planoOdontologico || "";
-    getElement("vt").value = banking.descontosDetalhados?.vt || "";
-    getElement("vrVa").value = banking.descontosDetalhados?.vrVa || "";
-    getElement("vrVaDescontadoEmFolha").checked = Boolean(
-      banking.descontosDetalhados?.vrVaDescontadoEmFolha
-    );
-    getElement("tipoCiclo").value = banking.tipoCiclo || "ciclo1";
+    getElement("planoSaude").value = 0;
+    getElement("planoOdontologico").value = 0;
+    getElement("vt").value = 0;
+    getElement("vrVa").value = 0;
+    getElement("vrVaDescontadoEmFolha").checked = false;
+    setCycleType(banking.tipoCiclo || "ciclo1");
     getElement("diaPagamento1").value = banking.diasPagamento?.[0] || 5;
     getElement("diaPagamento2").value = banking.diasPagamento?.[1] || 20;
+    if (cycleDate1Input) {
+      cycleDate1Input.value = buildCycleInputDate(banking.diasPagamento?.[0] || 5);
+    }
+    if (cycleDate2Input) {
+      cycleDate2Input.value = banking.tipoCiclo === "ciclo2"
+        ? buildCycleInputDate(banking.diasPagamento?.[1] || 20)
+        : "";
+    }
     getElement("percentualPagamento1").value =
       banking.percentuaisPagamento?.[0] || 100;
     getElement("percentualPagamento2").value =
@@ -2069,19 +2452,27 @@
 
     syncSalarioLiquidoModeFromPayload(banking);
 
-    outrosDescontosState = Array.isArray(banking.descontosDetalhados?.outrosDescontos)
+    const explicitDiscounts = Array.isArray(banking.descontosDetalhados?.outrosDescontos)
       ? [...banking.descontosDetalhados.outrosDescontos]
       : [];
+    outrosDescontosState = explicitDiscounts.length
+      ? explicitDiscounts
+      : getLegacyDiscountItems(banking);
+    nonDiscountedBenefitsState = getStoredNonDiscountedBenefits(data);
+    extraIncomesState = getStoredExtraIncomes(data);
 
     syncCycleFields();
     syncBalanceMode();
     renderOutrosDescontos();
+    renderNonDiscountedBenefits();
+    renderExtraIncomes();
     renderStatementPreview();
     updateSalaryPreview();
     updateCyclePreview();
     updateSummaryPreview();
     updateBankingStatusChip();
     updateAccordionSummaries();
+    updateBankingEditState();
   }
 
   function renderPaymentReceipt() {
@@ -2152,9 +2543,14 @@
     renderBenefitReceipt();
     updateSummaryPreview();
 
+    if (discountedBenefitsChip) {
+      discountedBenefitsChip.textContent = outrosDescontosState.length
+        ? `${outrosDescontosState.length} item(ns)`
+        : "Sem itens";
+    }
     beneficiosStatusChip.textContent = summary.benefits.active.length
-      ? "VR/VA configurado"
-      : "Sem beneficio";
+      ? `${summary.benefits.active.length} ativo(s)`
+      : "Sem beneficios ativos";
     receiptStatusChip.textContent =
       summary.paymentInfo.configured || summary.benefits.active.length
         ? "Pronto para registrar"
@@ -2195,6 +2591,88 @@
     updateAccordionSummaries();
   }
 
+  function addNonDiscountedBenefit() {
+    const nome = benefitNameInput?.value.trim();
+    const valor = toBankingNumber(benefitValueInput?.value);
+    const dataPrevista = benefitDateInput?.value;
+
+    if (!nome || valor <= 0 || !dataPrevista) {
+      showMessage(bankingMessage, "error", "Preencha nome, data e valor do beneficio.");
+      return;
+    }
+
+    nonDiscountedBenefitsState.push({
+      id: createId("beneficio"),
+      nome,
+      valor,
+      dataPrevista,
+      tipo: "beneficio",
+    });
+
+    benefitNameInput.value = "";
+    benefitValueInput.value = "";
+    benefitDateInput.value = "";
+    renderNonDiscountedBenefits();
+    updateSummaryPreview();
+    updateAccordionSummaries();
+  }
+
+  function removeNonDiscountedBenefit(event) {
+    const button = event.target.closest("[data-remove-benefit]");
+    if (!button) {
+      return;
+    }
+
+    nonDiscountedBenefitsState = nonDiscountedBenefitsState.filter(
+      (item) => item.id !== button.dataset.removeBenefit
+    );
+    renderNonDiscountedBenefits();
+    updateSummaryPreview();
+    updateAccordionSummaries();
+  }
+
+  function addExtraIncome() {
+    const tipo = extraIncomeTypeInput?.value || "extra";
+    const descricao = extraIncomeDescriptionInput?.value.trim();
+    const dataPrevista = extraIncomeDateInput?.value;
+    const valor = toBankingNumber(extraIncomeValueInput?.value);
+
+    if (!descricao || !dataPrevista || valor <= 0) {
+      showMessage(bankingMessage, "error", "Preencha descricao, data e valor do recebimento extra.");
+      return;
+    }
+
+    extraIncomesState.push({
+      id: createId("recebimento_extra"),
+      tipo,
+      descricao,
+      dataPrevista,
+      valor,
+    });
+
+    extraIncomeDescriptionInput.value = "";
+    extraIncomeDateInput.value = "";
+    extraIncomeValueInput.value = "";
+    extraIncomeTypeInput.value = "extra";
+    renderExtraIncomes();
+    updateSummaryPreview();
+    updateAccordionSummaries();
+  }
+
+  function removeExtraIncome(event) {
+    const button = event.target.closest("[data-remove-extra-income]");
+    if (!button) {
+      return;
+    }
+
+    extraIncomesState = extraIncomesState.filter(
+      (item) => item.id !== button.dataset.removeExtraIncome
+    );
+    renderExtraIncomes();
+    updateSummaryPreview();
+    updateAccordionSummaries();
+  }
+
   function handleSaveBanking(event) {
     if (event) {
       event.preventDefault();
@@ -2225,9 +2703,12 @@
     }
 
     salvarCadastroBancario(payload);
+    persistSupplementalCollections();
     const savedBanking = carregarCadastroBancario();
     renderBankingForm();
     renderReceiptArea();
+    bankingEditingLocked = true;
+    updateBankingEditState();
     accordionSections.forEach((section) => {
       setAccordionState(section.dataset.accordionSection, true);
     });
@@ -2242,8 +2723,10 @@
   }
 
   function handleEditBanking() {
+    bankingEditingLocked = false;
     renderBankingForm();
     renderReceiptArea();
+    updateBankingEditState();
     updateAccordionSummaries();
     showMessage(bankingMessage, "success", "Dados carregados para edicao.");
   }
@@ -2686,7 +3169,7 @@
   }
 
   function bindLiveUpdates() {
-    ["saldoAtual", "salarioBruto", "planoSaude", "planoOdontologico", "vt", "vrVa", "diaPagamento1", "diaPagamento2", "percentualPagamento1", "percentualPagamento2", "pagamentoDataPrevista", "pagamentoValorPrevisto", "vrvaDataPrevista", "vrvaValorPrevisto"].forEach((id) => {
+    ["saldoAtual", "salarioBruto", "planoSaude", "planoOdontologico", "vt", "vrVa", "diaPagamento1", "diaPagamento2", "percentualPagamento1", "percentualPagamento2", "pagamentoDataPrevista", "pagamentoValorPrevisto", "vrvaDataPrevista", "vrvaValorPrevisto", "cycle-date-1", "cycle-date-2"].forEach((id) => {
       getElement(id).addEventListener("input", () => {
         updateSalaryPreview();
         updateCyclePreview();
@@ -2695,10 +3178,11 @@
       });
     });
 
-    ["vrVaDescontadoEmFolha", "tipoCiclo", "origemSaldoBanco", "vrvaRecebido"].forEach((id) => {
+    ["vrVaDescontadoEmFolha", "tipoCiclo", "origemSaldoBanco", "vrvaRecebido", "salario-estimado-confirmado"].forEach((id) => {
       getElement(id).addEventListener("change", () => {
         syncCycleFields();
         syncBalanceMode();
+        salarioEstimadoConfirmadoState = Boolean(salaryEstimatedConfirmedInput?.checked);
         updateSalaryPreview();
         updateCyclePreview();
         updateSummaryPreview();
@@ -2707,6 +3191,15 @@
     });
 
     getElement("origemSaldoModo").addEventListener("change", handleBalanceModeChange);
+
+    cycleTypeButtons.forEach((button) => {
+      button.addEventListener("click", () => {
+        setCycleType(button.dataset.cycleType || "ciclo1");
+        syncCycleFields();
+        updateCyclePreview();
+        updateSummaryPreview();
+      });
+    });
 
     salaryModeButtons.forEach((button) => {
       button.addEventListener("click", () => {
@@ -2771,6 +3264,10 @@
 
   getElement("add-outro-desconto-button").addEventListener("click", addOutroDesconto);
   outrosDescontosList.addEventListener("click", removeOutroDesconto);
+  addBenefitButton?.addEventListener("click", addNonDiscountedBenefit);
+  benefitsList?.addEventListener("click", removeNonDiscountedBenefit);
+  addExtraIncomeButton?.addEventListener("click", addExtraIncome);
+  extraIncomeList?.addEventListener("click", removeExtraIncome);
   getElement("save-pagamento-button").addEventListener("click", savePaymentReceipt);
   getElement("mark-pagamento-recebido-button").addEventListener("click", markPaymentAsReceived);
   getElement("save-vrva-button").addEventListener("click", saveVrVaReceipt);
@@ -2802,6 +3299,7 @@
 
   bindAccordionToggles();
   bindLiveUpdates();
+  setCycleType("ciclo1");
   accordionSections.forEach((section) => {
     setAccordionState(section.dataset.accordionSection, true);
   });

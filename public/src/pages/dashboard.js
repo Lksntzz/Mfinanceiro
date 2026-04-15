@@ -565,7 +565,7 @@ function renderProjection(summary, projection) {
 
   const chartWidth = 920;
   const chartHeight = 320;
-  const padding = { top: 12, right: 22, bottom: 34, left: 76 };
+  const padding = { top: 16, right: 32, bottom: 46, left: 102 };
   const balances = projection.map((item) => Number(item.balance || 0));
   const rawMin = Math.min(...balances, 0);
   const rawMax = Math.max(...balances, 0);
@@ -606,6 +606,15 @@ function renderProjection(summary, projection) {
     const yPx = padding.top + (innerHeight / 4) * index;
     const yPercent = (yPx / chartHeight) * 100;
     return { value, y: yPx, yPercent: yPercent };
+  });
+  const maxXTicks = Math.min(6, points.length);
+  const xTickStep = Math.max(Math.ceil(points.length / Math.max(maxXTicks - 1, 1)), 1);
+  const xTicks = points.filter((point, index) => {
+    return (
+      index === 0 ||
+      index === points.length - 1 ||
+      index % xTickStep === 0
+    );
   });
   elements.chartBars.innerHTML = `
     <div class="projection-chart">
@@ -651,10 +660,13 @@ function renderProjection(summary, projection) {
       .join("")}
       </svg>
       <div class="projection-chart-axis projection-chart-axis-x">
-        ${points
+        ${xTicks
       .map(
-        (point) => `
-              <span style="left:${((point.x - padding.left) / Math.max(innerWidth, 1)) * 100}%">${point.label}</span>
+        (point, index) => `
+              <span
+                class="${index === 0 ? "projection-chart-x-edge-left" : index === xTicks.length - 1 ? "projection-chart-x-edge-right" : ""}"
+                style="left:${((point.x - padding.left) / Math.max(innerWidth, 1)) * 100}%"
+              >${point.label}</span>
             `
       )
       .join("")}
